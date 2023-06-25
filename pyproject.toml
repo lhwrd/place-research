@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "place-research"
+version = "0.1.0"
+description = "A Python packing for researching where to live in the US"
+authors = ["Lucas Howard <lhoward96@gmail.com>"]
+readme = "README.md"
+packages = [{include = "place_research"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.3.0"
+pytest = "^7.4.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
