@@ -9,6 +9,7 @@ packages = [{include = "place_research"}]
 [tool.poetry.dependencies]
 python = "^3.10"
 pandas = "^2.0.2"
+googlemaps = "^4.10.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.3.0"

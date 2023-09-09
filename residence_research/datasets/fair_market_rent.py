@@ -1,7 +1,7 @@
 """https://www.huduser.gov/portal/datasets/fmr/fmr2023/FY23_FMRs_revised.xlsx
 """
 import pandas as pd
-from residence_research.main import DatasetABC
+from residence_research.models.dataset import DatasetABC
 from pathlib import Path
 
 THIS_DIR = Path(__file__).parent
