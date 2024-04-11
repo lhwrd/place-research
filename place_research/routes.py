@@ -1,3 +1,4 @@
+""" Module for finding points along a route and getting distances from an origin to a list of points. """
 from googlemaps import Client
 
 
@@ -11,13 +12,12 @@ def find_points_along_route(
         end_address (str): End address for the route
         stops (int): Number of stops to find along the route
     """
-    route = gmaps.directions(start_address, end_address)
+    route = gmaps.directions(start_address, end_address)  # type: ignore
     steps = route[0]["legs"][0]["steps"]
     total_distance = route[0]["legs"][0]["distance"]["value"]
     interval_distance = round(total_distance / (stops + 1), 0)
 
     stop_locations = []
-    current_distance = 0
     distance_covered = 0
 
     for step in steps:
@@ -39,7 +39,8 @@ def find_points_along_route(
 
 
 def get_distances_from_origin(gmaps: Client, origin: str, points: list):
-    distances = gmaps.distance_matrix(origin, points, mode="driving")
+    """Get distances from an origin to a list of points"""
+    distances = gmaps.distance_matrix(origin, points, mode="driving")  # type: ignore
 
     result = []
 
