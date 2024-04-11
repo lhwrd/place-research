@@ -1,20 +1,23 @@
 [tool.poetry]
 name = "place-research"
 version = "0.1.0"
-description = "A Python packing for researching where to live in the US"
+description = ""
 authors = ["Lucas Howard <lhoward96@gmail.com>"]
 readme = "README.md"
-packages = [{include = "place_research"}]
+packages = [{ include = "place_research", from = "." }]
 
 [tool.poetry.dependencies]
-python = "^3.10"
-pandas = "^2.0.2"
+python = "^3.12"
 googlemaps = "^4.10.0"
+python-dotenv = "^1.0.1"
+jupyter = "^1.0.0"
+openpyxl = "^3.1.2"
+pandas = "^2.2.2"
 
 [tool.poetry.group.dev.dependencies]
-black = "^23.3.0"
-pytest = "^7.4.0"
-pytest-cov = "^4.1.0"
+pytest = "^8.1.1"
+black = "^24.3.0"
+
 
 [build-system]
 requires = ["poetry-core"]
