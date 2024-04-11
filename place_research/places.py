@@ -3,14 +3,21 @@
 from googlemaps import Client
 
 
+def get_lat_lng(gmaps: Client, address: str) -> tuple[float, float]:
+    """Get the latitude and longitude of an address as tuple"""
+    geocode_result = gmaps.geocode(address)  # type: ignore
+    return (
+        geocode_result[0]["geometry"]["location"]["lat"],
+        geocode_result[0]["geometry"]["location"]["lng"],
+    )
+
+
 def get_nearby_places_from_list(
     gmaps: Client, address: str, search_radius: int, seach_nearby: list[str]
 ):
     """Get nearby places from a list of places"""
     places = []
-    geocode_result = gmaps.geocode(address)  # type: ignore
-    lat = geocode_result[0]["geometry"]["location"]["lat"]
-    lng = geocode_result[0]["geometry"]["location"]["lng"]
+    lat, lng = get_lat_lng(gmaps, address)
     for place in seach_nearby:
         places.append(
             gmaps.places_nearby(location=(lat, lng), radius=search_radius, type=place)  # type: ignore
@@ -32,10 +39,15 @@ def get_place_details(gmaps: Client, place_id: str):
 
 
 def search_places_nearby(
-    gmaps: Client, address: str, search_radius: int, place_type: str
+    gmaps: Client,
+    location,
+    radius: int,
+    place_query: str | None = None,
+    place_type: str | None = None,
 ):
     """Search for operational places nearby a given address."""
-    places = gmaps.places(location=address, radius=search_radius, type=place_type)  # type: ignore
+    lat, lng = get_lat_lng(gmaps, location)
+    places = gmaps.places(location=(lat, lng), radius=radius, query=place_query, type=place_type)  # type: ignore
     return [
         get_place_details(gmaps, place["place_id"])
         # place
