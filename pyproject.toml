@@ -17,7 +17,8 @@ matplotlib = "^3.8.4"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.1.1"
-black = "^24.3.0"
+black = {extras = ["jupyter"], version = "^24.3.0"}
+pre-commit = "^3.7.0"
 
 
 [build-system]
