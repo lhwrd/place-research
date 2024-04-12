@@ -1,6 +1,9 @@
 """Representation of a Place """
 
+import logging
 from googlemaps import Client
+
+logger = logging.getLogger(__name__)
 
 
 def get_lat_lng(gmaps: Client, address: str) -> tuple[float, float]:
@@ -10,19 +13,6 @@ def get_lat_lng(gmaps: Client, address: str) -> tuple[float, float]:
         geocode_result[0]["geometry"]["location"]["lat"],
         geocode_result[0]["geometry"]["location"]["lng"],
     )
-
-
-def get_nearby_places_from_list(
-    gmaps: Client, address: str, search_radius: int, seach_nearby: list[str]
-):
-    """Get nearby places from a list of places"""
-    places = []
-    lat, lng = get_lat_lng(gmaps, address)
-    for place in seach_nearby:
-        places.append(
-            gmaps.places_nearby(location=(lat, lng), radius=search_radius, type=place)  # type: ignore
-        )
-    return places
 
 
 def get_place_details(gmaps: Client, place_id: str):
@@ -42,15 +32,50 @@ def search_places_nearby(
     gmaps: Client,
     location,
     radius: int,
-    place_query: str | None = None,
+    keyword: str | None = None,
     place_type: str | None = None,
 ):
     """Search for operational places nearby a given address."""
     lat, lng = get_lat_lng(gmaps, location)
-    places = gmaps.places(location=(lat, lng), radius=radius, query=place_query, type=place_type)  # type: ignore
+    places = gmaps.places_nearby(  # type: ignore
+        location=(lat, lng), radius=radius, keyword=keyword, type=place_type
+    )
     return [
         get_place_details(gmaps, place["place_id"])
         # place
         for place in places["results"]
         if place.get("business_status") == "OPERATIONAL"
     ]
+
+
+def search_multiple_places(
+    gmaps: Client,
+    subject_address: str,
+    search_radius: int,
+    search_terms: list[dict],
+) -> list[dict]:
+    """Search for multiple places by name or type within a certain radius of a subject address."""
+    results = []
+    # Search for each term in the list
+    for term in search_terms:
+        keyword = term.get("keyword")
+        place_type = term.get("type")
+        search_term = keyword or place_type
+
+        logger.info("Searching for %s near %s", search_term, subject_address)
+
+        result = search_places_nearby(
+            gmaps,
+            subject_address,
+            search_radius,
+            keyword=keyword,
+            place_type=place_type,
+        )
+
+        # Add the term to each result
+        for place in result:
+            place["search_term"] = keyword or place_type
+
+        results.extend(result)
+
+    return results
