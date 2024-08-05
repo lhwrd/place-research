@@ -3,3 +3,6 @@
 __pycache__/
 .vscode
 *.xlsx
+notebooks/
+.DS_Store
+*.ipynb_checkpoints/
