@@ -2,8 +2,8 @@
 
 import pandas as pd
 from googlemaps import Client
-from place_research.routes import get_distances_from_origin
-from place_research.utils import meters_to_miles
+from app.api.routes import get_distances_from_origin
+from app.api.utils import meters_to_miles
 
 
 def calculate_distance_score(distance):
@@ -32,12 +32,7 @@ def place_results_to_dataframe(
     points = [x["address"] for x in places_nearby]
 
     # Get the distances from the subject address to the places in chunks of 10
-    chunk_size = 10
-    distances = []
-
-    for i in range(0, len(points), chunk_size):
-        chunk = points[i : i + chunk_size]
-        distances.extend(get_distances_from_origin(gmaps, subject_address, chunk))
+    distances = chunked_distance_matrix(gmaps, subject_address, points)
 
     # Add the distances to the places
     for place, distance in zip(places_nearby, distances):
