@@ -1,4 +1,5 @@
 """ Module for finding points along a route and getting distances from an origin to a list of points. """
+
 from googlemaps import Client
 from .. import logger
 
@@ -70,5 +71,7 @@ def chunked_distance_matrix(
     for i in range(0, len(points), chunk_size):
         chunk = points[i : i + chunk_size]
         distances.extend(get_distances_from_origin(gmaps, origin, chunk))
+
+    logger.debug("Distances: %s", distances)
 
     return distances
