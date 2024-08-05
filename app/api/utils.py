@@ -14,3 +14,13 @@ def meters_to_miles(meters: int):
 def seconds_to_hours(seconds: int):
     """Convert seconds to hours"""
     return int(round(seconds / 3600, 0))
+
+
+def seconds_to_human_readable(seconds: int):
+    """Convert seconds to a human-readable format"""
+    hours = seconds_to_hours(seconds)
+    minutes = int((seconds % 3600) / 60)
+    if hours == 0:
+        return f"{minutes} minutes"
+
+    return f"{hours} hours, {minutes} minutes"
