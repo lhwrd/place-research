@@ -1,4 +1,5 @@
-""" Module for finding points along a route and getting distances from an origin to a list of points. """
+""" Module for finding points along a route and getting distances
+from an origin to a list of points. """
 
 from googlemaps import Client
 from .. import logger
