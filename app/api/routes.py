@@ -2,8 +2,7 @@
 from an origin to a list of points. """
 
 from googlemaps import Client
-from .. import logger
-
+from flask import current_app as app
 
 def find_points_along_route(
     gmaps: Client, start_address: str, end_address: str, stops: int
@@ -73,6 +72,6 @@ def chunked_distance_matrix(
         chunk = points[i : i + chunk_size]
         distances.extend(get_distances_from_origin(gmaps, origin, chunk))
 
-    logger.debug("Distances: %s", distances)
+    app.logger.debug("Distances: %s", distances)
 
     return distances
