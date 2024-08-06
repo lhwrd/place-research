@@ -33,7 +33,7 @@
                 <ul class="list-group mt-3">
                     {% for result in results %}
                     <li class="list-group-item">
-                        <strong>{{ result.search_term }} - {{ result.name }}</strong> - {{ result.distance }} miles, {{ result.duration }} driving time
+                        <strong>{{ result.name }}</strong> - {{ result.distance }} miles, {{ result.duration }} driving time
                     </li>
                     {% endfor %}
                 </ul>
@@ -99,7 +99,7 @@
                 }
             });
 
-            addInfoWindow(marker, '<div><h1>{{ result.name }}<h1><br />{{ result.search_term }}</div>');
+            addInfoWindow(marker, '<div><h1>{{ result.name }}</h1><br />{{ result.search_term }}</div>');
             {% endfor %}
         }
         google.maps.event.addDomListener(window, 'load', initMap);
