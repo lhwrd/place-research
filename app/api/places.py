@@ -1,12 +1,11 @@
 """Representation of a Place """
 
 from googlemaps import Client
-from app import logger
-
+from flask import current_app as app
 
 def get_lat_lng(gmaps: Client, address: str) -> tuple[float, float]:
     """Get the latitude and longitude of an address as tuple"""
-    logger.info("Getting lat/lng for %s", address)
+    app.logger.info("Getting lat/lng for %s", address)
     geocode_result = gmaps.geocode(address)  # type: ignore
     return (
         geocode_result[0]["geometry"]["location"]["lat"],
@@ -16,7 +15,7 @@ def get_lat_lng(gmaps: Client, address: str) -> tuple[float, float]:
 
 def get_place_details(gmaps: Client, place_id: str):
     """Get details about a place"""
-    logger.info("Getting details for place %s", place_id)
+    app.logger.info("Getting details for place %s", place_id)
     place_details = gmaps.place(place_id=place_id)  # type: ignore
     place_details = place_details.get("result")
     # logger.debug(place_details)
@@ -39,7 +38,7 @@ def search_places_nearby(
     number_of_places: int = 3,
 ):
     """Search for operational places nearby a given address."""
-    logger.info("Searching for places near %s within %s meters", location, radius)
+    app.logger.info("Searching for places near %s within %s meters", location, radius)
     places = gmaps.places_nearby(  # type: ignore
         location=location,
         # radius=radius,
@@ -47,7 +46,7 @@ def search_places_nearby(
         type=place_type,
         rank_by="distance",
     )
-    logger.debug("Found %s places", len(places["results"]))
+    app.logger.debug("Found %s places", len(places["results"]))
 
     # Filter for only operational places
     places = [
@@ -76,7 +75,7 @@ def search_multiple_places(
         place_type = term.get("type")
         search_term = keyword or place_type
 
-        logger.info("Searching for %s near %s", search_term, subject_address)
+        app.logger.info("Searching for %s near %s", search_term, subject_address)
 
         result = search_places_nearby(
             gmaps,
