@@ -54,11 +54,22 @@ def search_places_nearby(
         for place in places["results"]
         if place.get("business_status") == "OPERATIONAL"
     ]
+    
+    # Filter out duplicate places with the same address and similar names
+    unique_places = []
+
+    for place in places:
+        # If the address is the same, check if the name is similar
+        for p in unique_places:
+            if place["vicinity"] in p["vicinity"] and place["name"] in p["name"]:
+                break
+        else:
+            unique_places.append(place)
 
     # Take the first number_of_places
-    places = places[:number_of_places]
+    unique_places = unique_places[:number_of_places]
 
-    return places
+    return unique_places
 
 
 def search_multiple_places(
