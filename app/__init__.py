@@ -13,6 +13,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:////tmp/test.db"
 db = SQLAlchemy(app)
 
 app.config["GOOGLE_MAPS_API_KEY"] = os.getenv("GOOGLE_MAPS_API_KEY")
+app.config["GOOGLE_MAPS_MAP_ID"] = os.getenv("GOOGLE_MAPS_MAP_ID")
 
 # Configure app.logger
 if not app.logger.handlers:
