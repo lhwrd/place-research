@@ -1,5 +1,7 @@
 """Routes for the application."""
 
+import os
+
 from flask import render_template, request
 from flask import current_app as app
 
@@ -28,11 +30,11 @@ def search_nearby_park():
     gmaps = get_client()
 
     search_terms = [
-        {"keyword": "Walmart Supercenter"},
-        {"type": "grocery_or_supermarket"},
-        {"type": "gas_station"},
+        {"keyword": "\"Walmart Supercenter\""},
+        # {"type": "grocery_or_supermarket"},
+        # {"type": "gas_station"},
         # {"type": "laundry"},
-        {"type": "post_office"},
+        # {"type": "post_office"},
         # {"type": "pet_store"},
         # {"type": "veterinary_care"},
         # {"type": "hospital"},
@@ -62,10 +64,13 @@ def search_nearby_park():
         place["distance"] = meters_to_miles(distances[i]["distance"])
         place["duration"] = seconds_to_human_readable(distances[i]["duration"])
 
+    app.logger.debug("GOOGLE_MAPS_MAP_ID: %s", app.config["GOOGLE_MAPS_MAP_ID"])
+    
     # Return back to the homepage with the search results
     return render_template(
         "index.html",
         GOOGLE_MAPS_API_KEY=app.config["GOOGLE_MAPS_API_KEY"],
+        GOOGLE_MAPS_MAPS_ID=app.config["GOOGLE_MAPS_MAP_ID"],
         center=center,
         results=places,
     )
