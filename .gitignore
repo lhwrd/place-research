@@ -163,3 +163,7 @@ cython_debug/
 *.xlsx
 *.csv
 *.ipynb
+
+cache/
+
+.DS_Store
