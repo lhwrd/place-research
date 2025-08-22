@@ -7,13 +7,15 @@ from dotenv import load_dotenv
 from .cache import CacheManager
 from .config import Config
 from .engine import ResearchEngine
-from .models import Place
+from .models import Place, City, County
 from .providers import (
     AirQualityProvider,
+    CensusProvider,
     FloodZoneProvider,
     HighwayProvider,
     RailroadProvider,
     WalkBikeScoreProvider,
+    WalmartProvider,
 )
 
 load_dotenv()
@@ -58,6 +60,12 @@ def research(address, config_path, no_cache):
     if config.is_provider_enabled("air_quality"):
         providers.append(AirQualityProvider(config=config))
 
+    if config.is_provider_enabled("census"):
+        providers.append(CensusProvider(config=config))
+
+    if config.is_provider_enabled("walmart"):
+        providers.append(WalmartProvider(config=config))
+
     engine = ResearchEngine(providers, config=config)
 
     gmaps_api_key = os.getenv("GOOGLE_MAPS_API_KEY")
@@ -75,18 +83,35 @@ def research(address, config_path, no_cache):
     )
     place = Place(address, coordinates)
 
+    # Extract city, county, and state information from geocoding result
+    city_name = None
+    county_name = None
+    state_name = None
+
     try:
-        place.city = geocode_result[0]["address_components"][2]["long_name"]
+        city_name = geocode_result[0]["address_components"][2]["long_name"]
     except (IndexError, KeyError):
-        place.city = None
+        pass
+
     try:
-        place.county = geocode_result[0]["address_components"][3]["long_name"]
+        county_name = geocode_result[0]["address_components"][3]["long_name"]
     except (IndexError, KeyError):
-        place.county = None
+        pass
+
     try:
-        place.state = geocode_result[0]["address_components"][4]["long_name"]
+        state_name = geocode_result[0]["address_components"][4]["long_name"]
     except (IndexError, KeyError):
-        place.state = None
+        pass
+
+    # Create City and County objects if we have the necessary information
+    if city_name and state_name:
+        place.city = City(city_name, state_name)
+
+    if county_name and state_name:
+        place.county = County(county_name, state_name)
+
+    if state_name:
+        place.state = state_name
 
     engine.enrich_place(place)
 
@@ -127,6 +152,132 @@ def research(address, config_path, no_cache):
     if "air_quality" in place.attributes:
         click.echo(f"Air Quality: {place.attributes['air_quality']}")
         click.echo(f"Air Quality Category: {place.attributes['air_quality_category']}")
+
+    # Display census data
+    if "census_population" in place.attributes:
+        click.echo("\nCensus Data:")
+        if place.attributes.get("census_population"):
+            click.echo(f"  Population: {place.attributes['census_population']:,}")
+        if place.attributes.get("census_median_income"):
+            click.echo(
+                f"  Median Household Income: ${place.attributes['census_median_income']:,}"
+            )
+        if place.attributes.get("census_median_home_value"):
+            click.echo(
+                f"  Median Home Value: ${place.attributes['census_median_home_value']:,}"
+            )
+        if place.attributes.get("census_housing_units"):
+            click.echo(f"  Housing Units: {place.attributes['census_housing_units']:,}")
+        if place.attributes.get("census_homeownership_rate"):
+            click.echo(
+                f"  Homeownership Rate: {place.attributes['census_homeownership_rate']}%"
+            )
+        if place.attributes.get("census_higher_education_rate"):
+            click.echo(
+                f"  Higher Education Rate: {place.attributes['census_higher_education_rate']}%"
+            )
+        if place.attributes.get("census_public_transit_commuters"):
+            click.echo(
+                f"  Public Transit Commuters: {place.attributes['census_public_transit_commuters']:,}"
+            )
+        if place.attributes.get("census_work_from_home"):
+            click.echo(
+                f"  Work From Home: {place.attributes['census_work_from_home']:,}"
+            )
+
+    if place.attributes.get("census_error"):
+        click.echo(f"Census Data Error: {place.attributes['census_error']}")
+
+    # Display Walmart data
+    if "walmart_supercenter_driving_distance_m" in place.attributes:
+        if place.attributes["walmart_supercenter_driving_distance_m"] is not None:
+            driving_distance_m = place.attributes[
+                "walmart_supercenter_driving_distance_m"
+            ]
+            driving_distance_km = place.attributes[
+                "walmart_supercenter_driving_distance_km"
+            ]
+            driving_time_min = place.attributes[
+                "walmart_supercenter_driving_time_minutes"
+            ]
+            straight_distance_m = place.attributes.get(
+                "walmart_supercenter_straight_line_distance_m"
+            )
+
+            click.echo("\nWalmart Supercenter Data:")
+            click.echo(
+                f"  Driving Distance: {driving_distance_m:,} meters ({driving_distance_km} km)"
+            )
+            click.echo(f"  Driving Time: {driving_time_min} minutes")
+
+            if straight_distance_m:
+                straight_distance_km = straight_distance_m / 1000
+                click.echo(
+                    f"  Straight-line Distance: {straight_distance_m:.1f} meters ({straight_distance_km:.2f} km)"
+                )
+
+            click.echo(
+                f"  Category: {place.attributes.get('walmart_supercenter_distance_category', 'Unknown')}"
+            )
+
+            if place.attributes.get("nearest_walmart_supercenter_name"):
+                click.echo(
+                    f"  Name: {place.attributes['nearest_walmart_supercenter_name']}"
+                )
+
+            if place.attributes.get("nearest_walmart_supercenter_address"):
+                click.echo(
+                    f"  Address: {place.attributes['nearest_walmart_supercenter_address']}"
+                )
+
+            if place.attributes.get("nearest_walmart_supercenter_rating"):
+                click.echo(
+                    f"  Rating: {place.attributes['nearest_walmart_supercenter_rating']}/5"
+                )
+
+            open_status = place.attributes.get("nearest_walmart_supercenter_open_now")
+            if open_status is not None:
+                status_text = "Open" if open_status else "Closed"
+                click.echo(f"  Currently: {status_text}")
+        else:
+            click.echo(
+                "\nWalmart Supercenter Data: No Walmart Supercenter found within 50km"
+            )
+
+    if place.attributes.get("walmart_error"):
+        click.echo(f"Walmart Data Error: {place.attributes['walmart_error']}")
+
+    # Display city-specific census data
+    if place.city and hasattr(place.city, "attributes") and place.city.attributes:
+        city_census = {
+            k: v for k, v in place.city.attributes.items() if k.startswith("census_")
+        }
+        if city_census:
+            click.echo(f"\nCity Census Data ({place.city.name}, {place.city.state}):")
+            for key, value in city_census.items():
+                if key != "census_error" and value is not None:
+                    display_name = key.replace("census_", "").replace("_", " ").title()
+                    if isinstance(value, int) and value > 1000:
+                        click.echo(f"  {display_name}: {value:,}")
+                    else:
+                        click.echo(f"  {display_name}: {value}")
+
+    # Display county-specific census data
+    if place.county and hasattr(place.county, "attributes") and place.county.attributes:
+        county_census = {
+            k: v for k, v in place.county.attributes.items() if k.startswith("census_")
+        }
+        if county_census:
+            click.echo(
+                f"\nCounty Census Data ({place.county.name}, {place.county.state}):"
+            )
+            for key, value in county_census.items():
+                if key != "census_error" and value is not None:
+                    display_name = key.replace("census_", "").replace("_", " ").title()
+                    if isinstance(value, int) and value > 1000:
+                        click.echo(f"  {display_name}: {value:,}")
+                    else:
+                        click.echo(f"  {display_name}: {value}")
 
     # Restore cache setting if it was disabled
     if no_cache:
