@@ -5,15 +5,17 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "beautifulsoup4>=4.13.4",
     "click>=8.2.1",
     "googlemaps>=4.10.0",
     "osmnx>=2.0.6",
     "python-dotenv>=1.1.1",
+    "requests>=2.32.5",
     "rich>=14.1.0",
 ]
 
 [project.scripts]
-research = "place_research.cli:main"
+research = "place_research.cli:cli"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -22,8 +24,4 @@ where = ["src"]
 package = true
 
 [dependency-groups]
-dev = [
-    "isort>=6.0.1",
-    "pytest>=8.4.1",
-    "ruff>=0.12.10",
-]
+dev = ["isort>=6.0.1", "pytest>=8.4.1", "ruff>=0.12.10"]

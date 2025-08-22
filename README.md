@@ -1,49 +1,142 @@
-# ResidenceResearch
+# PlaceResearch
 
-**ResidenceResearch** is a Python package designed to facilitate research on places to live in the United States. It provides access to a comprehensive dataset that includes public data from various US agencies such as the Department of Housing and Urban Development (HUD) and the Census Bureau. This dataset can be used to analyze and explore various factors related to different locations in the United States.
+A tool for researching places by gathering data from multiple providers including flood zones, walk/bike scores, and railroad proximity.
 
 ## Features
 
-- **Comprehensive Dataset**: The package offers a rich collection of public data, including information on Fair Market Rents, Median Income, election outcomes by political party, and more. This dataset is regularly updated and encompasses various geographical areas within the United States.
-
-- **Data Retrieval**: The package provides functions to easily retrieve specific data points or subsets from the dataset. You can access information based on geographical regions, timeframes, or specific variables of interest.
-
-- **Data Analysis and Visualization**: The package offers a range of functions for analyzing and visualizing the dataset. It includes statistical calculations, data aggregation, plotting utilities, and more, allowing you to gain insights into the characteristics of different places in the United States.
+- **Multi-provider data gathering**: Collect data from flood zone APIs, WalkScore, and railroad datasets
+- **Intelligent caching**: Automatic caching of API responses to reduce redundant calls and improve performance
+- **Configurable providers**: Enable/disable specific data providers through configuration
+- **Command-line interface**: Easy-to-use CLI for research and cache management
 
 ## Installation
 
-You can install the **ResidenceResearch** using `pip`:
-
 ```bash
-pip install residence_research
+uv sync
 ```
 
 ## Usage
 
-To get started, import the package into your Python script:
+### Basic Research
 
-```python
-import residence_research as rr
+Research a place by address:
+
+```bash
+uv run research research "111 White Place, Port Orange, FL 32128"
 ```
 
+### Cache Management
 
-## Data Sources
+Check cache statistics:
 
-The ResidenceResearch Package utilizes public data from the following US agencies:
+```bash
+uv run research cache-stats
+```
 
-- Department of Housing and Urban Development (HUD)
-- Census Bureau
+Clear all cached data:
 
-## Contributions and Feedback
+```bash
+uv run research clear-cache
+```
 
-Contributions to the ResidenceResearch Package are welcome. If you would like to contribute, please submit a pull request on the project's GitHub repository.
+Disable caching for a single request:
 
-If you encounter any issues or have suggestions for improvement, please feel free to open an issue on the repository as well.
+```bash
+uv run research research "123 Main St" --no-cache
+```
 
-## License
+## Configuration
 
-The ResidenceResearch package is released under the [MIT License](https://opensource.org/licenses/MIT). You are free to use, modify, and distribute this package in accordance with the terms and conditions of the license.
+The application uses a `config.json` file in the project root. Key configuration options:
 
-## Acknowledgements
+```json
+{
+    "cache_enabled": true,
+    "cache_ttl_hours": 24,
+    "timeout_seconds": 30,
+    "providers": {
+        "flood_zone": {
+            "enabled": true,
+            "cache_enabled": true
+        },
+        "walkbike_score": {
+            "enabled": true,
+            "cache_enabled": true
+        },
+        "railroads": {
+            "raillines_path": "/path/to/railroad/data.geojson",
+            "enabled": true,
+            "cache_enabled": true
+        }
+    }
+}
+```
 
-This project was developed by Lucas Howard and was inspired by the need for accessible and comprehensive data to research places to live in the United States. We would like to express our gratitude to the various US agencies that provide the valuable public data used in this package.
+### Cache Configuration
+
+- `cache_enabled`: Global cache enable/disable
+- `cache_ttl_hours`: How long to keep cached data (default: 24 hours)
+- `providers.{provider}.cache_enabled`: Per-provider cache control
+
+## Environment Variables
+
+Create a `.env` file with the following variables:
+
+```env
+GOOGLE_MAPS_API_KEY=your_api_key_here
+NATIONAL_FLOOD_DATA_API_KEY=your_api_key_here
+NATIONAL_FLOOD_DATA_CLIENT_ID=your_client_id_here
+WALKSCORE_API_KEY=your_api_key_here
+```
+
+## Caching System
+
+The caching system automatically stores provider responses to avoid redundant API calls:
+
+- **Cache Key**: Generated from coordinates and provider name
+- **Storage**: JSON files in the `cache/` directory
+- **TTL**: Configurable expiration time (default: 24 hours)
+- **Per-provider**: Each provider can have caching individually enabled/disabled
+
+### Cache Benefits
+
+- **Faster responses**: Cached data is returned immediately
+- **Reduced API costs**: Fewer external API calls
+- **Offline capability**: Previously researched places work without internet
+- **Development efficiency**: Faster iteration during development
+
+### Cache Management Commands
+
+```bash
+# View cache statistics
+uv run research cache-stats
+
+# Clear all cache
+uv run research clear-cache
+
+# Clear cache for specific provider (when implemented)
+uv run research clear-cache --provider flood_zone
+
+# Bypass cache for one request
+uv run research research "address" --no-cache
+```
+
+## Available Providers
+
+1. **Flood Zone Provider**: FEMA flood zone data
+2. **Walk/Bike Score Provider**: Walkability and bikeability scores
+3. **Railroad Provider**: Distance to nearest railroad lines
+
+## Development
+
+Install development dependencies:
+
+```bash
+uv sync --dev
+```
+
+Run tests:
+
+```bash
+uv run pytest
+```
