@@ -1,20 +1,29 @@
-[tool.poetry]
+[project]
 name = "place-research"
 version = "0.1.0"
-description = "A Python packing for researching where to live in the US"
-authors = ["Lucas Howard <lhoward96@gmail.com>"]
+description = "Add your description here"
 readme = "README.md"
-packages = [{include = "place_research"}]
+requires-python = ">=3.13"
+dependencies = [
+    "click>=8.2.1",
+    "googlemaps>=4.10.0",
+    "osmnx>=2.0.6",
+    "python-dotenv>=1.1.1",
+    "rich>=14.1.0",
+]
 
-[tool.poetry.dependencies]
-python = "^3.10"
-pandas = "^2.0.2"
+[project.scripts]
+research = "place_research.cli:main"
 
-[tool.poetry.group.dev.dependencies]
-black = "^23.3.0"
-pytest = "^7.4.0"
-pytest-cov = "^4.1.0"
+[tool.setuptools.packages.find]
+where = ["src"]
 
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+[tool.uv]
+package = true
+
+[dependency-groups]
+dev = [
+    "isort>=6.0.1",
+    "pytest>=8.4.1",
+    "ruff>=0.12.10",
+]
