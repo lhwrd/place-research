@@ -1,6 +1,7 @@
-import requests
-from typing import TYPE_CHECKING
 import math
+from typing import TYPE_CHECKING
+
+import requests
 
 if TYPE_CHECKING:
     from ..config import Config

@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import TYPE_CHECKING
+
 import geopandas as gpd
 from shapely.geometry import Point
 

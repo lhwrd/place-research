@@ -1,6 +1,7 @@
 # interfaces.py
-from typing import Protocol, runtime_checkable, TYPE_CHECKING
-from .models import Place, City, County, State
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
+
+from .models import City, County, Place, State
 
 if TYPE_CHECKING:
     from .config import Config

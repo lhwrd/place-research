@@ -1,5 +1,6 @@
 from typing import Any
 
+
 class County:
     def __init__(self, name: str, state: str):
         self.name = name

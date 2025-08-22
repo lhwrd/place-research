@@ -1,19 +1,15 @@
 import os
+
 import click
 import googlemaps
 from dotenv import load_dotenv
 
-from .models import Place
-from .engine import ResearchEngine
-from .config import Config
 from .cache import CacheManager
-from .providers import (
-    FloodZoneProvider,
-    WalkBikeScoreProvider,
-    RailroadProvider,
-    HighwayProvider,
-    AirQualityProvider,
-)
+from .config import Config
+from .engine import ResearchEngine
+from .models import Place
+from .providers import (AirQualityProvider, FloodZoneProvider, HighwayProvider,
+                        RailroadProvider, WalkBikeScoreProvider)
 
 load_dotenv()
 

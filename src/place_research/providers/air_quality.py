@@ -1,7 +1,7 @@
 import os
-from dotenv import load_dotenv
 
 import requests
+from dotenv import load_dotenv
 
 from ..models.place import Place
 

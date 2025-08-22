@@ -1,8 +1,9 @@
 # engine.py
-from .interfaces import PlaceProvider, CityProvider, CountyProvider, StateProvider
-from .models import Place
-from .config import Config
 from .cache import CacheManager
+from .config import Config
+from .interfaces import (CityProvider, CountyProvider, PlaceProvider,
+                         StateProvider)
+from .models import Place
 
 
 class ResearchEngine:

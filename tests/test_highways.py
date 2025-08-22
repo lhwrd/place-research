@@ -1,7 +1,9 @@
-import pytest
 from unittest.mock import Mock, patch
-from place_research.providers.highways import HighwayProvider
+
+import pytest
+
 from place_research.models.place import Place
+from place_research.providers.highways import HighwayProvider
 
 
 class TestHighwayProvider:
