@@ -7,6 +7,7 @@ from ..models.place import Place
 
 load_dotenv()
 
+
 class AirQualityProvider:
     def __init__(self, config=None):
         self.config = config
@@ -20,7 +21,7 @@ class AirQualityProvider:
             "latitude": place.coordinates[0],
             "longitude": place.coordinates[1],
             "format": "application/json",
-            "distance": 50
+            "distance": 50,
         }
         response = requests.get(self._api_url, params=params, timeout=10)
         response.raise_for_status()
@@ -30,4 +31,6 @@ class AirQualityProvider:
             return
 
         place.attributes["air_quality"] = json_data[0].get("AQI", "No data")
-        place.attributes["air_quality_category"] = json_data[0].get("Category", {}).get("Name", "No data")
+        place.attributes["air_quality_category"] = (
+            json_data[0].get("Category", {}).get("Name", "No data")
+        )

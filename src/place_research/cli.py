@@ -8,8 +8,13 @@ from .cache import CacheManager
 from .config import Config
 from .engine import ResearchEngine
 from .models import Place
-from .providers import (AirQualityProvider, FloodZoneProvider, HighwayProvider,
-                        RailroadProvider, WalkBikeScoreProvider)
+from .providers import (
+    AirQualityProvider,
+    FloodZoneProvider,
+    HighwayProvider,
+    RailroadProvider,
+    WalkBikeScoreProvider,
+)
 
 load_dotenv()
 
@@ -118,7 +123,7 @@ def research(address, config_path, no_cache):
             )
         if place.attributes.get("highway_error"):
             click.echo(f"Highway Data Error: {place.attributes['highway_error']}")
-            
+
     if "air_quality" in place.attributes:
         click.echo(f"Air Quality: {place.attributes['air_quality']}")
         click.echo(f"Air Quality Category: {place.attributes['air_quality_category']}")

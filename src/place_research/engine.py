@@ -1,8 +1,7 @@
 # engine.py
 from .cache import CacheManager
 from .config import Config
-from .interfaces import (CityProvider, CountyProvider, PlaceProvider,
-                         StateProvider)
+from .interfaces import CityProvider, CountyProvider, PlaceProvider, StateProvider
 from .models import Place
 
 
