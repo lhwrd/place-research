@@ -1,40 +1,68 @@
+import logging
 import os
-from typing import TYPE_CHECKING
 
+from dataclasses import dataclass
 import requests
 
-if TYPE_CHECKING:
-    from ..config import Config
+from place_research.interfaces import DisplayableResult, ProviderNameMixin
 
 
-class WalkBikeScoreProvider:
-    def __init__(self, api_key: str | None = None, config: "Config | None" = None):
-        self.config = config
+@dataclass
+class Score:
+    score: int | None
+    description: str | None
+
+    def to_dict(self):
+        return {
+            "score": self.score,
+            "description": self.description,
+        }
+
+
+@dataclass
+class WalkBikeScore(DisplayableResult):
+    walk_score: Score
+    bike_score: Score
+
+    def display(self):
+        return f"Walk Score: {self.walk_score}, Bike Score: {self.bike_score}\n"
+
+    def to_dict(self):
+        return {
+            "walk_score": self.walk_score.to_dict(),
+            "bike_score": self.bike_score.to_dict(),
+        }
+
+
+class WalkBikeScoreProvider(ProviderNameMixin):
+    def __init__(self, api_key: str | None = None):
         api_key = api_key or os.getenv("WALKSCORE_API_KEY")
         self.api_key = api_key
-
-        # Use timeout from config if available
-        self.timeout = config.timeout_seconds if config else 10
+        self.logger = logging.getLogger(__name__)
 
     def fetch_place_data(self, place):
+        if place.walk_score and place.walk_description:
+            return
+
+        coords = place.geolocation.split(";")
+        if len(coords) != 2:
+            self.logger.error("Invalid geolocation format.")
+            return
+
         url = "https://api.walkscore.com/score"
         params = {
             "format": "json",
             "address": place.address,
-            "lat": place.coordinates[0],
-            "lon": place.coordinates[1],
+            "lat": coords[0],
+            "lon": coords[1],
             "wsapikey": self.api_key,
             "bike": 1,
         }
 
-        response = requests.get(url, params=params, timeout=self.timeout)
+        response = requests.get(url, params=params, timeout=10)
         if response.status_code == 200:
             data = response.json()
-            place.attributes["walk_score"] = {
-                "score": data.get("walkscore"),
-                "description": data.get("description"),
-            }
-            place.attributes["bike_score"] = data.get("bike")
-        else:
-            place.attributes["walk_score"] = None
-            place.attributes["bike_score"] = None
+            place.walk_score = data.get("walkscore")
+            place.walk_description = data.get("description")
+            place.bike_score = data.get("bike", {}).get("score")
+            place.bike_description = data.get("bike", {}).get("description")

@@ -1,40 +1,16 @@
+import logging
 import math
-from typing import TYPE_CHECKING
 
 import requests
 
-if TYPE_CHECKING:
-    from ..config import Config
-    from ..models import Place
+from place_research.interfaces import ProviderNameMixin
+from place_research.models.place import Place
+from place_research.utils import haversine_distance
 
 
-class HighwayProvider:
-    def __init__(self, config: "Config | None" = None):
-        self.config = config
-        self.timeout = config.timeout_seconds if config else 30
-
-    def _haversine_distance(
-        self, lat1: float, lon1: float, lat2: float, lon2: float
-    ) -> float:
-        """
-        Calculate the great circle distance between two points
-        on the earth (specified in decimal degrees) in meters.
-        """
-        # Convert decimal degrees to radians
-        lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
-
-        # Haversine formula
-        dlat = lat2 - lat1
-        dlon = lon2 - lon1
-        a = (
-            math.sin(dlat / 2) ** 2
-            + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
-        )
-        c = 2 * math.asin(math.sqrt(a))
-
-        # Radius of earth in meters
-        r = 6371000
-        return c * r
+class HighwayProvider(ProviderNameMixin):
+    def __init__(self):
+        self.logger = logging.getLogger(__name__)
 
     def _get_nearby_highways(
         self, lat: float, lon: float, radius_km: float = 5.0
@@ -59,7 +35,7 @@ class HighwayProvider:
                 overpass_url,
                 data=query,
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
-                timeout=self.timeout,
+                timeout=30,
             )
             response.raise_for_status()
             return response.json().get("elements", [])
@@ -84,7 +60,7 @@ class HighwayProvider:
                     node_lat = node.get("lat")
                     node_lon = node.get("lon")
                     if node_lat is not None and node_lon is not None:
-                        distance = self._haversine_distance(
+                        distance = haversine_distance(
                             place_lat, place_lon, node_lat, node_lon
                         )
                         min_distance = min(min_distance, distance)
@@ -142,71 +118,66 @@ class HighwayProvider:
 
         return {"noise_level_db": round(estimated_db, 1), "noise_category": category}
 
-    def fetch_place_data(self, place: "Place"):
+    def fetch_place_data(self, place: Place):
         """
         Fetch highway distance and road noise data for the given place.
         """
-        lat, lon = place.coordinates
+        if not place.geolocation:
+            self.logger.debug("Geolocation not available.")
+            return
 
-        try:
-            # Get nearby highways
-            highways = self._get_nearby_highways(lat, lon)
+        if place.highway_distance_m is not None:
+            self.logger.debug("Already fetched highway data.")
+            return
 
-            if not highways:
-                # No highways found within 5km
-                place.attributes["highway_distance_m"] = None
-                place.attributes["nearest_highway_type"] = None
-                place.attributes["road_noise_level_db"] = None
-                place.attributes["road_noise_category"] = "Very Low"
-                return
+        coordinates = place.geolocation.split(";")
+        lat, lon = (float(coordinates[0]), float(coordinates[1]))
 
-            # Calculate minimum distance
-            min_distance = self._calculate_min_distance_to_highways(lat, lon, highways)
+        # Get nearby highways
+        highways = self._get_nearby_highways(lat, lon)
 
-            # Extract highway types for noise estimation
-            highway_types = []
+        if not highways:
+            # No highways found within 5km
+            place.highway_distance_m = None
+            place.nearest_highway_type = None
+            place.road_noise_level_db = None
+            place.road_noise_category = "Very Low"
+            return
+
+        # Calculate minimum distance
+        min_distance = self._calculate_min_distance_to_highways(lat, lon, highways)
+
+        # Extract highway types for noise estimation
+        highway_types = []
+        for highway in highways:
+            highway_type = highway.get("tags", {}).get("highway")
+            if highway_type:
+                highway_types.append(highway_type)
+
+        # Get the closest highway type
+        closest_highway_type = None
+        if highways and min_distance is not None:
+            closest_distance = float("inf")
             for highway in highways:
-                highway_type = highway.get("tags", {}).get("highway")
-                if highway_type:
-                    highway_types.append(highway_type)
-
-            # Get the closest highway type
-            closest_highway_type = None
-            if highways and min_distance is not None:
-                closest_distance = float("inf")
-                for highway in highways:
-                    if highway.get("type") == "way" and "geometry" in highway:
-                        for node in highway["geometry"]:
-                            node_lat = node.get("lat")
-                            node_lon = node.get("lon")
-                            if node_lat is not None and node_lon is not None:
-                                distance = self._haversine_distance(
-                                    lat, lon, node_lat, node_lon
+                if highway.get("type") == "way" and "geometry" in highway:
+                    for node in highway["geometry"]:
+                        node_lat = node.get("lat")
+                        node_lon = node.get("lon")
+                        if node_lat is not None and node_lon is not None:
+                            distance = haversine_distance(lat, lon, node_lat, node_lon)
+                            if distance < closest_distance:
+                                closest_distance = distance
+                                closest_highway_type = highway.get("tags", {}).get(
+                                    "highway"
                                 )
-                                if distance < closest_distance:
-                                    closest_distance = distance
-                                    closest_highway_type = highway.get("tags", {}).get(
-                                        "highway"
-                                    )
 
-            # Estimate road noise
-            noise_data = self._estimate_road_noise_level(min_distance, highway_types)
+        # Estimate road noise
+        noise_data = self._estimate_road_noise_level(min_distance, highway_types)
 
-            # Store results
-            place.attributes["highway_distance_m"] = (
-                round(min_distance, 1) if min_distance else None
-            )
-            place.attributes["nearest_highway_type"] = closest_highway_type
-            place.attributes["road_noise_level_db"] = noise_data["noise_level_db"]
-            place.attributes["road_noise_category"] = noise_data["noise_category"]
-            place.attributes["nearby_highway_types"] = list(
-                set(highway_types)
-            )  # Remove duplicates
-
-        except (requests.RequestException, ValueError) as e:
-            # Set error attributes if API call fails
-            place.attributes["highway_distance_m"] = None
-            place.attributes["nearest_highway_type"] = None
-            place.attributes["road_noise_level_db"] = None
-            place.attributes["road_noise_category"] = "Unknown"
-            place.attributes["highway_error"] = str(e)
+        # Store results
+        place.highway_distance_m = (
+            int(round(min_distance, 0)) if min_distance is not None else None
+        )
+        place.nearest_highway_type = closest_highway_type
+        place.road_noise_level_db = noise_data["noise_level_db"]
+        place.road_noise_category = noise_data["noise_category"]

@@ -1,5 +1,4 @@
 from .air_quality import AirQualityProvider
-from .census import CensusProvider
 from .flood_zone import FloodZoneProvider
 from .highways import HighwayProvider
 from .railroads import RailroadProvider
@@ -12,6 +11,5 @@ __all__ = [
     "RailroadProvider",
     "HighwayProvider",
     "AirQualityProvider",
-    "CensusProvider",
     "WalmartProvider",
 ]
