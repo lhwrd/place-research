@@ -5,11 +5,11 @@ import requests
 from dotenv import load_dotenv
 
 from ..models.place import Place
-
+from .provider_name_mixin import ProviderNameMixin
 load_dotenv()
 
 
-class AirQualityProvider:
+class AirQualityProvider(ProviderNameMixin):
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self._api_url = "https://www.airnowapi.org/aq/forecast/latLong/"
