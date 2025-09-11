@@ -105,6 +105,13 @@ class WalmartProvider(ProviderNameMixin):
             self.logger.error("Geolocation must be set on place.")
             return
 
+        if (
+            place.walmart_distance_km is not None
+            and place.walmart_duration_m is not None
+        ):
+            self.logger.debug("Walmart data already fetched for place ID %s", place.id)
+            return
+
         gmaps = googlemaps.Client(key=self.api_key, queries_per_second=5)
         coordinates = place.geolocation.split(";")
         coordinates = (float(coordinates[0]), float(coordinates[1]))
@@ -164,4 +171,4 @@ class WalmartProvider(ProviderNameMixin):
         place.walmart_duration_category = categorize_duration(place.walmart_duration_m)
 
         # Get Walmart rating
-        place.walmart_rating = walmart.get("rating")
+        place.walmart_rating = walmart.get("rating", 0.0)

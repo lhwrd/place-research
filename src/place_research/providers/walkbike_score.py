@@ -42,6 +42,9 @@ class WalkBikeScoreProvider(ProviderNameMixin):
 
     def fetch_place_data(self, place):
         if place.walk_score and place.walk_description:
+            self.logger.debug(
+                "Walk/Bike score data already fetched for place ID %s", place.id
+            )
             return
 
         coords = place.geolocation.split(";")

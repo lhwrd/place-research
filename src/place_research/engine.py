@@ -13,7 +13,7 @@ class ResearchEngine:
         self.providers = providers
 
     def enrich_place(self, place: Place):
-        self.logger.info("Enriching place: %s", place)
+        self.logger.debug("Enriching place: %s", place)
         for provider in self.providers:
             self.logger.debug("Using provider: %s", provider)
             if isinstance(provider, PlaceProvider):
@@ -24,5 +24,5 @@ class ResearchEngine:
                     self.logger.error(
                         "Error in provider %s: %s", provider, e, exc_info=True
                     )
-        self.logger.info("Finished enriching place: %s", place)
+        self.logger.info("Finished enriching place: %s", place.id)
         return place

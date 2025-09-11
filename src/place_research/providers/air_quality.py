@@ -21,6 +21,12 @@ class AirQualityProvider:
             self.logger.debug("Geolocation not available.")
             return
 
+        if place.air_quality and place.air_quality_category:
+            self.logger.info(
+                "Air quality data already fetched for place ID %s", place.id
+            )
+            return
+
         coordinates = [float(x) for x in place.geolocation.split(";")]
         api_key = os.getenv("AIRNOW_API_KEY")
         params = {
@@ -40,7 +46,7 @@ class AirQualityProvider:
             return
         air_quality = json_data[0].get("AQI")
         air_quality_category = json_data[0].get("Category", {}).get("Name", "No data")
-        self.logger.info("Air quality data fetched successfully.")
+        self.logger.debug("Air quality data fetched successfully.")
 
         place.air_quality = air_quality
         place.air_quality_category = air_quality_category

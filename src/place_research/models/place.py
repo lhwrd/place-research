@@ -33,6 +33,9 @@ class Place(BaseModel):
     flood_risk: str | None = Field(alias="Flood Risk")
     air_quality: str | None = Field(alias="Air Quality")
     air_quality_category: str | None = Field(alias="Air Quality Category")
+    annual_avg_temp: float | None = Field(alias="Annual Avg Temp")
+    annual_avg_precip: float | None = Field(alias="Annual Avg Precip")
+    proximity_to_family: dict | None = Field(alias="Proximity to Family")
 
     class Config:
         validate_by_alias = True

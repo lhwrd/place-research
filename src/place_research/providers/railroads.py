@@ -33,7 +33,7 @@ class RailroadProvider(ProviderNameMixin):
             self.logger.error("Railroad lines file not found: %s", raillines_path)
             raise FileNotFoundError(f"Railroad lines file not found: {raillines_path}")
 
-        self.logger.info("Loading railroad lines data from %s", raillines_path)
+        self.logger.debug("Loading railroad lines data from %s", raillines_path)
         self._raillines_data = gpd.read_file(path)
 
         if self._raillines_data.crs is None:
@@ -42,13 +42,11 @@ class RailroadProvider(ProviderNameMixin):
 
     def fetch_place_data(self, place: "Place"):
         """Fetch railroad data for the given place."""
-        self.logger.info(
-            "Fetching railroad data for place: %s", getattr(place, "name", repr(place))
-        )
         if place.nearest_railroad:
             self.logger.debug("Already fetched nearest railroad data.")
             return
 
+        self.logger.info("Fetching railroad data for place: %s", place.id)
         self._load_raillines_data()
 
         if not isinstance(self._raillines_data, gpd.GeoDataFrame):

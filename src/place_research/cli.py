@@ -2,16 +2,18 @@ import logging
 import click
 from dotenv import load_dotenv
 
-from place_research.providers.air_quality import AirQualityProvider
-from place_research.providers.flood_zone import FloodZoneProvider
-from place_research.providers.highways import HighwayProvider
-from place_research.providers.railroads import RailroadProvider
 from .engine import ResearchEngine
 from .nocodb import NocoDB, TableRecordsQuery
 from .models import Place
 from .providers import (
     WalkBikeScoreProvider,
     WalmartProvider,
+    AnnualAverageClimateProvider,
+    FloodZoneProvider,
+    HighwayProvider,
+    RailroadProvider,
+    AirQualityProvider,
+    ProximityToFamilyProvider,
 )
 
 load_dotenv()
@@ -58,6 +60,10 @@ def update(ctx, api_key, base_url, table_id, verify_ssl):
 
     # Perform the update logic here
     for record in table_records:
+        if not record.get("Address"):
+            logging.error("Address is required for place ID %s", record.get("Id"))
+            continue
+
         place = Place.model_validate(record)
         original_place = place.model_dump()
 
@@ -79,6 +85,8 @@ def update(ctx, api_key, base_url, table_id, verify_ssl):
             HighwayProvider(),
             FloodZoneProvider(),
             AirQualityProvider(),
+            AnnualAverageClimateProvider(),
+            ProximityToFamilyProvider(),
         ]
 
         engine = ResearchEngine(providers=providers)
@@ -93,8 +101,7 @@ def update(ctx, api_key, base_url, table_id, verify_ssl):
             )
             logging.debug("Updating record: %s", updated_data)
             noco.update_table_record(table_id=table_id, data=updated_data)
-            click.echo(f"Updated Place ID {place.id}:")
-            click.echo(updated_data)
+            click.echo(f"Updated Place ID {place.id}")
         print("\n")
 
 

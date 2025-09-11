@@ -26,6 +26,12 @@ class FloodZoneProvider(ProviderNameMixin):
             self.logger.debug("Geolocation not available.")
             return
 
+        if place.flood_zone and place.flood_risk:
+            self.logger.debug(
+                "Flood zone data already fetched for place ID %s", place.id
+            )
+            return
+
         coordinates = [float(x) for x in place.geolocation.split(";")]
 
         params = {
