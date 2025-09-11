@@ -55,6 +55,7 @@ class FloodZoneProvider(ProviderNameMixin):
         if len(flood_hazard_area) == 0:
             place.flood_zone = "Unknown"
             place.flood_risk = "Unknown"
+            return
         flood_zone = flood_hazard_area[0].get("fld_zone")
         flood_risk = flood_hazard_area[0].get("zone_subty")
 
