@@ -30,7 +30,7 @@ class TableRecordsQuery:
         }
 
 
-class NocoDB:
+class NocoDBClient:
     def __init__(
         self,
         base_url,
