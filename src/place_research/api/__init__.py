@@ -18,7 +18,7 @@ from ..logging_config import setup_logging
 from ..middleware import (
     MetricsMiddleware,
     RequestLoggingMiddleware,
-    set_metrics_middleware,
+    create_metrics_registry,
 )
 from ..validation import sanitize_error_message
 
@@ -67,9 +67,18 @@ def create_app() -> FastAPI:
     # Add middleware (order matters - last added = first executed)
 
     # Metrics middleware (innermost - closest to route handlers)
+    # Create registry and metrics middleware
+    metrics_registry = create_metrics_registry()
     metrics_middleware = MetricsMiddleware(application)
+
+    # Register the middleware
+    metrics_registry.register(metrics_middleware)
+
+    # Add middleware to app
     application.add_middleware(MetricsMiddleware)
-    set_metrics_middleware(metrics_middleware)
+
+    # Store registry in app state for dependency injection
+    application.state.metrics_registry = metrics_registry
 
     # Request logging middleware
     application.add_middleware(
@@ -151,9 +160,10 @@ def create_app() -> FastAPI:
         )
 
     # Import and include routers
+    # pylint: disable=import-outside-toplevel
     from .auth_routes import (
         router as auth_router,
-    )  # pylint: disable=import-outside-toplevel
+    )
     from .routes import router  # pylint: disable=import-outside-toplevel
 
     application.include_router(router)
