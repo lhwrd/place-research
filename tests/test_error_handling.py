@@ -329,7 +329,7 @@ class TestServiceErrorHandling:
         from place_research.models.place import Place
 
         # Mock Google Maps to avoid API calls in tests
-        def mock_geocode(address):
+        def mock_geocode(_address):
             return [
                 {
                     "geometry": {"location": {"lat": 40.0, "lng": -74.0}},

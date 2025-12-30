@@ -50,6 +50,35 @@ class Settings(BaseSettings):
         description="Whether new API keys can be created via API (default: True)",
     )
 
+    # Database settings
+    database_url: str = Field(
+        "sqlite:///./place_research.db",
+        alias="DATABASE_URL",
+        description="Database connection URL (default: sqlite:///./place_research.db)",
+    )
+
+    # JWT settings
+    jwt_secret_key: str = Field(
+        ...,
+        alias="JWT_SECRET_KEY",
+        description="Secret key for JWT token signing (REQUIRED - generate with: openssl rand -hex 32)",
+    )
+    jwt_algorithm: str = Field(
+        "HS256",
+        alias="JWT_ALGORITHM",
+        description="Algorithm for JWT token signing (default: HS256)",
+    )
+    jwt_access_token_expire_minutes: int = Field(
+        30,
+        alias="JWT_ACCESS_TOKEN_EXPIRE_MINUTES",
+        description="Access token expiration in minutes (default: 30)",
+    )
+    jwt_refresh_token_expire_days: int = Field(
+        7,
+        alias="JWT_REFRESH_TOKEN_EXPIRE_DAYS",
+        description="Refresh token expiration in days (default: 7)",
+    )
+
     # NocoDB configuration
     nocodb_url: Optional[str] = Field(None, alias="NOCODB_URL")
     nocodb_token: Optional[str] = Field(None, alias="NOCODB_TOKEN")

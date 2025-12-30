@@ -1,13 +1,13 @@
 """Authentication and authorization models.
 
-This module defines the data models for API keys, users, and permissions.
+This module defines the data models for users, JWT tokens, and permissions.
 """
 
 from datetime import datetime
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 
 
 class UserRole(str, Enum):
@@ -18,75 +18,17 @@ class UserRole(str, Enum):
     READONLY = "readonly"  # Read-only access (no write operations)
 
 
-class RateLimitTier(str, Enum):
-    """Rate limit tiers for different API key types."""
-
-    FREE = "free"  # 100 requests/hour
-    BASIC = "basic"  # 1,000 requests/hour
-    PREMIUM = "premium"  # 10,000 requests/hour
-    UNLIMITED = "unlimited"  # No rate limit
-
-
-class APIKey(BaseModel):
-    """API Key model for authentication.
-
-    API keys are used to authenticate requests to the API.
-    Each key has an associated role, rate limit tier, and usage tracking.
-    """
-
-    key: str = Field(..., description="The API key string")
-    name: str = Field(..., description="Human-readable name for the key")
-    role: UserRole = Field(default=UserRole.USER, description="Role for authorization")
-    tier: RateLimitTier = Field(
-        default=RateLimitTier.FREE, description="Rate limit tier"
-    )
-
-    # Usage tracking
-    created_at: datetime = Field(default_factory=datetime.now)
-    last_used_at: Optional[datetime] = None
-    request_count: int = Field(
-        default=0, description="Total requests made with this key"
-    )
-
-    # Optional restrictions
-    enabled: bool = Field(default=True, description="Whether the key is active")
-    expires_at: Optional[datetime] = None
-    allowed_ips: Optional[list[str]] = Field(
-        default=None,
-        description="IP addresses allowed to use this key (None = all IPs)",
-    )
-
-    def is_expired(self) -> bool:
-        """Check if the API key is expired."""
-        if self.expires_at is None:
-            return False
-        return datetime.now() > self.expires_at
-
-    def is_valid(self) -> bool:
-        """Check if the API key is valid (enabled and not expired)."""
-        return self.enabled and not self.is_expired()
-
-    def get_rate_limit(self) -> int:
-        """Get the requests per hour limit for this key."""
-        limits = {
-            RateLimitTier.FREE: 100,
-            RateLimitTier.BASIC: 1000,
-            RateLimitTier.PREMIUM: 10000,
-            RateLimitTier.UNLIMITED: 999999999,  # Effectively unlimited
-        }
-        return limits[self.tier]
-
-
 class AuthenticatedUser(BaseModel):
-    """Represents an authenticated user/API key.
+    """Represents an authenticated user.
 
     This is the model passed through the request context after authentication.
+    For backward compatibility, includes api_key and tier fields (unused).
     """
 
-    api_key: str = Field(..., description="The API key used")
+    api_key: str = Field(default="", description="Deprecated - not used")
     role: UserRole = Field(..., description="User's role")
-    tier: RateLimitTier = Field(..., description="Rate limit tier")
-    name: str = Field(..., description="Name of the API key")
+    tier: str = Field(default="unlimited", description="Access tier")
+    name: str = Field(..., description="Username")
 
     def has_role(self, required_role: UserRole) -> bool:
         """Check if user has at least the required role.
@@ -109,31 +51,55 @@ class AuthenticatedUser(BaseModel):
         return self.role == UserRole.ADMIN
 
 
-class CreateAPIKeyRequest(BaseModel):
-    """Request model for creating a new API key."""
+# OAuth2 and User Management Models
 
-    name: str = Field(
-        ..., min_length=3, max_length=100, description="Name for the API key"
+
+class UserCreate(BaseModel):
+    """Request model for creating a new user."""
+
+    username: str = Field(
+        ..., min_length=3, max_length=50, description="Unique username"
     )
-    role: UserRole = Field(default=UserRole.USER, description="Role to assign")
-    tier: RateLimitTier = Field(
-        default=RateLimitTier.FREE, description="Rate limit tier"
-    )
-    expires_in_days: Optional[int] = Field(
-        None, gt=0, le=3650, description="Days until expiration (None = never expires)"
-    )
-    allowed_ips: Optional[list[str]] = None
+    email: EmailStr = Field(..., description="Email address")
+    password: str = Field(..., min_length=8, max_length=100, description="Password")
+    role: UserRole = Field(default=UserRole.USER, description="User role")
 
 
-class APIKeyResponse(BaseModel):
-    """Response model for API key operations."""
+class UserLogin(BaseModel):
+    """Request model for user login."""
 
-    key: str
-    name: str
+    username: str = Field(..., description="Username")
+    password: str = Field(..., description="Password")
+
+
+class UserResponse(BaseModel):
+    """Response model for user operations."""
+
+    id: int
+    username: str
+    email: str
     role: UserRole
-    tier: RateLimitTier
+    is_active: bool
+    is_verified: bool
     created_at: datetime
-    expires_at: Optional[datetime]
-    enabled: bool
-    request_count: int
-    rate_limit_per_hour: int
+    last_login_at: Optional[datetime]
+
+    class Config:
+        from_attributes = True
+
+
+class Token(BaseModel):
+    """OAuth2 token response."""
+
+    access_token: str
+    token_type: str = "bearer"
+    expires_in: int
+    refresh_token: Optional[str] = None
+
+
+class TokenData(BaseModel):
+    """Data extracted from JWT token."""
+
+    user_id: int
+    username: str
+    role: UserRole

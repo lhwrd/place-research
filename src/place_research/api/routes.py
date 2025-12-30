@@ -5,7 +5,6 @@ Uses FastAPI dependency injection for explicit configuration and service managem
 """
 
 import logging
-import re
 from typing import Annotated, Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status

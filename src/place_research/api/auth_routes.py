@@ -1,142 +1,216 @@
-"""Authentication and API key management routes."""
+"""Authentication routes for JWT-based authentication."""
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
+from sqlmodel import Session, select
 
-from ..auth import APIKeyManager, AuthUser, get_api_key_manager, require_role
+from ..auth import CurrentUser
 from ..config import Settings, get_settings
-from ..models.auth import APIKeyResponse, CreateAPIKeyRequest, UserRole
+from ..database import get_db
+from ..db_models import User
+from ..models.auth import Token, UserCreate, UserResponse, UserRole
+from ..security import (
+    create_access_token,
+    create_refresh_token,
+    hash_password,
+    verify_password,
+    verify_token,
+)
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 @router.post(
-    "/keys",
-    response_model=APIKeyResponse,
-    status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_role(UserRole.ADMIN))],
+    "/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED
 )
-async def create_api_key(
-    request: CreateAPIKeyRequest,
-    _user: AuthUser,
-    manager: APIKeyManager = Depends(get_api_key_manager),
-    settings: Settings = Depends(get_settings),
-) -> APIKeyResponse:
-    """Create a new API key (Admin only).
+async def register_user(
+    user_data: UserCreate,
+    db: Session = Depends(get_db),
+) -> UserResponse:
+    """Register a new user account.
 
-    Requires ADMIN role to create new API keys.
+    Creates a new user with hashed password. Admin users can only be created
+    via this endpoint if the first user doesn't exist yet (bootstrap).
     """
-    if not settings.allow_api_key_creation:
+    # Check if username already exists
+    existing_username = db.exec(
+        select(User).where(User.username == user_data.username)
+    ).first()
+    if existing_username:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error": "VALIDATION_ERROR",
+                "message": "Username already exists",
+                "details": {"username": user_data.username},
+            },
+        )
+
+    # Check if email already exists
+    existing_email = db.exec(select(User).where(User.email == user_data.email)).first()
+    if existing_email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error": "VALIDATION_ERROR",
+                "message": "Email already exists",
+                "details": {"email": user_data.email},
+            },
+        )
+
+    # Check if this is the first user (bootstrap admin)
+    user_count = len(db.exec(select(User)).all())
+    if user_count == 0:
+        # First user becomes admin
+        role = UserRole.ADMIN
+    else:
+        # Otherwise use requested role (default USER)
+        role = user_data.role
+        # Non-admins can't create admin users via this endpoint
+        if role == UserRole.ADMIN:
+            role = UserRole.USER
+
+    # Create new user
+    new_user = User(
+        username=user_data.username,
+        email=user_data.email,
+        hashed_password=hash_password(user_data.password),
+        role=role,
+        is_active=True,
+        is_verified=False,  # Email verification not implemented yet
+    )
+
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return UserResponse.from_orm(new_user)
+
+
+@router.post("/login", response_model=Token)
+async def login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+) -> Token:
+    """Login with username and password to receive JWT tokens.
+
+    This endpoint follows the OAuth2 password flow standard.
+    Returns an access token and refresh token.
+    """
+    # Find user by username
+    user = db.exec(select(User).where(User.username == form_data.username)).first()
+
+    if not user or not verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "error": "AUTHENTICATION_ERROR",
+                "message": "Incorrect username or password",
+                "details": {},
+            },
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail={
                 "error": "AUTHORIZATION_ERROR",
-                "message": "API key creation is disabled",
+                "message": "User account is disabled",
                 "details": {},
             },
         )
 
-    api_key = manager.create_key(request)
+    # Create access and refresh tokens
+    if user.id is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "INTERNAL_ERROR", "message": "User ID is None"},
+        )
 
-    return APIKeyResponse(
-        key=api_key.key,
-        name=api_key.name,
-        role=api_key.role,
-        tier=api_key.tier,
-        created_at=api_key.created_at,
-        expires_at=api_key.expires_at,
-        enabled=api_key.enabled,
-        request_count=api_key.request_count,
-        rate_limit_per_hour=api_key.get_rate_limit(),
+    access_token = create_access_token(
+        user_id=user.id,
+        username=user.username,
+        role=user.role,
+    )
+
+    refresh_token = create_refresh_token(
+        user_id=user.id,
+        username=user.username,
+    )
+
+    return Token(
+        access_token=access_token,
+        token_type="bearer",
+        expires_in=settings.jwt_access_token_expire_minutes * 60,
+        refresh_token=refresh_token,
     )
 
 
-@router.get(
-    "/keys",
-    response_model=list[APIKeyResponse],
-    dependencies=[Depends(require_role(UserRole.ADMIN))],
-)
-async def list_api_keys(
-    _user: AuthUser,
-    manager: APIKeyManager = Depends(get_api_key_manager),
-) -> list[APIKeyResponse]:
-    """List all API keys (Admin only).
+@router.post("/refresh", response_model=Token)
+async def refresh_token_endpoint(
+    refresh_token: str,
+    db: Session = Depends(get_db),
+    settings: Settings = Depends(get_settings),
+) -> Token:
+    """Refresh an access token using a refresh token.
 
-    Requires ADMIN role to view all API keys.
+    Provide a valid refresh token to receive a new access token.
     """
-    keys = manager.list_keys()
+    token_data = verify_token(refresh_token, token_type="refresh")
 
-    return [
-        APIKeyResponse(
-            key=k.key,
-            name=k.name,
-            role=k.role,
-            tier=k.tier,
-            created_at=k.created_at,
-            expires_at=k.expires_at,
-            enabled=k.enabled,
-            request_count=k.request_count,
-            rate_limit_per_hour=k.get_rate_limit(),
-        )
-        for k in keys
-    ]
-
-
-@router.get("/me", response_model=APIKeyResponse)
-async def get_current_key(
-    user: AuthUser,
-    manager: APIKeyManager = Depends(get_api_key_manager),
-) -> APIKeyResponse:
-    """Get information about the current API key.
-
-    Returns details about the API key used to authenticate this request.
-    """
-    api_key = manager.get_key(user.api_key)
-
-    if not api_key:
+    if not token_data:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
-                "error": "NOT_FOUND",
-                "message": "API key not found",
+                "error": "AUTHENTICATION_ERROR",
+                "message": "Invalid or expired refresh token",
                 "details": {},
             },
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
-    return APIKeyResponse(
-        key=api_key.key,
-        name=api_key.name,
-        role=api_key.role,
-        tier=api_key.tier,
-        created_at=api_key.created_at,
-        expires_at=api_key.expires_at,
-        enabled=api_key.enabled,
-        request_count=api_key.request_count,
-        rate_limit_per_hour=api_key.get_rate_limit(),
+    # Get user from database
+    user = db.exec(select(User).where(User.id == token_data.user_id)).first()
+
+    if not user or not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "error": "AUTHENTICATION_ERROR",
+                "message": "User not found or inactive",
+                "details": {},
+            },
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Create new access token
+    if user.id is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"error": "INTERNAL_ERROR", "message": "User ID is None"},
+        )
+
+    access_token = create_access_token(
+        user_id=user.id,
+        username=user.username,
+        role=user.role,
+    )
+
+    return Token(
+        access_token=access_token,
+        token_type="bearer",
+        expires_in=settings.jwt_access_token_expire_minutes * 60,
     )
 
 
-@router.delete(
-    "/keys/{key}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(require_role(UserRole.ADMIN))],
-)
-async def revoke_api_key(
-    key: str,
-    _user: AuthUser,
-    manager: APIKeyManager = Depends(get_api_key_manager),
-):
-    """Revoke (disable) an API key (Admin only).
+@router.get("/me", response_model=UserResponse)
+async def get_current_user_info(
+    user: CurrentUser,
+) -> UserResponse:
+    """Get information about the currently authenticated user.
 
-    Requires ADMIN role to revoke API keys.
+    Requires JWT token authentication.
     """
-    if not manager.revoke_key(key):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={
-                "error": "NOT_FOUND",
-                "message": "API key not found",
-                "details": {"key": key},
-            },
-        )
-
-    return None
+    return UserResponse.from_orm(user)

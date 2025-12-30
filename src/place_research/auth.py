@@ -1,26 +1,22 @@
 """Authentication and authorization for place-research API.
 
-This module provides API key authentication, role-based authorization,
-and rate limiting functionality.
+This module provides OAuth2 password flow with JWT token authentication
+and role-based authorization.
 """
 
-import hashlib
 import logging
-import secrets
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Annotated, Optional
 
-from fastapi import Depends, HTTPException, Security, status
-from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from sqlmodel import Session, select
 
+from .database import get_db
+from .db_models import User
 from .exceptions import PlaceResearchError
-from .models.auth import (
-    APIKey,
-    AuthenticatedUser,
-    CreateAPIKeyRequest,
-    RateLimitTier,
-    UserRole,
-)
+from .models.auth import AuthenticatedUser, UserRole
+from .security import verify_token
 
 logger = logging.getLogger(__name__)
 
@@ -42,241 +38,118 @@ class AuthorizationError(PlaceResearchError):
         super().__init__(message, "AUTHORIZATION_ERROR", details)
 
 
-# Security schemes
-api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
-bearer_scheme = HTTPBearer(auto_error=False)
+# Security scheme
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
-class APIKeyManager:
-    """Manages API keys for authentication.
+async def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db),
+) -> User:
+    """Get the current authenticated user from JWT token.
 
-    In production, this should be backed by a database.
-    For now, we use in-memory storage with some default keys.
-    """
-
-    def __init__(self):
-        self.keys: dict[str, APIKey] = {}
-        self._initialize_default_keys()
-
-    def _initialize_default_keys(self):
-        """Initialize some default API keys for testing."""
-        # Admin key
-        self.keys["dev-admin-key-12345"] = APIKey(
-            key="dev-admin-key-12345",
-            name="Development Admin Key",
-            role=UserRole.ADMIN,
-            tier=RateLimitTier.UNLIMITED,
-            enabled=True,
-        )
-
-        # Regular user key
-        self.keys["dev-user-key-67890"] = APIKey(
-            key="dev-user-key-67890",
-            name="Development User Key",
-            role=UserRole.USER,
-            tier=RateLimitTier.BASIC,
-            enabled=True,
-        )
-
-        # Read-only key
-        self.keys["dev-readonly-key-11111"] = APIKey(
-            key="dev-readonly-key-11111",
-            name="Development Readonly Key",
-            role=UserRole.READONLY,
-            tier=RateLimitTier.FREE,
-            enabled=True,
-        )
-
-        logger.info("Initialized %s default API keys", len(self.keys))
-
-    def generate_key(self) -> str:
-        """Generate a new API key."""
-        # Generate a secure random key
-        random_bytes = secrets.token_bytes(32)
-        key = hashlib.sha256(random_bytes).hexdigest()
-        return f"pr_{key[:32]}"  # pr_ prefix for "place-research"
-
-    def create_key(self, request: CreateAPIKeyRequest) -> APIKey:
-        """Create a new API key."""
-        key_string = self.generate_key()
-
-        # Calculate expiration
-        expires_at = None
-        if request.expires_in_days:
-            expires_at = datetime.now() + timedelta(days=request.expires_in_days)
-
-        api_key = APIKey(
-            key=key_string,
-            name=request.name,
-            role=request.role,
-            tier=request.tier,
-            expires_at=expires_at,
-            allowed_ips=request.allowed_ips,
-            enabled=True,
-        )
-
-        self.keys[key_string] = api_key
-        logger.info("Created new API key: %s (%s)", request.name, request.role)
-        return api_key
-
-    def get_key(self, key: str) -> Optional[APIKey]:
-        """Retrieve an API key."""
-        return self.keys.get(key)
-
-    def validate_key(self, key: str, client_ip: Optional[str] = None) -> APIKey:
-        """Validate an API key and return it if valid.
-
-        Args:
-            key: The API key to validate
-            client_ip: The client's IP address for IP restriction checking
-
-        Returns:
-            The validated APIKey object
-
-        Raises:
-            AuthenticationError: If the key is invalid, expired, or from wrong IP
-        """
-        api_key = self.get_key(key)
-
-        if not api_key:
-            raise AuthenticationError("Invalid API key")
-
-        if not api_key.enabled:
-            raise AuthenticationError("API key is disabled")
-
-        if api_key.is_expired():
-            raise AuthenticationError("API key has expired")
-
-        # Check IP restrictions
-        if api_key.allowed_ips and client_ip:
-            if client_ip not in api_key.allowed_ips:
-                raise AuthenticationError(f"API key not allowed from IP: {client_ip}")
-
-        # Update usage tracking
-        api_key.last_used_at = datetime.now()
-        api_key.request_count += 1
-
-        return api_key
-
-    def list_keys(self) -> list[APIKey]:
-        """List all API keys."""
-        return list(self.keys.values())
-
-    def revoke_key(self, key: str) -> bool:
-        """Revoke (disable) an API key."""
-        api_key = self.get_key(key)
-        if api_key:
-            api_key.enabled = False
-            logger.info("Revoked API key: %s", api_key.name)
-            return True
-        return False
-
-    def delete_key(self, key: str) -> bool:
-        """Delete an API key completely."""
-        if key in self.keys:
-            api_key = self.keys[key]
-            del self.keys[key]
-            logger.info("Deleted API key: %s", api_key.name)
-            return True
-        return False
-
-
-# Global instance (in production, this would be injected from app state)
-_api_key_manager = APIKeyManager()
-
-
-def get_api_key_manager() -> APIKeyManager:
-    """Get the API key manager instance.
-
-    This is a dependency that can be injected into endpoints.
-    """
-    return _api_key_manager
-
-
-async def get_api_key(
-    api_key_value: Optional[str] = Security(api_key_header),
-    bearer: Optional[HTTPAuthorizationCredentials] = Security(bearer_scheme),
-) -> Optional[str]:
-    """Extract API key from request headers.
-
-    Supports two formats:
-    1. X-API-Key header
-    2. Authorization: Bearer <key> header
-    """
-    if api_key_value:
-        return api_key_value
-
-    if bearer:
-        return bearer.credentials
-
-    return None
-
-
-async def authenticate(
-    api_key: Optional[str] = Depends(get_api_key),
-    manager: APIKeyManager = Depends(get_api_key_manager),
-) -> AuthenticatedUser:
-    """Authenticate the request using API key.
-
-    This dependency can be used on endpoints to require authentication.
+    Args:
+        token: JWT token from Authorization header
+        db: Database session
 
     Returns:
-        AuthenticatedUser with role and permissions
+        User object if token is valid
 
     Raises:
         HTTPException: If authentication fails (401)
     """
-    if not api_key:
+    if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
                 "error": "AUTHENTICATION_ERROR",
-                "message": "API key required. Provide via X-API-Key header or Authorization: Bearer token",  # pylint: disable=line-too-long
+                "message": "Authentication required",
                 "details": {},
             },
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    try:
-        validated_key = manager.validate_key(api_key)
-
-        return AuthenticatedUser(
-            api_key=api_key,
-            role=validated_key.role,
-            tier=validated_key.tier,
-            name=validated_key.name,
-        )
-    except AuthenticationError as e:
-        logger.warning("Authentication failed: %s", e.message)
+    token_data = verify_token(token, token_type="access")
+    if not token_data:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=e.to_dict(),
+            detail={
+                "error": "AUTHENTICATION_ERROR",
+                "message": "Invalid or expired token",
+                "details": {},
+            },
             headers={"WWW-Authenticate": "Bearer"},
-        ) from e
+        )
+
+    user = db.exec(select(User).where(User.id == token_data.user_id)).first()
+    if not user or not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "error": "AUTHENTICATION_ERROR",
+                "message": "User not found or inactive",
+                "details": {},
+            },
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Update last login time
+    user.last_login_at = datetime.utcnow()
+    db.commit()
+
+    return user
+
+
+async def get_current_user_optional(
+    token: Optional[str] = Depends(oauth2_scheme),
+    db: Session = Depends(get_db),
+) -> Optional[User]:
+    """Get the current user, or None if not authenticated.
+
+    This allows endpoints to work with or without authentication.
+    """
+    if not token:
+        return None
+
+    try:
+        return await get_current_user(token=token, db=db)
+    except HTTPException:
+        return None
+
+
+async def authenticate(user: User = Depends(get_current_user)) -> AuthenticatedUser:
+    """Authenticate the request using JWT token.
+
+    This dependency can be used on endpoints to require authentication.
+
+    Returns:
+        AuthenticatedUser with role and permissions
+    """
+    return AuthenticatedUser(
+        api_key="",  # Not using API keys
+        role=user.role,
+        tier="unlimited",  # All authenticated users get full access
+        name=user.username,
+    )
 
 
 async def authenticate_optional(
-    api_key: Optional[str] = Depends(get_api_key),
-    manager: APIKeyManager = Depends(get_api_key_manager),
+    user: Optional[User] = Depends(get_current_user_optional),
 ) -> Optional[AuthenticatedUser]:
-    """Optional authentication - returns None if no API key provided.
+    """Optional authentication - returns None if no token provided.
 
     This allows endpoints to work with or without authentication,
     potentially with different behavior based on auth status.
     """
-    if not api_key:
+    if not user:
         return None
 
-    try:
-        validated_key = manager.validate_key(api_key)
-        return AuthenticatedUser(
-            api_key=api_key,
-            role=validated_key.role,
-            tier=validated_key.tier,
-            name=validated_key.name,
-        )
-    except AuthenticationError:
-        return None
+    return AuthenticatedUser(
+        api_key="",
+        role=user.role,
+        tier="unlimited",
+        name=user.username,
+    )
 
 
 def require_role(required_role: UserRole):
@@ -287,8 +160,15 @@ def require_role(required_role: UserRole):
         async def admin_endpoint(): ...
     """
 
-    async def check_role(user: AuthenticatedUser = Depends(authenticate)):
-        if not user.has_role(required_role):
+    async def check_role(user: User = Depends(get_current_user)):
+        # Role hierarchy: ADMIN > USER > READONLY
+        role_hierarchy = {
+            UserRole.READONLY: 0,
+            UserRole.USER: 1,
+            UserRole.ADMIN: 2,
+        }
+
+        if role_hierarchy[user.role] < role_hierarchy[required_role]:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail={
@@ -313,8 +193,8 @@ def require_write_access():
         async def create_something(): ...
     """
 
-    async def check_write(user: AuthenticatedUser = Depends(authenticate)):
-        if not user.can_write():
+    async def check_write(user: User = Depends(get_current_user)):
+        if user.role == UserRole.READONLY:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail={
@@ -333,3 +213,5 @@ AuthUser = Annotated[AuthenticatedUser, Depends(authenticate)]
 OptionalAuthUser = Annotated[
     Optional[AuthenticatedUser], Depends(authenticate_optional)
 ]
+CurrentUser = Annotated[User, Depends(get_current_user)]
+OptionalUser = Annotated[Optional[User], Depends(get_current_user_optional)]

@@ -1,425 +1,412 @@
-"""Tests for authentication and authorization.
+"""Tests for JWT-based authentication and authorization.
 
-This module tests API key authentication, role-based authorization,
-and the auth management endpoints.
+This module tests user registration, login, token refresh,
+and role-based authorization.
 """
-
-from datetime import datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlmodel import Session, select
 
 from place_research.api import create_app
-from place_research.auth import APIKeyManager, AuthenticationError
-from place_research.models.auth import (
-    UserRole,
-    RateLimitTier,
-    CreateAPIKeyRequest,
-    APIKey,
-)
+from place_research.database import get_db, get_engine, init_db
+from place_research.db_models import User
+from place_research.models.auth import UserRole
+from place_research.security import hash_password
 
 
-class TestAPIKeyModel:
-    """Test API Key model."""
+@pytest.fixture(scope="function")
+def test_db():
+    """Create a test database and clean it up after each test."""
+    init_db()
+    engine = get_engine()
 
-    def test_api_key_creation(self):
-        """Test creating an API key."""
-        key = APIKey(
-            key="test-key-123",
-            name="Test Key",
+    # Clear all users before the test
+    with Session(engine) as session:
+        users = session.exec(select(User)).all()
+        for user in users:
+            session.delete(user)
+        session.commit()
+
+    yield
+
+    # Clean up after the test
+    with Session(engine) as session:
+        users = session.exec(select(User)).all()
+        for user in users:
+            session.delete(user)
+        session.commit()
+
+
+@pytest.fixture
+def client(test_db):
+    """Create a test client."""
+    app = create_app()
+    with TestClient(app) as c:
+        yield c
+
+
+@pytest.fixture
+def test_user(test_db):
+    """Create a test user in the database."""
+    engine = get_engine()
+    with Session(engine) as session:
+        user = User(
+            username="testuser",
+            email="test@example.com",
+            hashed_password=hash_password("testpass123"),
             role=UserRole.USER,
-            tier=RateLimitTier.BASIC,
+            is_active=True,
+            is_verified=True,
+        )
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+        return user
+
+
+@pytest.fixture
+def admin_user(test_db):
+    """Create an admin user in the database."""
+    engine = get_engine()
+    with Session(engine) as session:
+        user = User(
+            username="admin",
+            email="admin@example.com",
+            hashed_password=hash_password("adminpass123"),
+            role=UserRole.ADMIN,
+            is_active=True,
+            is_verified=True,
+        )
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+        return user
+
+
+class TestUserRegistration:
+    """Test user registration endpoint."""
+
+    def test_register_user_success(self, client):
+        """Test successful user registration."""
+        # Clear all users first to ensure this is the first user
+        engine = get_engine()
+        with Session(engine) as session:
+            users = session.exec(select(User)).all()
+            for user in users:
+                session.delete(user)
+            session.commit()
+
+        response = client.post(
+            "/auth/register",
+            json={
+                "username": "newuser",
+                "email": "newuser@example.com",
+                "password": "securepass123",
+                "role": "user",
+            },
         )
 
-        assert key.key == "test-key-123"
-        assert key.name == "Test Key"
-        assert key.role == UserRole.USER
-        assert key.tier == RateLimitTier.BASIC
-        assert key.enabled is True
-        assert key.request_count == 0
+        assert response.status_code == 201
+        data = response.json()
+        assert data["username"] == "newuser"
+        assert data["email"] == "newuser@example.com"
+        # First user becomes admin
+        assert data["role"] == "admin"
+        assert data["is_active"] is True
+        assert "id" in data
 
-    def test_api_key_expiration(self):
-        """Test API key expiration."""
-        # Not expired
-        key = APIKey(
-            key="test-key", name="Test", expires_at=datetime.now() + timedelta(days=1)
-        )
-        assert not key.is_expired()
-        assert key.is_valid()
+    def test_register_first_user_becomes_admin(self, client):
+        """Test that the first user becomes an admin."""
+        # Clear all users first
+        engine = get_engine()
+        with Session(engine) as session:
+            users = session.exec(select(User)).all()
+            for user in users:
+                session.delete(user)
+            session.commit()
 
-        # Expired
-        key.expires_at = datetime.now() - timedelta(days=1)
-        assert key.is_expired()
-        assert not key.is_valid()
-
-    def test_api_key_disabled(self):
-        """Test disabled API key."""
-        key = APIKey(key="test-key", name="Test", enabled=False)
-        assert not key.is_valid()
-
-    def test_rate_limits(self):
-        """Test rate limit tiers."""
-        tiers = {
-            RateLimitTier.FREE: 100,
-            RateLimitTier.BASIC: 1000,
-            RateLimitTier.PREMIUM: 10000,
-            RateLimitTier.UNLIMITED: 999999999,
-        }
-
-        for tier, expected_limit in tiers.items():
-            key = APIKey(key="test", name="Test", tier=tier)
-            assert key.get_rate_limit() == expected_limit
-
-
-class TestAPIKeyManager:
-    """Test API Key Manager."""
-
-    def test_default_keys(self):
-        """Test that default keys are initialized."""
-        manager = APIKeyManager()
-        keys = manager.list_keys()
-
-        assert len(keys) >= 3  # At least admin, user, readonly
-
-        # Check admin key exists
-        admin_key = manager.get_key("dev-admin-key-12345")
-        assert admin_key is not None
-        assert admin_key.role == UserRole.ADMIN
-
-    def test_generate_key(self):
-        """Test key generation."""
-        manager = APIKeyManager()
-        key1 = manager.generate_key()
-        key2 = manager.generate_key()
-
-        # Keys should be unique
-        assert key1 != key2
-
-        # Keys should have proper format
-        assert key1.startswith("pr_")
-        assert len(key1) == 35  # pr_ + 32 chars
-
-    def test_create_key(self):
-        """Test creating a new API key."""
-        manager = APIKeyManager()
-
-        request = CreateAPIKeyRequest(
-            name="Test API Key",
-            role=UserRole.USER,
-            tier=RateLimitTier.BASIC,
-            expires_in_days=30,
+        response = client.post(
+            "/auth/register",
+            json={
+                "username": "firstuser",
+                "email": "first@example.com",
+                "password": "firstpass123",
+                "role": "user",  # Requested role
+            },
         )
 
-        key = manager.create_key(request)
+        assert response.status_code == 201
+        data = response.json()
+        assert data["role"] == "admin"  # First user becomes admin
 
-        assert key.name == "Test API Key"
-        assert key.role == UserRole.USER
-        assert key.tier == RateLimitTier.BASIC
-        assert key.enabled is True
-
-        # Key should be retrievable
-        retrieved = manager.get_key(key.key)
-        assert retrieved == key
-
-    def test_validate_key_success(self):
-        """Test successful key validation."""
-        manager = APIKeyManager()
-
-        # Use default admin key
-        key = manager.validate_key("dev-admin-key-12345")
-
-        assert key.role == UserRole.ADMIN
-        assert key.request_count == 1  # Should increment
-        assert key.last_used_at is not None
-
-    def test_validate_key_invalid(self):
-        """Test validation with invalid key."""
-        manager = APIKeyManager()
-
-        with pytest.raises(AuthenticationError) as exc:
-            manager.validate_key("invalid-key")
-
-        assert "Invalid API key" in exc.value.message
-
-    def test_validate_key_disabled(self):
-        """Test validation with disabled key."""
-        manager = APIKeyManager()
-
-        # Create and disable a key
-        request = CreateAPIKeyRequest(
-            name="Test", role=UserRole.USER, expires_in_days=30
+    def test_register_duplicate_username(self, client, test_user):
+        """Test registration with duplicate username."""
+        response = client.post(
+            "/auth/register",
+            json={
+                "username": "testuser",  # Already exists
+                "email": "different@example.com",
+                "password": "password123",
+            },
         )
-        key = manager.create_key(request)
-        key.enabled = False
 
-        with pytest.raises(AuthenticationError) as exc:
-            manager.validate_key(key.key)
+        assert response.status_code == 400
+        assert "username already exists" in response.json()["detail"]["message"].lower()
 
-        assert "disabled" in exc.value.message.lower()
-
-    def test_validate_key_expired(self):
-        """Test validation with expired key."""
-        manager = APIKeyManager()
-
-        # Create expired key
-        request = CreateAPIKeyRequest(
-            name="Test", role=UserRole.USER, expires_in_days=1
+    def test_register_duplicate_email(self, client, test_user):
+        """Test registration with duplicate email."""
+        response = client.post(
+            "/auth/register",
+            json={
+                "username": "differentuser",
+                "email": "test@example.com",  # Already exists
+                "password": "password123",
+            },
         )
-        key = manager.create_key(request)
-        key.expires_at = datetime.now() - timedelta(days=1)
 
-        with pytest.raises(AuthenticationError) as exc:
-            manager.validate_key(key.key)
+        assert response.status_code == 400
+        assert "email already exists" in response.json()["detail"]["message"].lower()
 
-        assert "expired" in exc.value.message.lower()
 
-    def test_revoke_key(self):
-        """Test revoking a key."""
-        manager = APIKeyManager()
+class TestLogin:
+    """Test user login endpoint."""
 
-        request = CreateAPIKeyRequest(
-            name="Test", role=UserRole.USER, expires_in_days=30
+    def test_login_success(self, client, test_user):
+        """Test successful login."""
+        response = client.post(
+            "/auth/login",
+            data={
+                "username": "testuser",
+                "password": "testpass123",
+            },
         )
-        key = manager.create_key(request)
 
-        assert key.enabled is True
+        assert response.status_code == 200
+        data = response.json()
+        assert "access_token" in data
+        assert "refresh_token" in data
+        assert data["token_type"] == "bearer"
+        assert "expires_in" in data
 
-        success = manager.revoke_key(key.key)
-        assert success is True
-        assert key.enabled is False
-
-        # Should fail validation now
-        with pytest.raises(AuthenticationError):
-            manager.validate_key(key.key)
-
-    def test_delete_key(self):
-        """Test deleting a key."""
-        manager = APIKeyManager()
-
-        request = CreateAPIKeyRequest(
-            name="Test", role=UserRole.USER, expires_in_days=30
+    def test_login_invalid_username(self, client):
+        """Test login with invalid username."""
+        response = client.post(
+            "/auth/login",
+            data={
+                "username": "nonexistent",
+                "password": "password123",
+            },
         )
-        key = manager.create_key(request)
 
-        success = manager.delete_key(key.key)
-        assert success is True
+        assert response.status_code == 401
+        assert (
+            "incorrect username or password"
+            in response.json()["detail"]["message"].lower()
+        )
 
-        # Key should not exist
-        assert manager.get_key(key.key) is None
+    def test_login_invalid_password(self, client, test_user):
+        """Test login with invalid password."""
+        response = client.post(
+            "/auth/login",
+            data={
+                "username": "testuser",
+                "password": "wrongpassword",
+            },
+        )
+
+        assert response.status_code == 401
+        assert (
+            "incorrect username or password"
+            in response.json()["detail"]["message"].lower()
+        )
+
+    def test_login_inactive_user(self, client):
+        """Test login with inactive user account."""
+        # Create inactive user
+        engine = get_engine()
+        with Session(engine) as session:
+            user = User(
+                username="inactive",
+                email="inactive@example.com",
+                hashed_password=hash_password("password123"),
+                role=UserRole.USER,
+                is_active=False,
+            )
+            session.add(user)
+            session.commit()
+
+        response = client.post(
+            "/auth/login",
+            data={
+                "username": "inactive",
+                "password": "password123",
+            },
+        )
+
+        assert response.status_code == 403
+        assert "disabled" in response.json()["detail"]["message"].lower()
 
 
-class TestAuthentication:
-    """Test authentication in API."""
+class TestTokenRefresh:
+    """Test token refresh endpoint."""
 
-    @pytest.fixture
-    def client(self):
-        """Create test client."""
-        app = create_app()
-        return TestClient(app)
+    def test_refresh_token_success(self, client, test_user):
+        """Test successful token refresh."""
+        # First login to get tokens
+        login_response = client.post(
+            "/auth/login",
+            data={
+                "username": "testuser",
+                "password": "testpass123",
+            },
+        )
+        refresh_token = login_response.json()["refresh_token"]
 
-    def test_health_no_auth_required(self, client):
+        # Refresh the token
+        response = client.post(
+            f"/auth/refresh?refresh_token={refresh_token}",
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "access_token" in data
+        assert data["token_type"] == "bearer"
+
+    def test_refresh_token_invalid(self, client):
+        """Test refresh with invalid token."""
+        response = client.post(
+            "/auth/refresh?refresh_token=invalid-token",
+        )
+
+        assert response.status_code == 401
+        assert "invalid or expired" in response.json()["detail"]["message"].lower()
+
+
+class TestGetCurrentUser:
+    """Test get current user endpoint."""
+
+    def test_get_current_user_success(self, client, test_user):
+        """Test getting current user info."""
+        # Login first
+        login_response = client.post(
+            "/auth/login",
+            data={
+                "username": "testuser",
+                "password": "testpass123",
+            },
+        )
+        access_token = login_response.json()["access_token"]
+
+        # Get user info
+        response = client.get(
+            "/auth/me",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["username"] == "testuser"
+        assert data["email"] == "test@example.com"
+        assert data["role"] == "user"
+
+    def test_get_current_user_no_auth(self, client):
+        """Test getting current user without authentication."""
+        response = client.get("/auth/me")
+
+        assert response.status_code == 401
+
+    def test_get_current_user_invalid_token(self, client):
+        """Test getting current user with invalid token."""
+        response = client.get(
+            "/auth/me",
+            headers={"Authorization": "Bearer invalid-token"},
+        )
+
+        assert response.status_code == 401
+
+
+class TestRoleBasedAuthorization:
+    """Test role-based authorization."""
+
+    def test_admin_user_has_admin_role(self, client, admin_user):
+        """Test that admin user has admin role."""
+        # Login as admin
+        login_response = client.post(
+            "/auth/login",
+            data={
+                "username": "admin",
+                "password": "adminpass123",
+            },
+        )
+        access_token = login_response.json()["access_token"]
+
+        # Check role
+        response = client.get(
+            "/auth/me",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+
+        assert response.status_code == 200
+        assert response.json()["role"] == "admin"
+
+    def test_regular_user_has_user_role(self, client, test_user):
+        """Test that regular user has user role."""
+        # Login as regular user
+        login_response = client.post(
+            "/auth/login",
+            data={
+                "username": "testuser",
+                "password": "testpass123",
+            },
+        )
+        access_token = login_response.json()["access_token"]
+
+        # Check role
+        response = client.get(
+            "/auth/me",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+
+        assert response.status_code == 200
+        assert response.json()["role"] == "user"
+
+
+class TestAuthenticatedEndpoints:
+    """Test endpoints that require authentication."""
+
+    def test_health_endpoint_no_auth_required(self, client):
         """Test that health endpoint doesn't require auth."""
         response = client.get("/health")
         assert response.status_code == 200
 
-    def test_providers_no_auth_required(self, client):
+    def test_providers_endpoint_no_auth_required(self, client):
         """Test that providers endpoint doesn't require auth."""
         response = client.get("/providers")
-        assert response.status_code == 200
-
-    def test_enrich_without_auth_when_not_required(self, client):
-        """Test enrichment without auth when auth not required."""
-        # By default, authentication is not required
-        response = client.post("/enrich", json={"address": "123 Main St"})
-
-        # May fail for other reasons (missing API keys), but not auth
+        # Should succeed or return appropriate response, not 401
         assert response.status_code != 401
 
-    def test_enrich_with_valid_api_key(self, client):
-        """Test enrichment with valid API key."""
-        response = client.post(
-            "/enrich",
-            json={"address": "123 Main St"},
-            headers={"X-API-Key": "dev-user-key-67890"},
+    def test_authenticated_endpoint_with_token(self, client, test_user):
+        """Test accessing authenticated endpoint with valid token."""
+        # Login first
+        login_response = client.post(
+            "/auth/login",
+            data={
+                "username": "testuser",
+                "password": "testpass123",
+            },
         )
+        access_token = login_response.json()["access_token"]
 
-        # Should not fail due to authentication
-        assert response.status_code != 401
-
-    def test_enrich_with_bearer_token(self, client):
-        """Test enrichment with Bearer token."""
-        response = client.post(
-            "/enrich",
-            json={"address": "123 Main St"},
-            headers={"Authorization": "Bearer dev-user-key-67890"},
-        )
-
-        # Should not fail due to authentication
-        assert response.status_code != 401
-
-
-class TestAuthEndpoints:
-    """Test authentication management endpoints."""
-
-    @pytest.fixture
-    def client(self):
-        """Create test client."""
-        app = create_app()
-        return TestClient(app)
-
-    def test_get_current_key_info(self, client):
-        """Test getting current key information."""
-        response = client.get("/auth/me", headers={"X-API-Key": "dev-user-key-67890"})
-
-        assert response.status_code == 200
-        data = response.json()
-
-        assert data["name"] == "Development User Key"
-        assert data["role"] == "user"
-        assert data["tier"] == "basic"
-        assert "request_count" in data
-
-    def test_get_current_key_no_auth(self, client):
-        """Test getting current key without authentication."""
-        response = client.get("/auth/me")
-
-        assert response.status_code == 401
-        data = response.json()
-        # Response has 'detail' field with error info
-        assert "detail" in data
-        if isinstance(data["detail"], dict):
-            assert data["detail"]["error"] == "AUTHENTICATION_ERROR"
-        else:
-            assert (
-                "authentication" in str(data["detail"]).lower()
-                or "api key" in str(data["detail"]).lower()
-            )
-
-    def test_list_keys_as_admin(self, client):
-        """Test listing keys as admin."""
+        # Access authenticated endpoint (using /auth/me as example)
         response = client.get(
-            "/auth/keys", headers={"X-API-Key": "dev-admin-key-12345"}
+            "/auth/me",
+            headers={"Authorization": f"Bearer {access_token}"},
         )
 
         assert response.status_code == 200
-        data = response.json()
 
-        assert isinstance(data, list)
-        assert len(data) >= 3  # Default keys
-
-    def test_list_keys_as_user(self, client):
-        """Test listing keys as regular user (should fail)."""
-        response = client.get("/auth/keys", headers={"X-API-Key": "dev-user-key-67890"})
-
-        assert response.status_code == 403
-        data = response.json()
-        # Check detail field
-        if isinstance(data.get("detail"), dict):
-            assert data["detail"]["error"] == "AUTHORIZATION_ERROR"
-        else:
-            assert "authorization" in str(data).lower() or "admin" in str(data).lower()
-
-    def test_create_key_as_admin(self, client):
-        """Test creating API key as admin."""
-        response = client.post(
-            "/auth/keys",
-            json={"name": "New Test Key", "role": "user", "tier": "basic"},
-            headers={"X-API-Key": "dev-admin-key-12345"},
-        )
-
-        assert response.status_code == 201
-        data = response.json()
-
-        assert data["name"] == "New Test Key"
-        assert data["role"] == "user"
-        assert data["tier"] == "basic"
-        assert "key" in data
-
-    def test_create_key_as_user(self, client):
-        """Test creating API key as regular user (should fail)."""
-        response = client.post(
-            "/auth/keys",
-            json={"name": "New Test Key", "role": "user", "tier": "basic"},
-            headers={"X-API-Key": "dev-user-key-67890"},
-        )
-
-        assert response.status_code == 403
-
-    def test_revoke_key_as_admin(self, client):
-        """Test revoking API key as admin."""
-        # First create a key
-        create_response = client.post(
-            "/auth/keys",
-            json={"name": "Key to Revoke", "role": "user", "tier": "free"},
-            headers={"X-API-Key": "dev-admin-key-12345"},
-        )
-
-        assert create_response.status_code == 201
-        key_to_revoke = create_response.json()["key"]
-
-        # Now revoke it
-        response = client.delete(
-            f"/auth/keys/{key_to_revoke}", headers={"X-API-Key": "dev-admin-key-12345"}
-        )
-
-        assert response.status_code == 204
-
-    def test_revoke_nonexistent_key(self, client):
-        """Test revoking non-existent key."""
-        response = client.delete(
-            "/auth/keys/nonexistent-key", headers={"X-API-Key": "dev-admin-key-12345"}
-        )
-
-        assert response.status_code == 404
-
-
-class TestAuthorization:
-    """Test role-based authorization."""
-
-    @pytest.fixture
-    def client(self):
-        """Create test client."""
-        app = create_app()
-        return TestClient(app)
-
-    def test_admin_can_create_keys(self, client):
-        """Test that admin can create keys."""
-        response = client.post(
-            "/auth/keys",
-            json={"name": "Test", "role": "user", "tier": "free"},
-            headers={"X-API-Key": "dev-admin-key-12345"},
-        )
-
-        assert response.status_code == 201
-
-    def test_user_cannot_create_keys(self, client):
-        """Test that regular user cannot create keys."""
-        response = client.post(
-            "/auth/keys",
-            json={"name": "Test", "role": "user", "tier": "free"},
-            headers={"X-API-Key": "dev-user-key-67890"},
-        )
-
-        assert response.status_code == 403
-        data = response.json()
-        # Check for authorization error
-        response_str = str(data).lower()
-        assert (
-            "admin" in response_str
-            or "authorization" in response_str
-            or "forbidden" in response_str
-        )
-
-    def test_readonly_cannot_create_keys(self, client):
-        """Test that readonly user cannot create keys."""
-        response = client.post(
-            "/auth/keys",
-            json={"name": "Test", "role": "user", "tier": "free"},
-            headers={"X-API-Key": "dev-readonly-key-11111"},
-        )
-
-        assert response.status_code == 403
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
+    def test_authenticated_endpoint_without_token(self, client):
+        """Test accessing authenticated endpoint without token."""
+        response = client.get("/auth/me")
+        assert response.status_code == 401
