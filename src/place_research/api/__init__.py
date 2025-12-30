@@ -67,15 +67,13 @@ def create_app() -> FastAPI:
     # Add middleware (order matters - last added = first executed)
 
     # Metrics middleware (innermost - closest to route handlers)
-    # Create registry and metrics middleware
+    # Create registry
     metrics_registry = create_metrics_registry()
-    metrics_middleware = MetricsMiddleware(application)
 
-    # Register the middleware
-    metrics_registry.register(metrics_middleware)
-
-    # Add middleware to app
-    application.add_middleware(MetricsMiddleware)
+    # Create middleware instance (don't pass app parameter)
+    # Create registry and add middleware with auto-registration
+    metrics_registry = create_metrics_registry()
+    application.add_middleware(MetricsMiddleware, registry=metrics_registry)
 
     # Store registry in app state for dependency injection
     application.state.metrics_registry = metrics_registry

@@ -30,8 +30,8 @@ from place_research.logging_config import (
 from place_research.middleware import (
     RequestLoggingMiddleware,
     MetricsMiddleware,
+    create_metrics_registry,
     get_metrics_middleware,
-    set_metrics_middleware,
 )
 
 
@@ -220,7 +220,7 @@ class TestMetricsMiddleware:
 
         # Create metrics middleware instance
         metrics = MetricsMiddleware(app)
-        set_metrics_middleware(metrics)
+        app.add_middleware(MetricsMiddleware)
 
         # Add test endpoints
         @app.get("/success")
@@ -378,7 +378,6 @@ class TestProviderMetricsLogging:
 
         # Create a test place
         place = Place(
-            name="Test Place",
             address="123 Test St",
             latitude=40.7128,
             longitude=-74.0060,

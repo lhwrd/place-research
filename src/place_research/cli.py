@@ -48,7 +48,7 @@ def cli(ctx):
     type=click.Choice(["debug", "info", "warning", "error", "critical"]),
     help="Logging level",
 )
-def main(host: str, port: int, reload: bool, log_level: str):
+def serve(host: str, port: int, reload: bool, log_level: str):
     """Start the Place Research API server."""
     settings = get_settings()
 

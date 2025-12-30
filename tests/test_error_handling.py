@@ -322,7 +322,7 @@ class TestAPIErrorHandling:
 class TestServiceErrorHandling:
     """Test error handling in service layer."""
 
-    def test_enrich_with_no_providers(self, monkeypatch):
+    async def test_enrich_with_no_providers(self, monkeypatch):
         """Test enrichment when no providers are available."""
         from place_research.config import Settings
         from place_research.service import PlaceEnrichmentService
@@ -348,10 +348,10 @@ class TestServiceErrorHandling:
             googlemaps.Client, "geocode", lambda self, addr: mock_geocode(addr)
         )
 
-        place = Place(address="123 Main St")
+        place = Place(address="1600 Amphitheatre Parkway, Mountain View, CA")
 
         # With no providers, enrichment should succeed but return empty result
-        result = service.enrich_place(place)
+        result = await service.enrich_place(place)
 
         # Result should have no provider data
         assert result.walk_bike_score is None

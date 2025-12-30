@@ -27,7 +27,7 @@ class TestConfiguration:
 
     def test_custom_settings(self):
         """Test custom settings override defaults."""
-        settings = Settings(api_host="127.0.0.1", api_port=9000, log_level="DEBUG")
+        settings = Settings(API_HOST="127.0.0.1", API_PORT=9000, LOG_LEVEL="DEBUG")
         assert settings.api_host == "127.0.0.1"
         assert settings.api_port == 9000
         assert settings.log_level == "DEBUG"
@@ -102,7 +102,7 @@ class TestInMemoryRepository:
         """Test saving and retrieving places."""
         repo = InMemoryRepository()
 
-        place = Place(address="Test", geolocation="0;0")
+        place = Place(address="1600 Amphitheatre Parkway, Mountain View, CA")
         saved = repo.save(place)
 
         # Should assign an ID
@@ -111,14 +111,14 @@ class TestInMemoryRepository:
         # Should be retrievable
         retrieved = repo.get_by_id(saved.id)
         assert retrieved is not None
-        assert retrieved.address == "Test"
+        assert retrieved.address == "1600 Amphitheatre Parkway, Mountain View, CA"
 
     def test_get_all(self):
         """Test getting all places."""
         repo = InMemoryRepository()
 
-        place1 = Place(address="Place 1", geolocation="0;0")
-        place2 = Place(address="Place 2", geolocation="1;1")
+        place1 = Place(address="1600 Amphitheatre Parkway, Mountain View, CA")
+        place2 = Place(address="1 Infinite Loop, Cupertino, CA")
 
         repo.save(place1)
         repo.save(place2)
@@ -130,7 +130,7 @@ class TestInMemoryRepository:
         """Test deleting a place."""
         repo = InMemoryRepository()
 
-        place = Place(address="Test", geolocation="0;0")
+        place = Place(address="1600 Amphitheatre Parkway, Mountain View, CA")
         saved = repo.save(place)
 
         assert repo.delete(saved.id) is True
@@ -141,15 +141,16 @@ class TestInMemoryRepository:
         """Test querying places."""
         repo = InMemoryRepository()
 
-        place1 = Place(address="Test", geolocation="0;0")
-        place2 = Place(address="Other", geolocation="1;1")
-
+        place1 = Place(address="1600 Amphitheatre Parkway, Mountain View, CA")
+        place2 = Place(address="1 Infinite Loop, Cupertino, CA")
         repo.save(place1)
         repo.save(place2)
 
-        results = repo.query({"address": "Test"})
+        results = repo.query(
+            {"address": "1600 Amphitheatre Parkway, Mountain View, CA"}
+        )
         assert len(results) == 1
-        assert results[0].address == "Test"
+        assert results[0].address == "1600 Amphitheatre Parkway, Mountain View, CA"
 
 
 class TestPlaceEnrichmentService:
@@ -202,41 +203,41 @@ class TestPlaceEnrichmentService:
         assert "highway" in status
         assert status["highway"]["enabled"] is True
 
-    def test_enrich_place_basic(self):
+    async def test_enrich_place_basic(self):
         """Test basic place enrichment."""
         settings = Settings()
         service = PlaceEnrichmentService(settings)
 
-        place = Place(address="Test", geolocation="40.7128;-74.0060")
-        result = service.enrich_place(place)
+        place = Place(address="1600 Amphitheatre Parkway, Mountain View, CA")
+        result = await service.enrich_place(place)
 
         assert result is not None
         assert isinstance(result, EnrichmentResult)
         # Should have some data or errors
         assert result.highway is not None or len(result.errors) > 0
 
-    def test_enrich_and_save(self):
+    async def test_enrich_and_save(self):
         """Test enriching and saving a place."""
         settings = Settings()
         repo = InMemoryRepository()
         service = PlaceEnrichmentService(settings, repository=repo)
 
-        place = Place(address="Test", geolocation="40.7128;-74.0060")
-        _result = service.enrich_and_save(place)
+        place = Place(address="1600 Amphitheatre Parkway, Mountain View, CA")
+        _result = await service.enrich_and_save(place)
 
         # Should have saved to repository
         all_places = repo.get_all()
         assert len(all_places) == 1
 
-    def test_service_without_repository_raises(self):
+    async def test_service_without_repository_raises(self):
         """Test that enrich_and_save raises without repository."""
         settings = Settings()
         service = PlaceEnrichmentService(settings)  # No repository
 
-        place = Place(address="Test", geolocation="0;0")
+        place = Place(address="1600 Amphitheatre Parkway, Mountain View, CA")
 
         with pytest.raises(ValueError, match="No repository configured"):
-            service.enrich_and_save(place)
+            await service.enrich_and_save(place)
 
 
 class TestAPIRoutes:

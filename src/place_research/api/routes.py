@@ -5,9 +5,10 @@ Uses FastAPI dependency injection for explicit configuration and service managem
 """
 
 import logging
+import re
 from typing import Annotated, Any, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field, field_validator
 
 from ..config import Settings, get_settings
@@ -277,25 +278,48 @@ async def get_cache_stats(
     return stats
 
 
+def get_metrics_provider(request: Request):
+    """Dependency to get metrics provider from app state.
+
+    This follows DIP by depending on the abstraction stored in app state.
+
+    Args:
+        request: FastAPI request object containing app state
+
+    Returns:
+        MetricsProvider instance
+
+    Raises:
+        HTTPException: If metrics provider is not available
+    """
+    try:
+        registry = request.app.state.metrics_registry
+        return registry.get_provider()
+    except (AttributeError, RuntimeError) as e:
+        logger.warning("Metrics provider not available: %s", str(e))
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "error": "METRICS_UNAVAILABLE",
+                "message": "Metrics middleware not initialized",
+                "details": {"reason": str(e)},
+            },
+        ) from e
+
+
 @router.get("/metrics", tags=["Observability"])
-async def get_metrics() -> dict:
+async def get_metrics(
+    metrics_provider: Annotated[Any, Depends(get_metrics_provider)],
+) -> dict:
     """Get application performance metrics.
 
     Returns request counts, error rates, average response times,
     and per-endpoint statistics.
 
+    Args:
+        metrics_provider: Metrics provider (injected dependency)
+
     Returns:
         Metrics dictionary with request statistics
     """
-    from ..middleware import (
-        get_metrics_middleware,
-    )  # pylint: disable=import-outside-toplevel
-
-    try:
-        metrics_middleware = get_metrics_middleware()
-        return metrics_middleware.get_metrics()
-    except RuntimeError:
-        return {
-            "error": "Metrics not available",
-            "message": "Metrics middleware not initialized",
-        }
+    return metrics_provider.get_metrics()

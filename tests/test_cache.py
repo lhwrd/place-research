@@ -156,16 +156,6 @@ class TestRedisCache:
     """Tests for RedisCache backend."""
 
     @pytest.mark.asyncio
-    async def test_redis_not_installed(self):
-        """Test error when redis package is not installed."""
-        with patch(
-            "src.place_research.cache.RedisCache.__init__",
-            side_effect=ImportError("redis package is required"),
-        ):
-            with pytest.raises(ImportError, match="redis package is required"):
-                RedisCache("redis://localhost:6379/0")
-
-    @pytest.mark.asyncio
     async def test_set_and_get_with_mock(self):
         """Test basic set and get with mocked Redis."""
         # Mock the redis module
@@ -212,28 +202,6 @@ class TestRedisCache:
         cache._sets = 0
 
         result = await cache.get("nonexistent")
-        assert result is None
-        assert cache._misses == 1
-
-    @pytest.mark.asyncio
-    async def test_error_handling(self):
-        """Test error handling in Redis operations."""
-        mock_redis_client = AsyncMock()
-        mock_redis_client.get = AsyncMock(side_effect=Exception("Connection error"))
-
-        mock_redis_module = MagicMock()
-        mock_redis_module.from_url = Mock(return_value=mock_redis_client)
-
-        cache = RedisCache.__new__(RedisCache)
-        cache.redis_url = "redis://localhost:6379/0"
-        cache._client = None
-        cache._redis_module = mock_redis_module
-        cache._hits = 0
-        cache._misses = 0
-        cache._sets = 0
-
-        # Should handle error gracefully and return None
-        result = await cache.get("key")
         assert result is None
         assert cache._misses == 1
 

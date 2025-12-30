@@ -42,13 +42,17 @@ class MetricsRegistry:
 class MetricsMiddleware(BaseHTTPMiddleware):
     """Middleware for collecting performance metrics."""
 
-    def __init__(self, app: ASGIApp):
+    def __init__(self, app: ASGIApp, registry: MetricsRegistry | None = None) -> None:
         super().__init__(app)
         self.request_count = 0
         self.error_count = 0
         self.total_duration = 0.0
         self.status_codes: dict[int, int] = {}
         self.endpoint_metrics: dict[str, dict] = {}
+
+        # Auto-register if registry provided
+        if registry is not None:
+            registry.register(self)
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         start_time = time.perf_counter()
