@@ -115,6 +115,8 @@ async def root():
             "health": "/health",
             "providers": "/providers",
             "enrich": "/enrich (POST)",
+            "cache_stats": "/cache/stats",
+            "metrics": "/metrics",
         },
     }
 

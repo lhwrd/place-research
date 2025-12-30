@@ -12,8 +12,6 @@ Tests cover:
 
 import logging
 import pytest
-from io import StringIO
-from unittest.mock import AsyncMock, MagicMock, patch
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -30,8 +28,6 @@ from place_research.logging_config import (
 from place_research.middleware import (
     RequestLoggingMiddleware,
     MetricsMiddleware,
-    create_metrics_registry,
-    get_metrics_middleware,
 )
 
 
@@ -370,9 +366,9 @@ class TestProviderMetricsLogging:
 
         # Create service with logging enabled
         settings = Settings(
-            log_level="INFO",
-            log_provider_metrics=True,
-            cache_enabled=False,  # Disable cache for this test
+            LOG_LEVEL="INFO",
+            LOG_PROVIDER_METRICS=True,
+            CACHE_ENABLED=False,  # Disable cache for this test
         )
         service = PlaceEnrichmentService(settings)
 
