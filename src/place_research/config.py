@@ -86,22 +86,10 @@ class Settings(BaseSettings):
         return missing
 
 
-# Global settings instance (can be overridden for testing)
-_settings: Optional[Settings] = None
-
-
 def get_settings() -> Settings:
-    """Get the global settings instance.
+    """Create and return a Settings instance.
 
-    Creates settings on first call. For testing, call set_settings() first.
+    This is intended to be used as a FastAPI dependency.
+    For testing, you can override this dependency or pass Settings directly.
     """
-    global _settings
-    if _settings is None:
-        _settings = Settings()
-    return _settings
-
-
-def set_settings(settings: Settings) -> None:
-    """Set the global settings instance (mainly for testing)."""
-    global _settings
-    _settings = settings
+    return Settings()  # type: ignore[call-arg]

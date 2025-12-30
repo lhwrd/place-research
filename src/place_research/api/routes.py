@@ -1,18 +1,38 @@
 """API routes for place-research.
 
 This module defines all the REST API endpoints for place enrichment.
+Uses FastAPI dependency injection for explicit configuration and service management.
 """
 
-from typing import Optional
+from typing import Annotated, Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
+from ..config import Settings, get_settings
 from ..models import Place
-from . import get_service
+from ..service import PlaceEnrichmentService
 
 
 router = APIRouter()
+
+
+# Dependency for getting the enrichment service
+def get_enrichment_service(
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> PlaceEnrichmentService:
+    """Create PlaceEnrichmentService instance.
+
+    This is a FastAPI dependency that provides the enrichment service.
+    A new service instance is created for each request, ensuring thread safety.
+
+    Args:
+        settings: Application settings (injected dependency)
+
+    Returns:
+        PlaceEnrichmentService instance
+    """
+    return PlaceEnrichmentService(settings)
 
 
 # Request/Response Models
@@ -67,26 +87,26 @@ async def root():
 
 
 @router.get("/health", response_model=HealthResponse, tags=["General"])
-async def health_check():
+async def health_check(
+    service: Annotated[PlaceEnrichmentService, Depends(get_enrichment_service)],
+):
     """Health check endpoint.
 
     Returns service status and configuration.
     """
-    service = get_service()
-
     return HealthResponse(
         status="healthy", version="0.1.0", providers_count=len(service.providers)
     )
 
 
 @router.get("/providers", response_model=ProviderStatusResponse, tags=["Providers"])
-async def get_providers():
+async def get_providers(
+    service: Annotated[PlaceEnrichmentService, Depends(get_enrichment_service)],
+):
     """Get status of all providers.
 
     Returns information about which providers are enabled and their configuration status.
     """
-    service = get_service()
-
     return ProviderStatusResponse(
         enabled_providers=service.get_enabled_providers(),
         provider_details=service.get_provider_status(),
@@ -94,11 +114,15 @@ async def get_providers():
 
 
 @router.post("/enrich", tags=["Enrichment"])
-async def enrich_place(request: PlaceEnrichRequest) -> dict:
+async def enrich_place(
+    request: PlaceEnrichRequest,
+    service: Annotated[PlaceEnrichmentService, Depends(get_enrichment_service)],
+) -> dict:
     """Enrich a place with data from all enabled providers.
 
     Args:
         request: Place information (address and/or latitude/longitude)
+        service: Enrichment service (injected dependency)
 
     Returns:
         Enrichment results from all providers
@@ -130,9 +154,7 @@ async def enrich_place(request: PlaceEnrichRequest) -> dict:
 
     # Enrich the place
     try:
-        service = get_service()
         result = service.enrich_place(place)
-
         return result.to_dict()
 
     except Exception as e:
@@ -143,6 +165,7 @@ async def enrich_place(request: PlaceEnrichRequest) -> dict:
 
 @router.get("/enrich", tags=["Enrichment"])
 async def enrich_place_get(
+    service: Annotated[PlaceEnrichmentService, Depends(get_enrichment_service)],
     address: Optional[str] = Query(None, description="Place address"),
     latitude: Optional[float] = Query(None, description="Place latitude"),
     longitude: Optional[float] = Query(None, description="Place longitude"),
@@ -156,6 +179,7 @@ async def enrich_place_get(
         address: Place address
         latitude: Place latitude
         longitude: Place longitude
+        service: Enrichment service (injected dependency)
 
     Returns:
         Enrichment results from all providers
@@ -163,4 +187,4 @@ async def enrich_place_get(
     request = PlaceEnrichRequest(
         address=address, latitude=latitude, longitude=longitude
     )
-    return await enrich_place(request)
+    return await enrich_place(request, service)

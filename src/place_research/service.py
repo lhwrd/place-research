@@ -51,6 +51,9 @@ class PlaceEnrichmentService:
     4. Returns structured EnrichmentResult
 
     Usage:
+        from place_research.config import get_settings
+        from place_research.service import PlaceEnrichmentService
+
         settings = get_settings()
         service = PlaceEnrichmentService(settings)
         result = service.enrich_place(place)

@@ -24,7 +24,7 @@ class Place(BaseModel):
     enrichments: Optional[EnrichmentResult] = None
 
     def model_post_init(self, __context: Any) -> None:
-        """Reverse geocode the place's coordinates."""
+        """ReverseHey geocode the place's coordinates."""
         gmaps_api_key = os.getenv("GOOGLE_MAPS_API_KEY")
 
         gmaps = googlemaps.Client(key=gmaps_api_key)

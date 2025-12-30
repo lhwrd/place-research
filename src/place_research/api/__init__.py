@@ -6,38 +6,18 @@ It serves as the API-first interface to the place enrichment service.
 
 from contextlib import asynccontextmanager
 import logging
-from typing import Optional
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from ..config import get_settings
-from ..service import PlaceEnrichmentService
-
-
-# Global service instance
-_service: Optional[PlaceEnrichmentService] = None
-
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Lifespan context manager for FastAPI app.
-
-    Initializes the enrichment service on startup.
-    """
-    global _service
-
+async def lifespan(fastapi_app: FastAPI):
+    """Lifespan context manager for FastAPI app."""
     # Startup
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
     logger.info("Starting place-research API")
-
-    settings = get_settings()
-    _service = PlaceEnrichmentService(settings)
-
-    logger.info(
-        "Enrichment service initialized with %d providers", len(_service.providers)
-    )
 
     yield
 
@@ -47,6 +27,9 @@ async def lifespan(app: FastAPI):
 
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application.
+
+    The app uses dependency injection for Settings and PlaceEnrichmentService.
+    See routes.py for the dependency definitions.
 
     Returns:
         Configured FastAPI application
@@ -73,20 +56,6 @@ def create_app() -> FastAPI:
     app.include_router(router)
 
     return app
-
-
-def get_service() -> PlaceEnrichmentService:
-    """Get the global enrichment service instance.
-
-    Returns:
-        PlaceEnrichmentService instance
-
-    Raises:
-        RuntimeError: If service not initialized (app not started)
-    """
-    if _service is None:
-        raise RuntimeError("Service not initialized. Is the app started?")
-    return _service
 
 
 # Create app instance
