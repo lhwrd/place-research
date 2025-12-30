@@ -29,7 +29,7 @@ class DistanceProvider(ProviderNameMixin):
         self.distance_config = DistanceConfig(os.getenv("DISTANCE_CONFIG_PATH"))
         self.logger = logging.getLogger(__name__)
 
-    def fetch_place_data(self, place) -> DistancesResult:
+    async def fetch_place_data(self, place) -> DistancesResult:
         # Use Google Maps distance matrix API to get distances to addresses
         if not self.distance_config.addresses:
             self.logger.error("No addresses configured.")

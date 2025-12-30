@@ -1,7 +1,7 @@
 import logging
 import os
 
-import requests
+import httpx
 from dotenv import load_dotenv
 
 from ..interfaces import ProviderNameMixin
@@ -16,7 +16,7 @@ class AirQualityProvider(ProviderNameMixin):
         self.logger = logging.getLogger(__name__)
         self._api_url = "https://www.airnowapi.org/aq/forecast/latLong/"
 
-    def fetch_place_data(self, place: Place) -> AirQualityResult:
+    async def fetch_place_data(self, place: Place) -> AirQualityResult:
         """Fetch air quality data for a specific place."""
         self.logger.debug("Fetching air quality data...")
 
@@ -28,9 +28,10 @@ class AirQualityProvider(ProviderNameMixin):
             "format": "application/json",
             "distance": 50,
         }
-        response = requests.get(self._api_url, params=params, timeout=10)
-        response.raise_for_status()
-        json_data = response.json()
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(self._api_url, params=params)
+            response.raise_for_status()
+            json_data = response.json()
         if len(json_data) == 0:
             return AirQualityResult(air_quality=None, air_quality_category="No data")
 

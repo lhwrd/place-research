@@ -47,6 +47,7 @@ class PlaceProvider(Protocol):
     1. Accept configuration in __init__
     2. Return typed Result objects from fetch_place_data
     3. Handle errors gracefully (return None or raise specific exceptions)
+    4. Implement fetch_place_data as an async method for concurrent execution
     """
 
     @property
@@ -54,7 +55,7 @@ class PlaceProvider(Protocol):
         """Provider name for logging and error reporting."""
         ...
 
-    def fetch_place_data(self, place: Place) -> Optional[Any]:
+    async def fetch_place_data(self, place: Place) -> Optional[Any]:
         """Fetch enrichment data for a place.
 
         Args:

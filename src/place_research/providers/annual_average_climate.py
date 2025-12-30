@@ -17,7 +17,7 @@ class AnnualAverageClimateProvider(ProviderNameMixin):
     def load_data(self, path) -> pd.DataFrame:
         return pd.read_csv(path)
 
-    def fetch_place_data(self, place: Place) -> AnnualAverageClimateResult | None:
+    async def fetch_place_data(self, place: Place) -> AnnualAverageClimateResult | None:
         lat, lon = place.latitude, place.longitude
 
         # Find the nearest station

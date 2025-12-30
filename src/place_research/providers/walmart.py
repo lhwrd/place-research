@@ -65,7 +65,7 @@ class WalmartProvider(ProviderNameMixin):
                 "Google Maps API key missing. Set GOOGLE_MAPS_API_KEY envvar or config.json"
             )
 
-    def fetch_place_data(self, place: Place) -> WalmartResult:
+    async def fetch_place_data(self, place: Place) -> WalmartResult:
         """
         Fetch nearest Walmart Supercenter data for the given place.
         """

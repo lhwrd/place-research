@@ -41,7 +41,7 @@ class RailroadProvider(ProviderNameMixin):
             self.logger.error("Railroad lines data must have a defined CRS.")
             raise ValueError("Railroad lines data must have a defined CRS")
 
-    def fetch_place_data(self, place: "Place") -> RailroadResult:
+    async def fetch_place_data(self, place: "Place") -> RailroadResult:
         """Fetch railroad data for the given place."""
         self.logger.info("Fetching railroad data for place: %s", place.id)
         self._load_raillines_data()

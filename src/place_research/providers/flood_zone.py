@@ -1,7 +1,7 @@
 import logging
 import os
 
-import requests
+import httpx
 from dotenv import load_dotenv
 
 from place_research.interfaces import ProviderNameMixin
@@ -13,15 +13,13 @@ load_dotenv()
 
 
 class FloodZoneProvider(ProviderNameMixin):
-    def __init__(self, session: requests.Session | None = None):
+    def __init__(self, api_key: str | None = None):
         self.logger = logging.getLogger(__name__)
-        self._session = session or requests.Session()
-        api_key = os.getenv("NATIONAL_FLOOD_DATA_API_KEY")
-        if api_key is None:
+        self._api_key = api_key or os.getenv("NATIONAL_FLOOD_DATA_API_KEY")
+        if self._api_key is None:
             raise ValueError("NATIONAL_FLOOD_DATA_API_KEY is not set")
-        self._session.headers["x-api-key"] = api_key
 
-    def fetch_place_data(self, place: Place) -> FloodZoneResult | None:
+    async def fetch_place_data(self, place: Place) -> FloodZoneResult | None:
         """Fetch data from the API if not already fetched."""
         params = {
             "lat": str(place.latitude),
@@ -29,13 +27,16 @@ class FloodZoneProvider(ProviderNameMixin):
             "address": place.address,
             "searchtype": "addresscoord",
         }
-        response = self._session.get(
-            "https://api.nationalflooddata.com/v3/data",
-            params=params,
-            timeout=30,
-        )
-        response.raise_for_status()
-        json_data = response.json()
+        # _api_key is guaranteed to be str due to __init__ validation
+        headers = {"x-api-key": str(self._api_key)}
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(
+                "https://api.nationalflooddata.com/v3/data",
+                params=params,
+                headers=headers,
+            )
+            response.raise_for_status()
+            json_data = response.json()
         result = json_data.get("result")
         if not result:
             raise ValueError("No flood zone data found")

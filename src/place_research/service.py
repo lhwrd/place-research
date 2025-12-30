@@ -11,6 +11,7 @@ The service layer:
 - Can be used by CLI, API, or other frontends
 """
 
+import asyncio
 import logging
 import time
 from dataclasses import asdict, is_dataclass
@@ -223,74 +224,21 @@ class PlaceEnrichmentService:
         self.logger.info("Enriching place %s: %s", place.id or "unknown", place.address)
 
         result = EnrichmentResult(place_id=place.id)
-        successful_providers = 0
 
-        # Run each provider and collect results
-        for provider in self.providers:
-            try:
-                self.logger.debug("Running provider: %s", provider.name)
-                provider_result = await self._run_provider(provider, place)
+        # Run all providers in parallel using asyncio.gather
+        # Each provider execution is wrapped to catch and handle exceptions individually
+        provider_tasks = [
+            self._run_provider_with_error_handling(provider, place, result)
+            for provider in self.providers
+        ]
 
-                # Store result in appropriate field
-                # (This is a temporary bridge - will be cleaner when all providers return Results)
-                if provider_result:
-                    self._store_provider_result(provider_result, result)
-                    successful_providers += 1
-                    self.logger.debug(
-                        "Provider %s completed successfully", provider.name
-                    )
+        # Execute all providers concurrently
+        provider_results = await asyncio.gather(
+            *provider_tasks, return_exceptions=False
+        )
 
-            except ProviderException as e:
-                # Known provider exception
-                self.logger.warning("Provider %s failed: %s", provider.name, e.message)
-                result.errors.append(
-                    ProviderError(
-                        provider_name=provider.name,
-                        error_message=sanitize_error_message(e.message),
-                        error_type=e.error_code,
-                    )
-                )
-            except TimeoutError as e:
-                # Timeout exception
-                self.logger.warning("Provider %s timed out: %s", provider.name, e)
-                result.errors.append(
-                    ProviderError(
-                        provider_name=provider.name,
-                        error_message="Provider request timed out",
-                        error_type="PROVIDER_TIMEOUT",
-                    )
-                )
-            except (
-                ConnectionError,
-                ValueError,
-                KeyError,
-                TypeError,
-            ) as e:
-                self.logger.error(
-                    "Error in provider %s: %s", provider.name, e, exc_info=True
-                )
-                result.errors.append(
-                    ProviderError(
-                        provider_name=provider.name,
-                        error_message=sanitize_error_message(str(e)),
-                        error_type="PROVIDER_ERROR",
-                    )
-                )
-            except (OSError, RuntimeError, ImportError) as e:
-                # Handle other specific common exceptions that might occur
-                self.logger.error(
-                    "Unexpected error in provider %s: %s",
-                    provider.name,
-                    e,
-                    exc_info=True,
-                )
-                result.errors.append(
-                    ProviderError(
-                        provider_name=provider.name,
-                        error_message=sanitize_error_message(str(e)),
-                        error_type="PROVIDER_ERROR",
-                    )
-                )
+        # Count successful providers
+        successful_providers = sum(1 for r in provider_results if r is not None)
 
         # Check if all providers failed
         if successful_providers == 0 and len(self.providers) > 0:
@@ -306,6 +254,86 @@ class PlaceEnrichmentService:
             len(result.errors),
         )
         return result
+
+    async def _run_provider_with_error_handling(
+        self, provider: PlaceProvider, place: Place, result: EnrichmentResult
+    ) -> Optional[Any]:
+        """Run a provider and handle all errors, updating the result object.
+
+        This method wraps _run_provider to catch exceptions and store them
+        in the result.errors list instead of propagating them.
+
+        Args:
+            provider: The provider to run
+            place: The place to enrich
+            result: The EnrichmentResult to update with data or errors
+
+        Returns:
+            The provider result if successful, None otherwise
+        """
+        try:
+            self.logger.debug("Running provider: %s", provider.name)
+            provider_result = await self._run_provider(provider, place)
+
+            # Store result in appropriate field
+            if provider_result:
+                self._store_provider_result(provider_result, result)
+                self.logger.debug("Provider %s completed successfully", provider.name)
+                return provider_result
+
+        except ProviderException as e:
+            # Known provider exception
+            self.logger.warning("Provider %s failed: %s", provider.name, e.message)
+            result.errors.append(
+                ProviderError(
+                    provider_name=provider.name,
+                    error_message=sanitize_error_message(e.message),
+                    error_type=e.error_code,
+                )
+            )
+        except TimeoutError as e:
+            # Timeout exception
+            self.logger.warning("Provider %s timed out: %s", provider.name, e)
+            result.errors.append(
+                ProviderError(
+                    provider_name=provider.name,
+                    error_message="Provider request timed out",
+                    error_type="PROVIDER_TIMEOUT",
+                )
+            )
+        except (
+            ConnectionError,
+            ValueError,
+            KeyError,
+            TypeError,
+        ) as e:
+            self.logger.error(
+                "Error in provider %s: %s", provider.name, e, exc_info=True
+            )
+            result.errors.append(
+                ProviderError(
+                    provider_name=provider.name,
+                    error_message=sanitize_error_message(str(e)),
+                    error_type="PROVIDER_ERROR",
+                )
+            )
+        except (OSError, RuntimeError, ImportError) as e:
+            # Handle other specific common exceptions that might occur
+            self.logger.error(
+                "Unexpected error in provider %s: %s",
+                provider.name,
+                e,
+                exc_info=True,
+            )
+            result.errors.append(
+                ProviderError(
+                    provider_name=provider.name,
+                    error_message=sanitize_error_message(str(e)),
+                    error_type="PROVIDER_ERROR",
+                )
+            )
+
+        return None
 
     async def _run_provider(
         self, provider: PlaceProvider, place: Place
@@ -392,7 +420,7 @@ class PlaceEnrichmentService:
             )
 
         try:
-            provider_result = provider.fetch_place_data(place)
+            provider_result = await provider.fetch_place_data(place)
         except (
             ProviderException,
             TimeoutError,

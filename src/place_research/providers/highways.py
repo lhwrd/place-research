@@ -1,7 +1,7 @@
 import logging
 import math
 
-import requests
+import httpx
 
 from place_research.interfaces import ProviderNameMixin
 from place_research.models.place import Place
@@ -13,7 +13,7 @@ class HighwayProvider(ProviderNameMixin):
     def __init__(self):
         self.logger = logging.getLogger(__name__)
 
-    def _get_nearby_highways(
+    async def _get_nearby_highways(
         self, lat: float, lon: float, radius_km: float = 5.0
     ) -> list:
         """
@@ -32,18 +32,18 @@ class HighwayProvider(ProviderNameMixin):
         """
 
         try:
-            response = requests.post(
-                overpass_url,
-                data=query,
-                headers={"Content-Type": "application/x-www-form-urlencoded"},
-                timeout=30,
-            )
-            response.raise_for_status()
-            return response.json().get("elements", [])
-        except requests.RequestException as e:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(
+                    overpass_url,
+                    data=query,
+                    headers={"Content-Type": "application/x-www-form-urlencoded"},
+                )
+                response.raise_for_status()
+                return response.json().get("elements", [])
+        except httpx.HTTPError as e:
             # Fallback to a smaller radius if the query fails
             if radius_km > 1.0:
-                return self._get_nearby_highways(lat, lon, radius_km / 2)
+                return await self._get_nearby_highways(lat, lon, radius_km / 2)
             raise ValueError(f"Failed to fetch highway data: {e}") from e
 
     def _calculate_min_distance_to_highways(
@@ -119,12 +119,12 @@ class HighwayProvider(ProviderNameMixin):
 
         return {"noise_level_db": round(estimated_db, 1), "noise_category": category}
 
-    def fetch_place_data(self, place: Place) -> HighwayResult:
+    async def fetch_place_data(self, place: Place) -> HighwayResult:
         """
         Fetch highway distance and road noise data for the given place.
         """
         # Get nearby highways
-        highways = self._get_nearby_highways(place.latitude, place.longitude)
+        highways = await self._get_nearby_highways(place.latitude, place.longitude)
 
         if not highways:
             self.logger.info("No highways found near the place.")

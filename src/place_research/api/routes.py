@@ -11,12 +11,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field, field_validator
 
 from ..config import Settings, get_settings
-from ..models import Place
+from ..models import Place, UserRole
 from ..service import PlaceEnrichmentService
 
 # Auth imports
 try:
-    from ..auth import authenticate_optional
+    from ..auth import require_role
 
     AUTH_AVAILABLE = True
 except ImportError:
@@ -164,7 +164,7 @@ async def enrich_place(
     service: Annotated[PlaceEnrichmentService, Depends(get_enrichment_service)],
     settings: Settings = Depends(get_settings),
     user: Optional[Any] = (
-        None if not AUTH_AVAILABLE else Depends(authenticate_optional)
+        None if not AUTH_AVAILABLE else Depends(require_role(UserRole.READONLY))
     ),
 ) -> dict:
     """Enrich a place with data from all enabled providers.
@@ -194,7 +194,7 @@ async def enrich_place(
 
     # Log authenticated requests
     if user:
-        logger.info("Enrichment request from %s (%s)", user.name, user.role)
+        logger.info("Enrichment request from %s (%s)", user.username, user.role)
 
     if not request.address and not request.latitude and not request.longitude:
         raise HTTPException(
