@@ -1,44 +1,12 @@
 import logging
 import os
-from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 import googlemaps
 
-from place_research.interfaces import DisplayableResult, ProviderNameMixin
+from place_research.interfaces import ProviderNameMixin
 
-if TYPE_CHECKING:
-    from ..models import Place
-
-
-@dataclass
-class WalmartResult(DisplayableResult):
-    """Walmart result for a specific place."""
-
-    distance_km: float | None
-    duration_m: float | None
-    distance_category: str | None
-    duration_category: str | None
-    rating: float | None
-
-    def display(self):
-        """Display Walmart result in a human-readable way."""
-        return (
-            f"Walmart Supercenter\n"
-            f"Distance: {self.distance_km} km ({self.distance_category})\n"
-            f"Duration: {self.duration_m} min ({self.duration_category})\n"
-            f"Rating: {self.rating} / 5\n"
-        )
-
-    def to_dict(self):
-        """Convert Walmart result to a dictionary."""
-        return {
-            "distance_km": self.distance_km,
-            "duration_m": self.duration_m,
-            "distance_category": self.distance_category,
-            "duration_category": self.duration_category,
-            "rating": self.rating,
-        }
+from ..models.place import Place
+from ..models.results import WalmartResult
 
 
 def categorize_distance(distance_km: float | None) -> str:
@@ -97,7 +65,7 @@ class WalmartProvider(ProviderNameMixin):
                 "Google Maps API key missing. Set GOOGLE_MAPS_API_KEY envvar or config.json"
             )
 
-    def fetch_place_data(self, place: "Place") -> WalmartResult:
+    def fetch_place_data(self, place: Place) -> WalmartResult:
         """
         Fetch nearest Walmart Supercenter data for the given place.
         """
