@@ -1,9 +1,9 @@
-from dataclasses import dataclass
 import json
-import os
 import logging
-import requests
+import os
+from dataclasses import dataclass
 
+import requests
 
 logger = logging.getLogger("nocodb")
 

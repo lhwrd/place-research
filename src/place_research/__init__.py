@@ -1,4 +1,5 @@
 import logging
+
 from .engine import ResearchEngine
 from .models import Place
 

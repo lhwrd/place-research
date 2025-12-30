@@ -11,8 +11,8 @@ Usage:
 
 import logging
 
-import uvicorn
 import click
+import uvicorn
 
 from ..config import get_settings
 

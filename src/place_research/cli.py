@@ -1,6 +1,8 @@
 import logging
+
 import click
 from dotenv import load_dotenv
+import uvicorn
 
 from .config import get_settings
 
@@ -25,14 +27,14 @@ def cli(ctx):
 @cli.command()
 @click.option(
     "--host",
-    default="0.0.0.0",
-    help="Host to bind to",
+    default=None,
+    help="Host to bind to (default from settings or 0.0.0.0)",
 )
 @click.option(
     "--port",
     type=int,
-    default=8000,
-    help="Port to bind to",
+    default=None,
+    help="Port to bind to (default from settings or 8000)",
 )
 @click.option(
     "--reload",
@@ -40,27 +42,40 @@ def cli(ctx):
     default=False,
     help="Enable auto-reload for development",
 )
-@click.pass_context
-def serve(ctx, host: str, port: int, reload: bool):
+@click.option(
+    "--log-level",
+    default="info",
+    type=click.Choice(["debug", "info", "warning", "error", "critical"]),
+    help="Logging level",
+)
+def main(host: str, port: int, reload: bool, log_level: str):
     """Start the Place Research API server."""
-    from .api.server import main as serve_main
+    settings = get_settings()
 
-    # Call the server's main function with the provided parameters
-    import sys
+    # Use settings or defaults
+    host = host or settings.api_host
+    port = port or settings.api_port
 
-    sys.argv = ["serve"]
-    if host != "0.0.0.0":
-        sys.argv.extend(["--host", host])
-    if port != 8000:
-        sys.argv.extend(["--port", str(port)])
-    if reload:
-        sys.argv.append("--reload")
-    log_level = ctx.obj.get("log_level", "INFO").lower()
-    if log_level.lower() != "info":
-        sys.argv.extend(["--log-level", log_level.lower()])
+    # Configure logging
+    logging.basicConfig(
+        level=getattr(logging, log_level.upper()),
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    )
 
-    serve_main.callback(host, port, reload, log_level)
+    logger = logging.getLogger(__name__)
+    logger.info("Starting Place Research API on %s:%s", host, port)
+    logger.info("Auto-reload: %s", reload)
+    logger.info("Log level: %s", log_level)
+
+    # Run the server
+    uvicorn.run(
+        "place_research.api:app",
+        host=host,
+        port=port,
+        reload=reload,
+        log_level=log_level,
+    )
 
 
 if __name__ == "__main__":
-    cli()
+    cli()  # pylint: disable=no-value-for-parameter

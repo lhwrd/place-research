@@ -59,8 +59,11 @@ class RailroadResult:
 class WalmartResult:
     """Result from WalmartProvider."""
 
-    nearest_walmart: Optional[str] = None
-    distance_to_walmart_miles: Optional[float] = None
+    distance_km: Optional[float] = None
+    duration_m: Optional[float] = None
+    distance_category: Optional[str] = None
+    duration_category: Optional[str] = None
+    rating: Optional[float] = None
 
 
 @dataclass
@@ -74,6 +77,22 @@ class DistancesResult:
     """Result from DistanceProvider."""
 
     distances: dict[str, DistanceResult] = field(default_factory=dict)
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "DistancesResult":
+        """Create DistancesResult from dict, reconstructing nested DistanceResult objects."""
+        if "distances" in data and isinstance(data["distances"], dict):
+            distances = {}
+            for key, value in data["distances"].items():
+                if isinstance(value, dict):
+                    # Reconstruct DistanceResult from dict
+                    distances[key] = DistanceResult(**value)
+                else:
+                    # Already a DistanceResult object
+                    distances[key] = value
+            return cls(distances=distances)
+        else:
+            return cls(**data)
 
 
 @dataclass
@@ -190,8 +209,11 @@ class EnrichmentResult:
 
         if self.walmart:
             result["walmart"] = {
-                "nearest": self.walmart.nearest_walmart,
-                "distance_miles": self.walmart.distance_to_walmart_miles,
+                "distance_km": self.walmart.distance_km,
+                "duration_m": self.walmart.duration_m,
+                "distance_category": self.walmart.distance_category,
+                "duration_category": self.walmart.duration_category,
+                "rating": self.walmart.rating,
             }
 
         if self.distances:

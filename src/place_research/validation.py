@@ -8,8 +8,8 @@ import re
 from typing import Optional, Tuple
 
 from .exceptions import (
-    InvalidGeolocationError,
     InvalidCoordinatesError,
+    InvalidGeolocationError,
     ValidationError,
 )
 

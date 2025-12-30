@@ -4,7 +4,7 @@ This module defines the exception hierarchy for the application.
 All exceptions include proper error codes and messages for API responses.
 """
 
-from typing import Optional, Any
+from typing import Any, Optional
 
 
 class PlaceResearchError(Exception):

@@ -38,6 +38,18 @@ class Settings(BaseSettings):
     annual_climate_path: Optional[Path] = Field(None, alias="ANNUAL_CLIMATE_PATH")
     distance_config_path: Optional[Path] = Field(None, alias="DISTANCE_CONFIG_PATH")
 
+    # Authentication settings
+    require_authentication: bool = Field(
+        False,
+        alias="REQUIRE_AUTHENTICATION",
+        description="Whether API authentication is required (default: False for dev)",
+    )
+    allow_api_key_creation: bool = Field(
+        True,
+        alias="ALLOW_API_KEY_CREATION",
+        description="Whether new API keys can be created via API (default: True)",
+    )
+
     # NocoDB configuration
     nocodb_url: Optional[str] = Field(None, alias="NOCODB_URL")
     nocodb_token: Optional[str] = Field(None, alias="NOCODB_TOKEN")
@@ -47,6 +59,100 @@ class Settings(BaseSettings):
     log_level: str = Field("INFO", alias="LOG_LEVEL")
     api_host: str = Field("0.0.0.0", alias="API_HOST")
     api_port: int = Field(8000, alias="API_PORT")
+
+    # Logging & Observability settings
+    log_format: str = Field(
+        "json",
+        alias="LOG_FORMAT",
+        description="Log format: 'json' for production, 'text' or 'color' for dev (default: json)",
+    )
+    log_requests: bool = Field(
+        True,
+        alias="LOG_REQUESTS",
+        description="Log HTTP requests (default: True)",
+    )
+    log_responses: bool = Field(
+        True,
+        alias="LOG_RESPONSES",
+        description="Log HTTP responses (default: True)",
+    )
+    log_provider_metrics: bool = Field(
+        True,
+        alias="LOG_PROVIDER_METRICS",
+        description="Log provider execution metrics (default: True)",
+    )
+    log_cache_operations: bool = Field(
+        False,
+        alias="LOG_CACHE_OPERATIONS",
+        description="Log cache operations - useful for debugging (default: False)",
+    )
+
+    # Cache settings
+    cache_enabled: bool = Field(
+        True,
+        alias="CACHE_ENABLED",
+        description="Enable caching for provider results (default: True)",
+    )
+    cache_backend: str = Field(
+        "memory",
+        alias="CACHE_BACKEND",
+        description="Cache backend: 'memory' or 'redis' (default: memory)",
+    )
+    cache_default_ttl: int = Field(
+        3600,
+        alias="CACHE_DEFAULT_TTL",
+        description="Default cache TTL in seconds (default: 3600 = 1 hour)",
+    )
+    redis_url: Optional[str] = Field(
+        None,
+        alias="REDIS_URL",
+        description="Redis connection URL (e.g., redis://localhost:6379/0)",
+    )
+
+    # Per-provider cache TTLs (in seconds)
+    # Air quality changes frequently
+    cache_ttl_air_quality: int = Field(
+        1800,
+        alias="CACHE_TTL_AIR_QUALITY",
+        description="Cache TTL for air quality data (default: 1800 = 30 min)",
+    )
+    # Climate data is annual averages, rarely changes
+    cache_ttl_climate: int = Field(
+        86400,
+        alias="CACHE_TTL_CLIMATE",
+        description="Cache TTL for climate data (default: 86400 = 24 hours)",
+    )
+    # Flood zones rarely change
+    cache_ttl_flood: int = Field(
+        86400,
+        alias="CACHE_TTL_FLOOD",
+        description="Cache TTL for flood zone data (default: 86400 = 24 hours)",
+    )
+    # Infrastructure (highways, railroads) rarely changes
+    cache_ttl_infrastructure: int = Field(
+        86400,
+        alias="CACHE_TTL_INFRASTRUCTURE",
+        description="Cache TTL for infrastructure data (default: 86400 = 24 hours)",
+    )
+    # Walk/bike scores change with development but not frequently
+    cache_ttl_walkability: int = Field(
+        7200,
+        alias="CACHE_TTL_WALKABILITY",
+        description="Cache TTL for walk/bike scores (default: 7200 = 2 hours)",
+    )
+
+    def get_provider_ttls(self) -> dict[str, int]:
+        """Get mapping of provider names to cache TTLs."""
+        return {
+            "air_quality": self.cache_ttl_air_quality,
+            "annual_average_climate": self.cache_ttl_climate,
+            "flood_zone": self.cache_ttl_flood,
+            "highways": self.cache_ttl_infrastructure,
+            "railroads": self.cache_ttl_infrastructure,
+            "proximity_to_family": self.cache_ttl_infrastructure,
+            "walkbike_score": self.cache_ttl_walkability,
+            "walmart": self.cache_ttl_infrastructure,
+        }
 
     def validate_provider_config(self, provider_name: str) -> list[str]:
         """Validate that required config for a provider exists.

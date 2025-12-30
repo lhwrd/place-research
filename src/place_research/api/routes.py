@@ -5,14 +5,22 @@ Uses FastAPI dependency injection for explicit configuration and service managem
 """
 
 import logging
-from typing import Annotated, Optional
+from typing import Annotated, Any, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field, field_validator
 
 from ..config import Settings, get_settings
 from ..models import Place
 from ..service import PlaceEnrichmentService
+
+# Auth imports
+try:
+    from ..auth import authenticate_optional
+
+    AUTH_AVAILABLE = True
+except ImportError:
+    AUTH_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +56,7 @@ class PlaceEnrichRequest(BaseModel):
 
     @field_validator("latitude", "longitude")
     @classmethod
-    def validate_coordinates_together(cls, v, info):
+    def validate_coordinates_together(cls, v, _info):
         """Validate that if one coordinate is provided, both must be provided."""
         # This validator runs for each field, so we just return the value
         # The actual validation happens in the endpoint
@@ -143,6 +151,7 @@ async def get_providers(
     responses={
         200: {"description": "Successfully enriched place"},
         400: {"model": ErrorResponse, "description": "Invalid request"},
+        401: {"model": ErrorResponse, "description": "Authentication required"},
         422: {"model": ErrorResponse, "description": "Validation error"},
         500: {"model": ErrorResponse, "description": "Internal server error"},
         503: {"model": ErrorResponse, "description": "Service unavailable"},
@@ -151,12 +160,18 @@ async def get_providers(
 async def enrich_place(
     request: PlaceEnrichRequest,
     service: Annotated[PlaceEnrichmentService, Depends(get_enrichment_service)],
+    settings: Settings = Depends(get_settings),
+    user: Optional[Any] = (
+        None if not AUTH_AVAILABLE else Depends(authenticate_optional)
+    ),
 ) -> dict:
     """Enrich a place with data from all enabled providers.
 
     Args:
         request: Place information (address and/or latitude/longitude)
         service: Enrichment service (injected dependency)
+        settings: Application settings
+        user: Authenticated user (optional)
 
     Returns:
         Enrichment results from all providers
@@ -164,6 +179,21 @@ async def enrich_place(
     Raises:
         HTTPException: If place information is invalid or enrichment fails
     """
+    # Check if authentication is required
+    if settings.require_authentication and not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "error": "AUTHENTICATION_ERROR",
+                "message": "Authentication required. Provide API key via X-API-Key header or Authorization: Bearer token",  # pylint: disable=line-too-long
+                "details": {},
+            },
+        )
+
+    # Log authenticated requests
+    if user:
+        logger.info("Enrichment request from %s (%s)", user.name, user.role)
+
     if not request.address and not request.latitude and not request.longitude:
         raise HTTPException(
             status_code=400,
@@ -188,7 +218,7 @@ async def enrich_place(
 
     # Enrich the place
     try:
-        result = service.enrich_place(place)
+        result = await service.enrich_place(place)
         return result.to_dict()
 
     except Exception as e:
@@ -222,3 +252,50 @@ async def enrich_place_get(
         address=address, latitude=latitude, longitude=longitude
     )
     return await enrich_place(request, service)
+
+
+@router.get("/cache/stats", tags=["Cache"])
+async def get_cache_stats(
+    service: Annotated[PlaceEnrichmentService, Depends(get_enrichment_service)],
+) -> dict:
+    """Get cache statistics.
+
+    Returns cache hit rate, size, and other metrics.
+    Returns empty stats if caching is disabled.
+
+    Returns:
+        Cache statistics dictionary
+    """
+    if not service.cache_manager:
+        return {
+            "enabled": False,
+            "message": "Caching is disabled",
+        }
+
+    stats = await service.cache_manager.get_stats()
+    stats["enabled"] = True
+    return stats
+
+
+@router.get("/metrics", tags=["Observability"])
+async def get_metrics() -> dict:
+    """Get application performance metrics.
+
+    Returns request counts, error rates, average response times,
+    and per-endpoint statistics.
+
+    Returns:
+        Metrics dictionary with request statistics
+    """
+    from ..middleware import (
+        get_metrics_middleware,
+    )  # pylint: disable=import-outside-toplevel
+
+    try:
+        metrics_middleware = get_metrics_middleware()
+        return metrics_middleware.get_metrics()
+    except RuntimeError:
+        return {
+            "error": "Metrics not available",
+            "message": "Metrics middleware not initialized",
+        }

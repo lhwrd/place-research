@@ -6,7 +6,7 @@ This module defines the core abstractions:
 - DisplayableResult: Legacy base class for results
 """
 
-from typing import Protocol, runtime_checkable, Optional, Any
+from typing import Any, Optional, Protocol, runtime_checkable
 
 from .models import Place
 

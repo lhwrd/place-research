@@ -4,9 +4,9 @@ import os
 import requests
 from dotenv import load_dotenv
 
+from ..interfaces import ProviderNameMixin
 from ..models.place import Place
 from ..models.results import AirQualityResult
-from ..interfaces import ProviderNameMixin
 
 load_dotenv()
 

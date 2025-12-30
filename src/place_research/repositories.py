@@ -6,10 +6,10 @@ This module provides concrete implementations of the PlaceRepository protocol:
 """
 
 import logging
-from typing import Optional, Any
+from typing import Any, Optional
 
+from .clients.nocodb import NocoDBClient, TableRecordsQuery
 from .models import Place
-from .clients.nocodb import NocoDBClient
 
 
 class InMemoryRepository:
@@ -74,19 +74,21 @@ class NocoDBRepository:
     Wraps the existing NocoDB client to implement the PlaceRepository protocol.
     """
 
-    def __init__(self, client: NocoDBClient):
+    def __init__(self, client: NocoDBClient, table_id: str):
         """Initialize with a NocoDB client.
 
         Args:
             client: Configured NocoDB instance
         """
         self.client = client
+        self.table_id = table_id
         self.logger = logging.getLogger(__name__)
 
     def get_all(self) -> list[Place]:
         """Fetch all places from NocoDB."""
         self.logger.info("Fetching all places from NocoDB")
-        records = self.client.get_all_records()
+        query = TableRecordsQuery(table_id=self.table_id)
+        records = self.client.list_table_records(query)
         places = [Place(**record) for record in records]
         self.logger.info("Fetched %d places", len(places))
         return places
@@ -111,7 +113,8 @@ class NocoDBRepository:
         if place.id:
             self.logger.info("Updating place %s in NocoDB", place.id)
             # Use the update method if it exists, otherwise use upsert logic
-            self.client.update_record(place.id, place.model_dump(by_alias=True))
+            data = {"id": place.id, **place.model_dump(by_alias=True)}
+            self.client.update_table_record(self.table_id, data)
         else:
             self.logger.info("Creating new place in NocoDB")
             # NocoDB create logic would go here

@@ -1,7 +1,7 @@
 import logging
 import os
-
 from dataclasses import dataclass
+
 import requests
 
 from place_research.interfaces import DisplayableResult, ProviderNameMixin

@@ -1,5 +1,5 @@
-from datetime import datetime
 import os
+from datetime import datetime
 from typing import Any, Optional
 from uuid import uuid4
 
@@ -23,7 +23,9 @@ class Place(BaseModel):
     # Attributes
     enrichments: Optional[EnrichmentResult] = None
 
-    def model_post_init(self, __context: Any) -> None:
+    def model_post_init(
+        self, __context: Any
+    ) -> None:  # pylint: disable=arguments-differ
         """ReverseHey geocode the place's coordinates."""
         gmaps_api_key = os.getenv("GOOGLE_MAPS_API_KEY")
 

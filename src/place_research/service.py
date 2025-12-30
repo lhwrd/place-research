@@ -12,37 +12,38 @@ The service layer:
 """
 
 import logging
-from typing import Optional, Any
+import time
+from dataclasses import asdict, is_dataclass
+from typing import Any, Optional
 
+from .cache import CacheManager, get_cache_manager, initialize_cache
 from .config import Settings
+from .exceptions import EnrichmentError
+from .exceptions import ProviderError as ProviderException
+from .exceptions import ValidationError as PlaceValidationError
+from .interfaces import PlaceProvider, PlaceRepository
 from .models import Place
 from .models.results import (
-    EnrichmentResult,
-    ProviderError,
-    WalkBikeScoreResult,
     AirQualityResult,
+    AnnualAverageClimateResult,
+    DistancesResult,
+    EnrichmentResult,
     FloodZoneResult,
     HighwayResult,
+    ProviderError,
     RailroadResult,
+    WalkBikeScoreResult,
     WalmartResult,
-    DistancesResult,
-    AnnualAverageClimateResult,
 )
-from .interfaces import PlaceProvider, PlaceRepository
 from .providers import (
-    WalkBikeScoreProvider,
     AirQualityProvider,
+    AnnualAverageClimateProvider,
+    DistanceProvider,
     FloodZoneProvider,
     HighwayProvider,
     RailroadProvider,
+    WalkBikeScoreProvider,
     WalmartProvider,
-    DistanceProvider,
-    AnnualAverageClimateProvider,
-)
-from .exceptions import (
-    EnrichmentError,
-    ProviderError as ProviderException,
-    ValidationError as PlaceValidationError,
 )
 from .validation import sanitize_error_message
 
@@ -87,6 +88,14 @@ class PlaceEnrichmentService:
             self.providers = self._initialize_default_providers()
         else:
             self.providers = providers
+
+        # Initialize cache if enabled
+        self.cache_manager: Optional[CacheManager] = None
+        if settings.cache_enabled:
+            self.cache_manager = self._initialize_cache()
+            self.logger.info("Cache enabled with %s backend", settings.cache_backend)
+        else:
+            self.logger.info("Cache disabled")
 
         self.logger.info(
             "Initialized enrichment service with %d providers", len(self.providers)
@@ -163,7 +172,39 @@ class PlaceEnrichmentService:
 
         return providers
 
-    def enrich_place(self, place: Place) -> EnrichmentResult:
+    def _initialize_cache(self) -> Optional[CacheManager]:
+        """Initialize cache manager based on settings.
+
+        Returns:
+            CacheManager instance or None if cache is disabled
+        """
+        try:
+            # Check if global cache manager exists
+            cache_manager = get_cache_manager()
+            if cache_manager:
+                self.logger.debug("Using existing cache manager")
+                return cache_manager
+
+            # Initialize new cache manager
+            provider_ttls = self.settings.get_provider_ttls()
+            cache_manager = initialize_cache(
+                backend_type=self.settings.cache_backend,
+                redis_url=self.settings.redis_url,
+                default_ttl=self.settings.cache_default_ttl,
+                provider_ttls=provider_ttls,
+            )
+            self.logger.info(
+                "Initialized cache: backend=%s, default_ttl=%ds, custom_ttls=%d",
+                self.settings.cache_backend,
+                self.settings.cache_default_ttl,
+                len(provider_ttls),
+            )
+            return cache_manager
+        except (ConnectionError, OSError, ImportError, ValueError, TypeError) as e:
+            self.logger.error("Failed to initialize cache: %s", e, exc_info=True)
+            return None
+
+    async def enrich_place(self, place: Place) -> EnrichmentResult:
         """Enrich a single place with data from all enabled providers.
 
         Args:
@@ -188,7 +229,7 @@ class PlaceEnrichmentService:
         for provider in self.providers:
             try:
                 self.logger.debug("Running provider: %s", provider.name)
-                provider_result = self._run_provider(provider, place)
+                provider_result = await self._run_provider(provider, place)
 
                 # Store result in appropriate field
                 # (This is a temporary bridge - will be cleaner when all providers return Results)
@@ -266,12 +307,178 @@ class PlaceEnrichmentService:
         )
         return result
 
-    def _run_provider(self, provider: PlaceProvider, place: Place) -> Optional[Any]:
+    async def _run_provider(
+        self, provider: PlaceProvider, place: Place
+    ) -> Optional[Any]:
         """Run a single provider and return its result.
 
         Handles both legacy providers (that mutate place) and new providers (that return Results).
+        Checks cache before running provider and caches results after.
         """
-        provider_result = provider.fetch_place_data(place)
+        start_time = time.perf_counter()
+
+        # Check cache if enabled and place has coordinates
+        if (
+            self.cache_manager
+            and hasattr(place, "latitude")
+            and hasattr(place, "longitude")
+        ):
+            try:
+                cached_result = await self.cache_manager.get_provider_result(
+                    provider.name,
+                    place.latitude,
+                    place.longitude,
+                )
+                if cached_result:
+                    if self.settings.log_cache_operations:
+                        self.logger.info(
+                            "Cache hit for %s",
+                            provider.name,
+                            extra={
+                                "provider": provider.name,
+                                "event": "cache_hit",
+                            },
+                        )
+                    # Reconstruct result object from cached dict
+                    result = self._deserialize_provider_result(
+                        provider.name, cached_result
+                    )
+
+                    # Log metrics if enabled
+                    if self.settings.log_provider_metrics:
+                        duration_ms = (time.perf_counter() - start_time) * 1000
+                        self.logger.info(
+                            "Provider %s completed (cached) in %.2fms",
+                            provider.name,
+                            duration_ms,
+                            extra={
+                                "provider": provider.name,
+                                "event": "provider_completed",
+                                "duration_ms": duration_ms,
+                                "cache_hit": True,
+                            },
+                        )
+
+                    return result
+            except (
+                ConnectionError,
+                TimeoutError,
+                ValueError,
+                KeyError,
+                TypeError,
+                OSError,
+                RuntimeError,
+            ) as e:
+                self.logger.warning(
+                    "Cache lookup failed for %s: %s",
+                    provider.name,
+                    e,
+                    extra={
+                        "provider": provider.name,
+                        "event": "cache_error",
+                        "error": str(e),
+                    },
+                )
+
+        # Run provider
+        if self.settings.log_provider_metrics:
+            self.logger.info(
+                "Fetching data from %s",
+                provider.name,
+                extra={
+                    "provider": provider.name,
+                    "event": "provider_started",
+                },
+            )
+
+        try:
+            provider_result = provider.fetch_place_data(place)
+        except (
+            ProviderException,
+            TimeoutError,
+            ConnectionError,
+            ValueError,
+            KeyError,
+            TypeError,
+            OSError,
+            RuntimeError,
+            ImportError,
+        ) as e:
+            duration_ms = (time.perf_counter() - start_time) * 1000
+            self.logger.error(
+                "Provider %s failed after %.2fms: %s",
+                provider.name,
+                duration_ms,
+                e,
+                extra={
+                    "provider": provider.name,
+                    "event": "provider_failed",
+                    "duration_ms": duration_ms,
+                    "error": str(e),
+                    "error_type": type(e).__name__,
+                },
+            )
+            raise
+
+        # Cache result if enabled and place has coordinates
+        if (
+            provider_result is not None
+            and self.cache_manager
+            and hasattr(place, "latitude")
+            and hasattr(place, "longitude")
+        ):
+            try:
+                # Serialize result for caching
+                serializable_result = self._serialize_provider_result(provider_result)
+                await self.cache_manager.set_provider_result(
+                    provider.name,
+                    place.latitude,
+                    place.longitude,
+                    serializable_result,
+                )
+                if self.settings.log_cache_operations:
+                    self.logger.info(
+                        "Cached result for %s",
+                        provider.name,
+                        extra={
+                            "provider": provider.name,
+                            "event": "cache_set",
+                        },
+                    )
+            except (
+                ConnectionError,
+                TimeoutError,
+                ValueError,
+                KeyError,
+                TypeError,
+                OSError,
+                RuntimeError,
+            ) as e:
+                self.logger.warning(
+                    "Failed to cache result for %s: %s",
+                    provider.name,
+                    e,
+                    extra={
+                        "provider": provider.name,
+                        "event": "cache_error",
+                        "error": str(e),
+                    },
+                )
+
+        # Log metrics if enabled
+        if self.settings.log_provider_metrics:
+            duration_ms = (time.perf_counter() - start_time) * 1000
+            self.logger.info(
+                "Provider %s completed in %.2fms",
+                provider.name,
+                duration_ms,
+                extra={
+                    "provider": provider.name,
+                    "event": "provider_completed",
+                    "duration_ms": duration_ms,
+                    "cache_hit": False,
+                },
+            )
 
         # If provider returned a result object, use it
         if provider_result is not None:
@@ -280,6 +487,56 @@ class PlaceEnrichmentService:
             # Legacy provider - no result returned
             self.logger.debug(
                 "Provider %s did not return a result object.", provider.name
+            )
+            return None
+
+    def _serialize_provider_result(self, result: Any) -> dict:
+        """Serialize a provider result for caching."""
+        if hasattr(result, "to_dict"):
+            return result.to_dict()
+        elif hasattr(result, "model_dump"):
+            return result.model_dump()
+        elif is_dataclass(result):
+            # Handle dataclass results
+            return asdict(result)  # type: ignore
+        else:
+            # Fallback for simple types
+            return {"data": result}
+
+    def _deserialize_provider_result(
+        self, provider_name: str, cached_data: dict
+    ) -> Any:
+        """Deserialize a cached provider result back to result object."""
+        # Map provider names to result classes
+        # Provider names are lowercase without underscores (e.g., "walkbikescore", "airquality")
+        result_classes = {
+            "walkbikescore": WalkBikeScoreResult,
+            "airquality": AirQualityResult,
+            "floodzone": FloodZoneResult,
+            "highway": HighwayResult,
+            "railroad": RailroadResult,
+            "walmart": WalmartResult,
+            "distance": DistancesResult,
+            "annualaverageclimate": AnnualAverageClimateResult,
+        }
+
+        result_class = result_classes.get(provider_name)
+        if result_class:
+            try:
+                # Check if the result class has a from_dict() class method
+                if hasattr(result_class, "from_dict"):
+                    return result_class.from_dict(cached_data)
+                else:
+                    # Standard dataclass construction
+                    return result_class(**cached_data)
+            except (TypeError, ValueError, AttributeError) as e:
+                self.logger.warning(
+                    "Failed to deserialize cached result for %s: %s", provider_name, e
+                )
+                return None
+        else:
+            self.logger.warning(
+                "Unknown provider for deserialization: %s", provider_name
             )
             return None
 
@@ -302,7 +559,7 @@ class PlaceEnrichmentService:
         elif isinstance(provider_result, AnnualAverageClimateResult):
             result.climate = provider_result
 
-    def enrich_and_save(self, place: Place) -> EnrichmentResult:
+    async def enrich_and_save(self, place: Place) -> EnrichmentResult:
         """Enrich a place and save it to the repository.
 
         Args:
@@ -317,7 +574,7 @@ class PlaceEnrichmentService:
         if not self.repository:
             raise ValueError("No repository configured for saving")
 
-        result = self.enrich_place(place)
+        result = await self.enrich_place(place)
 
         # Save to repository
         self.repository.save(place)

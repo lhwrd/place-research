@@ -4,23 +4,38 @@ This module provides a REST API for enriching places with data from multiple pro
 It serves as the API-first interface to the place enrichment service.
 """
 
-from contextlib import asynccontextmanager
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
+from ..config import get_settings
 from ..exceptions import PlaceResearchError
+from ..logging_config import setup_logging
+from ..middleware import (
+    MetricsMiddleware,
+    RequestLoggingMiddleware,
+    set_metrics_middleware,
+)
 from ..validation import sanitize_error_message
 
 
 @asynccontextmanager
-async def lifespan(fastapi_app: FastAPI):
+async def lifespan(_fastapi_app: FastAPI):
     """Lifespan context manager for FastAPI app."""
     # Startup
-    logging.basicConfig(level=logging.INFO)
+    settings = get_settings()
+
+    # Configure logging
+    setup_logging(
+        log_level=settings.log_level,
+        log_format=settings.log_format,
+        app_name="place-research",
+    )
+
     logger = logging.getLogger(__name__)
     logger.info("Starting place-research API")
 
@@ -39,15 +54,32 @@ def create_app() -> FastAPI:
     Returns:
         Configured FastAPI application
     """
-    app = FastAPI(
+    application = FastAPI(
         title="Place Research API",
         description="API for enriching places with data from multiple providers",
         version="0.1.0",
         lifespan=lifespan,
     )
 
-    # CORS middleware for frontend access
-    app.add_middleware(
+    # Get settings for middleware configuration
+    settings = get_settings()
+
+    # Add middleware (order matters - last added = first executed)
+
+    # Metrics middleware (innermost - closest to route handlers)
+    metrics_middleware = MetricsMiddleware(application)
+    application.add_middleware(MetricsMiddleware)
+    set_metrics_middleware(metrics_middleware)
+
+    # Request logging middleware
+    application.add_middleware(
+        RequestLoggingMiddleware,
+        log_requests=settings.log_requests,
+        log_responses=settings.log_responses,
+    )
+
+    # CORS middleware for frontend access (outermost)
+    application.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],  # Configure appropriately for production
         allow_credentials=True,
@@ -56,12 +88,12 @@ def create_app() -> FastAPI:
     )
 
     # Exception handlers
-    @app.exception_handler(PlaceResearchError)
-    async def place_research_error_handler(request: Request, exc: PlaceResearchError):
+    @application.exception_handler(PlaceResearchError)
+    async def place_research_error_handler(_request: Request, exc: PlaceResearchError):
         """Handle custom PlaceResearchError exceptions."""
         logger = logging.getLogger(__name__)
         logger.warning(
-            f"PlaceResearchError: {exc.message}", extra={"error_code": exc.error_code}
+            "PlaceResearchError: %s", exc.message, extra={"error_code": exc.error_code}
         )
 
         # Determine HTTP status code based on error type
@@ -77,11 +109,11 @@ def create_app() -> FastAPI:
 
         return JSONResponse(status_code=status_code, content=exc.to_dict())
 
-    @app.exception_handler(RequestValidationError)
-    async def validation_error_handler(request: Request, exc: RequestValidationError):
+    @application.exception_handler(RequestValidationError)
+    async def validation_error_handler(_request: Request, exc: RequestValidationError):
         """Handle Pydantic validation errors."""
         logger = logging.getLogger(__name__)
-        logger.warning(f"Validation error: {exc.errors()}")
+        logger.warning("Validation error: %s", exc.errors())
 
         # Format Pydantic errors into our standard format
         errors = []
@@ -100,11 +132,11 @@ def create_app() -> FastAPI:
             },
         )
 
-    @app.exception_handler(Exception)
-    async def general_exception_handler(request: Request, exc: Exception):
+    @application.exception_handler(Exception)
+    async def general_exception_handler(_request: Request, exc: Exception):
         """Handle all uncaught exceptions."""
         logger = logging.getLogger(__name__)
-        logger.error(f"Unhandled exception: {exc}", exc_info=True)
+        logger.error("Unhandled exception: %s", exc, exc_info=True)
 
         # Sanitize error message to avoid leaking sensitive info
         safe_message = sanitize_error_message(str(exc))
@@ -119,11 +151,15 @@ def create_app() -> FastAPI:
         )
 
     # Import and include routers
-    from .routes import router
+    from .auth_routes import (
+        router as auth_router,
+    )  # pylint: disable=import-outside-toplevel
+    from .routes import router  # pylint: disable=import-outside-toplevel
 
-    app.include_router(router)
+    application.include_router(router)
+    application.include_router(auth_router)
 
-    return app
+    return application
 
 
 # Create app instance
