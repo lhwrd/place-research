@@ -39,6 +39,12 @@ from .providers import (
     DistanceProvider,
     AnnualAverageClimateProvider,
 )
+from .exceptions import (
+    EnrichmentError,
+    ProviderError as ProviderException,
+    ValidationError as PlaceValidationError,
+)
+from .validation import sanitize_error_message
 
 
 class PlaceEnrichmentService:
@@ -165,10 +171,18 @@ class PlaceEnrichmentService:
 
         Returns:
             EnrichmentResult with data from all providers and any errors
+
+        Raises:
+            EnrichmentError: If enrichment fails completely (all providers fail)
         """
+        # Validate place has required data (address is required by Place model)
+        if not hasattr(place, "address") or not place.address:
+            raise PlaceValidationError("Place must have an address", field="place")
+
         self.logger.info("Enriching place %s: %s", place.id or "unknown", place.address)
 
         result = EnrichmentResult(place_id=place.id)
+        successful_providers = 0
 
         # Run each provider and collect results
         for provider in self.providers:
@@ -180,10 +194,33 @@ class PlaceEnrichmentService:
                 # (This is a temporary bridge - will be cleaner when all providers return Results)
                 if provider_result:
                     self._store_provider_result(provider_result, result)
+                    successful_providers += 1
+                    self.logger.debug(
+                        "Provider %s completed successfully", provider.name
+                    )
 
+            except ProviderException as e:
+                # Known provider exception
+                self.logger.warning("Provider %s failed: %s", provider.name, e.message)
+                result.errors.append(
+                    ProviderError(
+                        provider_name=provider.name,
+                        error_message=sanitize_error_message(e.message),
+                        error_type=e.error_code,
+                    )
+                )
+            except TimeoutError as e:
+                # Timeout exception
+                self.logger.warning("Provider %s timed out: %s", provider.name, e)
+                result.errors.append(
+                    ProviderError(
+                        provider_name=provider.name,
+                        error_message="Provider request timed out",
+                        error_type="PROVIDER_TIMEOUT",
+                    )
+                )
             except (
                 ConnectionError,
-                TimeoutError,
                 ValueError,
                 KeyError,
                 TypeError,
@@ -194,13 +231,38 @@ class PlaceEnrichmentService:
                 result.errors.append(
                     ProviderError(
                         provider_name=provider.name,
-                        error_message=str(e),
+                        error_message=sanitize_error_message(str(e)),
+                        error_type="PROVIDER_ERROR",
+                    )
+                )
+            except (OSError, RuntimeError, ImportError) as e:
+                # Handle other specific common exceptions that might occur
+                self.logger.error(
+                    "Unexpected error in provider %s: %s",
+                    provider.name,
+                    e,
+                    exc_info=True,
+                )
+                result.errors.append(
+                    ProviderError(
+                        provider_name=provider.name,
+                        error_message=sanitize_error_message(str(e)),
                         error_type="PROVIDER_ERROR",
                     )
                 )
 
+        # Check if all providers failed
+        if successful_providers == 0 and len(self.providers) > 0:
+            raise EnrichmentError(
+                "All providers failed to enrich place", place_id=place.id
+            )
+
         self.logger.info(
-            "Enrichment complete for place %s. Errors: %d", place.id, len(result.errors)
+            "Enrichment complete for place %s. Success: %d/%d, Errors: %d",
+            place.id,
+            successful_providers,
+            len(self.providers),
+            len(result.errors),
         )
         return result
 

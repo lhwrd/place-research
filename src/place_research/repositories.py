@@ -109,7 +109,7 @@ class NocoDBRepository:
         If place has an ID, updates existing record. Otherwise creates new.
         """
         if place.id:
-            self.logger.info(f"Updating place {place.id} in NocoDB")
+            self.logger.info("Updating place %s in NocoDB", place.id)
             # Use the update method if it exists, otherwise use upsert logic
             self.client.update_record(place.id, place.model_dump(by_alias=True))
         else:

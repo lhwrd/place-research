@@ -4,14 +4,17 @@ This module defines all the REST API endpoints for place enrichment.
 Uses FastAPI dependency injection for explicit configuration and service management.
 """
 
+import logging
 from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 from ..config import Settings, get_settings
 from ..models import Place
 from ..service import PlaceEnrichmentService
+
+logger = logging.getLogger(__name__)
 
 
 router = APIRouter()
@@ -39,9 +42,17 @@ def get_enrichment_service(
 class PlaceEnrichRequest(BaseModel):
     """Request body for enriching a place."""
 
-    address: Optional[str] = None
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
+    address: Optional[str] = Field(None, min_length=3, max_length=500)
+    latitude: Optional[float] = Field(None, ge=-90, le=90)
+    longitude: Optional[float] = Field(None, ge=-180, le=180)
+
+    @field_validator("latitude", "longitude")
+    @classmethod
+    def validate_coordinates_together(cls, v, info):
+        """Validate that if one coordinate is provided, both must be provided."""
+        # This validator runs for each field, so we just return the value
+        # The actual validation happens in the endpoint
+        return v
 
     class Config:
         json_schema_extra = {
@@ -68,16 +79,29 @@ class HealthResponse(BaseModel):
     providers_count: int
 
 
-# Endpoints
+class ErrorResponse(BaseModel):
+    """Standard error response format."""
+
+    error: str = Field(description="Error code")
+    message: str = Field(description="Human-readable error message")
+    details: dict = Field(default_factory=dict, description="Additional error details")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "error": "VALIDATION_ERROR",
+                "message": "Invalid geolocation format",
+                "details": {"field": "geolocation", "value": "invalid"},
+            }
+        }
 
 
 @router.get("/", tags=["General"])
 async def root():
     """Root endpoint with API information."""
     return {
-        "name": "Place Research API",
+        "message": "Place Research API",
         "version": "0.1.0",
-        "description": "API for enriching places with data from multiple providers",
         "endpoints": {
             "health": "/health",
             "providers": "/providers",
@@ -113,7 +137,17 @@ async def get_providers(
     )
 
 
-@router.post("/enrich", tags=["Enrichment"])
+@router.post(
+    "/enrich",
+    tags=["Enrichment"],
+    responses={
+        200: {"description": "Successfully enriched place"},
+        400: {"model": ErrorResponse, "description": "Invalid request"},
+        422: {"model": ErrorResponse, "description": "Validation error"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+        503: {"model": ErrorResponse, "description": "Service unavailable"},
+    },
+)
 async def enrich_place(
     request: PlaceEnrichRequest,
     service: Annotated[PlaceEnrichmentService, Depends(get_enrichment_service)],
