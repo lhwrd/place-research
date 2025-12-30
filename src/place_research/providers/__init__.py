@@ -5,7 +5,7 @@ from .railroads import RailroadProvider
 from .walkbike_score import WalkBikeScoreProvider
 from .walmart import WalmartProvider
 from .annual_average_climate import AnnualAverageClimateProvider
-from .proximity_to_family import ProximityToFamilyProvider
+from .driving_distance import DistanceProvider
 
 __all__ = [
     "FloodZoneProvider",
@@ -15,5 +15,5 @@ __all__ = [
     "AirQualityProvider",
     "WalmartProvider",
     "AnnualAverageClimateProvider",
-    "ProximityToFamilyProvider",
+    "DistanceProvider",
 ]

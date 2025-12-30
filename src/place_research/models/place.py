@@ -1,47 +1,29 @@
+from datetime import datetime
 import os
+from typing import Any, Optional
+from uuid import uuid4
 
 import googlemaps
 from pydantic import BaseModel, Field
 
+from place_research.models.results import EnrichmentResult
+
 
 class Place(BaseModel):
-    id: int = Field(alias="Id")
-    created_at: str = Field(alias="CreatedAt")
-    updated_at: str = Field(alias="UpdatedAt")
-    address: str = Field(alias="Address")
-    geolocation: str | None = Field(alias="Geolocation", default="0;0")
-    city: str | None = Field(alias="City")
-    county: str | None = Field(alias="County")
-    state: str | None = Field(alias="State")
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    created_at: str = Field(default=datetime.now().isoformat())
+    updated_at: str = Field(default=datetime.now().isoformat())
+    address: str
+    latitude: float = 0.0
+    longitude: float = 0.0
+    city: Optional[str] = None
+    county: Optional[str] = None
+    state: Optional[str] = None
 
     # Attributes
-    nearest_railroad: int | None = Field(alias="Nearest Railroad")
-    walk_score: int | None = Field(alias="Walk Score")
-    walk_description: str | None = Field(alias="Walk Description")
-    bike_score: int | None = Field(alias="Bike Score")
-    bike_description: str | None = Field(alias="Bike Description")
-    walmart_distance_km: float | None = Field(alias="Walmart Distance (km)")
-    walmart_duration_m: float | None = Field(alias="Walmart Duration (min)")
-    walmart_distance_category: str | None = Field(alias="Walmart Distance Category")
-    walmart_duration_category: str | None = Field(alias="Walmart Duration Category")
-    walmart_rating: float | None = Field(alias="Walmart Rating")
-    highway_distance_m: int | None = Field(alias="Highway Distance (m)")
-    nearest_highway_type: str | None = Field(alias="Nearest Highway Type")
-    road_noise_level_db: float | None = Field(alias="Road Noise Level (dB)")
-    road_noise_category: str | None = Field(alias="Road Noise Category")
-    flood_zone: str | None = Field(alias="Flood Zone")
-    flood_risk: str | None = Field(alias="Flood Risk")
-    air_quality: str | None = Field(alias="Air Quality")
-    air_quality_category: str | None = Field(alias="Air Quality Category")
-    annual_avg_temp: float | None = Field(alias="Annual Avg Temp")
-    annual_avg_precip: float | None = Field(alias="Annual Avg Precip")
-    proximity_to_family: dict | None = Field(alias="Proximity to Family")
+    enrichments: Optional[EnrichmentResult] = None
 
-    class Config:
-        validate_by_alias = True
-        serialization_by_alias = True
-
-    def reverse_geocode(self) -> None:
+    def model_post_init(self, __context: Any) -> None:
         """Reverse geocode the place's coordinates."""
         gmaps_api_key = os.getenv("GOOGLE_MAPS_API_KEY")
 
@@ -52,12 +34,9 @@ class Place(BaseModel):
             raise ValueError(f"Geocoding failed for address: {self.address}")
         geocode_result = geocode_result[0]
 
-        self.geolocation = ";".join(
-            [
-                str(geocode_result["geometry"]["location"]["lat"]),
-                str(geocode_result["geometry"]["location"]["lng"]),
-            ]
-        )
+        self.latitude = geocode_result["geometry"]["location"]["lat"]
+        self.longitude = geocode_result["geometry"]["location"]["lng"]
+
         # Extract city, county, and state information from geocoding result
         city_name = None
         county_name = None

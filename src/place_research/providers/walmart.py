@@ -97,28 +97,13 @@ class WalmartProvider(ProviderNameMixin):
                 "Google Maps API key missing. Set GOOGLE_MAPS_API_KEY envvar or config.json"
             )
 
-    def fetch_place_data(self, place: "Place"):
+    def fetch_place_data(self, place: "Place") -> WalmartResult:
         """
         Fetch nearest Walmart Supercenter data for the given place.
         """
-        if not place.geolocation:
-            self.logger.error("Geolocation must be set on place.")
-            return
-
-        if (
-            place.walmart_distance_km is not None
-            and place.walmart_duration_m is not None
-        ):
-            self.logger.debug("Walmart data already fetched for place ID %s", place.id)
-            return
 
         gmaps = googlemaps.Client(key=self.api_key, queries_per_second=5)
-        coordinates = place.geolocation.split(";")
-        coordinates = (float(coordinates[0]), float(coordinates[1]))
-
-        if len(coordinates) != 2:
-            self.logger.error("Geolocation must be in 'lat;lng' format.")
-            return
+        coordinates = (place.latitude, place.longitude)
 
         # Find nearest Walmart Supercenter
         nearest_walmarts = gmaps.places_nearby(  # type: ignore
@@ -130,7 +115,13 @@ class WalmartProvider(ProviderNameMixin):
         results = nearest_walmarts.get("results", [])
         if not results:
             self.logger.error("No Walmart Supercenter found nearby.")
-            return
+            return WalmartResult(
+                distance_km=None,
+                duration_m=None,
+                distance_category="Unknown",
+                duration_category="Unknown",
+                rating=None,
+            )
 
         walmart = results[0]
 
@@ -144,31 +135,51 @@ class WalmartProvider(ProviderNameMixin):
 
         if not matrix_result.get("rows"):
             self.logger.error("No rows found in distance matrix response.")
-            return
+            return WalmartResult(
+                distance_km=None,
+                duration_m=None,
+                distance_category="Unknown",
+                duration_category="Unknown",
+                rating=None,
+            )
 
         elements = matrix_result["rows"][0]["elements"]
         if not elements:
             self.logger.error("No elements found in distance matrix response.")
-            return
+            return WalmartResult(
+                distance_km=None,
+                duration_m=None,
+                distance_category="Unknown",
+                duration_category="Unknown",
+                rating=None,
+            )
 
         element = elements[0]
         if element["status"] != "OK":
             self.logger.error(
                 "Failed to get valid route from Google Maps API: %s", element
             )
-            return
+            raise ValueError("Invalid route data from Google Maps API.")
 
         # Extract distance and duration information
-        place.walmart_distance_km = round(
+        walmart_distance_km = round(
             element["distance"]["value"] / 1000, 1
         )  # Convert to km
-        place.walmart_duration_m = round(
+        walmart_duration_m = round(
             element["duration"]["value"] / 60, 1
         )  # Convert to minutes
 
         # Categorize distance and duration
-        place.walmart_distance_category = categorize_distance(place.walmart_distance_km)
-        place.walmart_duration_category = categorize_duration(place.walmart_duration_m)
+        walmart_distance_category = categorize_distance(walmart_distance_km)
+        walmart_duration_category = categorize_duration(walmart_duration_m)
 
         # Get Walmart rating
-        place.walmart_rating = walmart.get("rating", 0.0)
+        walmart_rating = walmart.get("rating", 0.0)
+
+        return WalmartResult(
+            distance_km=walmart_distance_km,
+            duration_m=walmart_duration_m,
+            distance_category=walmart_distance_category,
+            duration_category=walmart_duration_category,
+            rating=walmart_rating,
+        )

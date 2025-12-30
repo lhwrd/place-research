@@ -2,20 +2,6 @@ import logging
 import click
 from dotenv import load_dotenv
 
-from .engine import ResearchEngine
-from .nocodb import NocoDB, TableRecordsQuery
-from .models import Place
-from .providers import (
-    WalkBikeScoreProvider,
-    WalmartProvider,
-    AnnualAverageClimateProvider,
-    FloodZoneProvider,
-    HighwayProvider,
-    RailroadProvider,
-    AirQualityProvider,
-    ProximityToFamilyProvider,
-)
-
 load_dotenv()
 
 
@@ -33,76 +19,42 @@ def cli(ctx, debug):
 
 
 @cli.command()
-@click.option("--api-key", envvar="NOCODB_API_KEY", required=True)
-@click.option("--base-url", envvar="NOCODB_BASE_URL", required=True)
-@click.option("--table-id", envvar="NOCODB_TABLE_ID", required=True)
-@click.option("--verify-ssl/--no-verify-ssl", default=True)
+@click.option(
+    "--host",
+    default="0.0.0.0",
+    help="Host to bind to",
+)
+@click.option(
+    "--port",
+    type=int,
+    default=8000,
+    help="Port to bind to",
+)
+@click.option(
+    "--reload",
+    is_flag=True,
+    default=False,
+    help="Enable auto-reload for development",
+)
 @click.pass_context
-def update(ctx, api_key, base_url, table_id, verify_ssl):
-    """Update the empty values in the NocoDB Table."""
-    click.echo("Updating NocoDB Table...")
+def serve(_, debug, host: str, port: int, reload: bool):
+    """Start the Place Research API server."""
+    from .api.server import main as serve_main
 
-    if not verify_ssl:
-        click.echo("Warning: SSL verification is disabled.")
-        import warnings
+    # Call the server's main function with the provided parameters
+    import sys
 
-        warnings.filterwarnings("ignore")
-
-    debug = ctx.obj.get("DEBUG", False)
+    sys.argv = ["serve"]
+    if host != "0.0.0.0":
+        sys.argv.extend(["--host", host])
+    if port != 8000:
+        sys.argv.extend(["--port", str(port)])
+    if reload:
+        sys.argv.append("--reload")
     if debug:
-        logging.getLogger().setLevel(logging.DEBUG)
-        logging.debug("Debug logging enabled for update command.")
+        sys.argv.extend(["--log-level", "debug"])
 
-    noco = NocoDB(base_url=base_url, api_key=api_key, verify_ssl=verify_ssl)
-
-    table_records = noco.list_table_records(TableRecordsQuery(table_id=table_id))
-    table_records = table_records.get("list", [])
-
-    # Perform the update logic here
-    for record in table_records:
-        if not record.get("Address"):
-            logging.error("Address is required for place ID %s", record.get("Id"))
-            continue
-
-        place = Place.model_validate(record)
-        original_place = place.model_dump()
-
-        # Reverse geocode first
-        if (
-            not place.geolocation
-            or place.geolocation == "0;0"
-            or not place.city
-            or not place.county
-            or not place.state
-        ):
-            place.reverse_geocode()
-            logging.debug("Reverse geocoded place: %s", place.geolocation)
-
-        providers = [
-            RailroadProvider(),
-            WalkBikeScoreProvider(),
-            WalmartProvider(),
-            HighwayProvider(),
-            FloodZoneProvider(),
-            AirQualityProvider(),
-            AnnualAverageClimateProvider(),
-            ProximityToFamilyProvider(),
-        ]
-
-        engine = ResearchEngine(providers=providers)
-
-        engine.enrich_place(place)
-        logging.debug("Enriched place: %s", place)
-
-        # Update the record if it's been changed
-        if place.model_dump() != original_place:
-            updated_data = place.model_dump(
-                by_alias=True, exclude={"created_at", "updated_at"}, exclude_none=True
-            )
-            logging.debug("Updating record: %s", updated_data)
-            noco.update_table_record(table_id=table_id, data=updated_data)
-            click.echo(f"Updated Place ID {place.id}")
-        print("\n")
+    serve_main.callback(host, port, reload, "info")
 
 
 if __name__ == "__main__":
