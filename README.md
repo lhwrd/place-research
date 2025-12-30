@@ -16,12 +16,10 @@ uv sync
 
 ## Usage
 
-### Update
-
-To update the NocoDB table with the latest data:
+### Start the API
 
 ```bash
-uv run research update
+research serve --port 8000
 ```
 
 ## Environment Variables
@@ -41,7 +39,7 @@ NOCODB_BASE_URL=
 NOCODB_API_KEY=
 NOCODB_TABLE_ID=
 ANNUAL_CLIMATE_PATH=
-FAMILY_CONFIG_PATH=
+DISTANCE_CONFIG_PATH=
 ```
 
 ## Available Providers
@@ -51,7 +49,7 @@ FAMILY_CONFIG_PATH=
 3. **Railroad Provider**: Distance to nearest railroad lines
 4. **Air Quality Provider**: Air quality index data
 5. **Walmart Proximity Provider**: Distance to nearest Walmart stores
-6. **Proximity to Family Provider**: Distance to specified family locations
+6. **Distances Provider**: Distance to specified addresses
 7. **Annual Climate Provider**: Climate data from annual summaries
 
 ## Development
