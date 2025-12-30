@@ -7,13 +7,16 @@ requires-python = ">=3.13"
 dependencies = [
     "beautifulsoup4>=4.13.4",
     "click>=8.2.1",
+    "fastapi>=0.115.0",
     "googlemaps>=4.10.0",
     "osmnx>=2.0.6",
     "pandas>=2.3.2",
     "pydantic>=2.11.7",
+    "pydantic-settings>=2.7.1",
     "python-dotenv>=1.1.1",
     "requests>=2.32.5",
     "rich>=14.1.0",
+    "uvicorn[standard]>=0.34.0",
 ]
 
 [project.scripts]
@@ -34,6 +37,4 @@ dev = [
     "pytest>=8.4.1",
     "ruff>=0.12.10",
 ]
-jupyter = [
-    "jupyter>=1.1.1",
-]
+jupyter = ["jupyter>=1.1.1"]
