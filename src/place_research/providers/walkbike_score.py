@@ -1,10 +1,11 @@
 import logging
 import os
-
 from dataclasses import dataclass
-import requests
+
+import httpx
 
 from place_research.interfaces import DisplayableResult, ProviderNameMixin
+from place_research.models.results import WalkBikeScoreResult
 
 
 @dataclass
@@ -40,32 +41,34 @@ class WalkBikeScoreProvider(ProviderNameMixin):
         self.api_key = api_key
         self.logger = logging.getLogger(__name__)
 
-    def fetch_place_data(self, place):
-        if place.walk_score and place.walk_description:
-            self.logger.debug(
-                "Walk/Bike score data already fetched for place ID %s", place.id
-            )
-            return
-
-        coords = place.geolocation.split(";")
-        if len(coords) != 2:
-            self.logger.error("Invalid geolocation format.")
-            return
-
+    async def fetch_place_data(self, place) -> WalkBikeScoreResult:
         url = "https://api.walkscore.com/score"
         params = {
             "format": "json",
             "address": place.address,
-            "lat": coords[0],
-            "lon": coords[1],
+            "lat": place.latitude,
+            "lon": place.longitude,
             "wsapikey": self.api_key,
             "bike": 1,
         }
 
-        response = requests.get(url, params=params, timeout=10)
-        if response.status_code == 200:
-            data = response.json()
-            place.walk_score = data.get("walkscore")
-            place.walk_description = data.get("description")
-            place.bike_score = data.get("bike", {}).get("score")
-            place.bike_description = data.get("bike", {}).get("description")
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(url, params=params)
+            if response.status_code == 200:
+                data = response.json()
+
+                return WalkBikeScoreResult(
+                    walk_score=data.get("walkscore"),
+                    walk_description=data.get("description"),
+                    bike_score=data.get("bike", {}).get("score"),
+                    bike_description=data.get("bike", {}).get("description"),
+                )
+
+            self.logger.error(
+                "Walk/Bike Score API error %s: %s", response.status_code, response.text
+            )
+            raise httpx.HTTPStatusError(
+                f"Walk/Bike Score API error {response.status_code}: {response.text}",
+                request=response.request,
+                response=response,
+            )

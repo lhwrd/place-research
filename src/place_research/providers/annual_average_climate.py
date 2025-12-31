@@ -1,11 +1,11 @@
-from glob import glob
-import os
 import logging
+import os
 
 import pandas as pd
 
 from place_research.interfaces import ProviderNameMixin
 from place_research.models.place import Place
+from place_research.models.results import AnnualAverageClimateResult
 
 
 class AnnualAverageClimateProvider(ProviderNameMixin):
@@ -17,19 +17,8 @@ class AnnualAverageClimateProvider(ProviderNameMixin):
     def load_data(self, path) -> pd.DataFrame:
         return pd.read_csv(path)
 
-    def fetch_place_data(self, place: Place):
-        if not place.geolocation:
-            self.logger.debug("Geolocation not available.")
-            return
-
-        if place.annual_avg_temp and place.annual_avg_precip:
-            self.logger.info(
-                "Annual climate data already fetched for place ID %s", place.id
-            )
-            return
-
-        coordinates = [float(x) for x in place.geolocation.split(";")]
-        lat, lon = coordinates
+    async def fetch_place_data(self, place: Place) -> AnnualAverageClimateResult | None:
+        lat, lon = place.latitude, place.longitude
 
         # Find the nearest station
         df = self.data.copy()
@@ -38,9 +27,14 @@ class AnnualAverageClimateProvider(ProviderNameMixin):
         ) ** 0.5
         nearest_station = df.loc[df["distance"].idxmin()].to_dict()
 
-        place.annual_avg_temp = nearest_station["ANN-TAVG-NORMAL"]
-        place.annual_avg_precip = nearest_station["ANN-PRCP-NORMAL"]
+        annual_avg_temp = nearest_station["ANN-TAVG-NORMAL"]
+        annual_avg_precip = nearest_station["ANN-PRCP-NORMAL"]
         self.logger.info(
-            "Annual climate data fetched for place with geolocation: %s",
-            place.geolocation,
+            "Annual climate data fetched for place with latitude: %s and longitude: %s",
+            lat,
+            lon,
+        )
+        return AnnualAverageClimateResult(
+            annual_average_temperature=annual_avg_temp,
+            annual_average_precipitation=annual_avg_precip,
         )

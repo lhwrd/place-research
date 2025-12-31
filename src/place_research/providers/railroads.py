@@ -1,5 +1,5 @@
-import os
 import logging
+import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -7,6 +7,7 @@ import geopandas as gpd
 from shapely.geometry import Point
 
 from place_research.interfaces import ProviderNameMixin
+from place_research.models.results import RailroadResult
 
 if TYPE_CHECKING:
     from ..models import Place
@@ -40,12 +41,8 @@ class RailroadProvider(ProviderNameMixin):
             self.logger.error("Railroad lines data must have a defined CRS.")
             raise ValueError("Railroad lines data must have a defined CRS")
 
-    def fetch_place_data(self, place: "Place"):
+    async def fetch_place_data(self, place: "Place") -> RailroadResult:
         """Fetch railroad data for the given place."""
-        if place.nearest_railroad:
-            self.logger.debug("Already fetched nearest railroad data.")
-            return
-
         self.logger.info("Fetching railroad data for place: %s", place.id)
         self._load_raillines_data()
 
@@ -53,15 +50,11 @@ class RailroadProvider(ProviderNameMixin):
             self.logger.error("Railroad lines data not loaded.")
             raise ValueError("Railroad lines data not loaded")
 
-        if not place.geolocation:
-            self.logger.error("Geolocation must be set on place.")
-            raise ValueError("Geolocation must be set.")
-
-        # Note: place.geolocation is (lat;lng) but Point expects (lng, lat)
-        coords = [float(x) for x in place.geolocation.split(";")]
-        self.logger.debug("Parsed coordinates for place: %s", coords)
+        self.logger.debug(
+            "Parsed coordinates for place: %s", (place.latitude, place.longitude)
+        )
         # Swap to (lng, lat) for Point
-        place_point = Point(coords[1], coords[0])
+        place_point = Point(place.longitude, place.latitude)
 
         # Ensure both GeoDataFrames are in the same CRS
         rail_gdf = self._raillines_data.to_crs(epsg=3857)
@@ -78,4 +71,6 @@ class RailroadProvider(ProviderNameMixin):
         )
 
         # For now, just indicate that railroad data is available
-        place.nearest_railroad = nearest_distance
+        return RailroadResult(
+            distance_to_railroad_m=nearest_distance,
+        )
