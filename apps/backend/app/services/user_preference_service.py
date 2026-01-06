@@ -114,9 +114,6 @@ class UserPreferenceService:
         preferences.min_bike_score = None
         preferences.min_transit_score = None
         preferences.max_commute_time = None
-        preferences.workplace_address = None
-        preferences.workplace_latitude = None
-        preferences.workplace_longitude = None
         preferences.preferred_amenities = None
         preferences.preferred_places = None
         preferences.min_bedrooms = None
@@ -135,29 +132,3 @@ class UserPreferenceService:
         logger.info(f"Reset preferences to defaults for user {user_id}")
 
         return preferences
-
-    def has_workplace_configured(self, user_id: int) -> bool:
-        """Check if user has workplace location configured."""
-        preferences = self.get_preferences(user_id)
-
-        if not preferences:
-            return False
-
-        return (
-            preferences.workplace_latitude is not None
-            and preferences.workplace_longitude is not None
-        )
-
-    def get_workplace_location(self, user_id: int) -> Optional[Dict[str, Any]]:
-        """Get workplace location if configured."""
-        preferences = self.get_preferences(user_id)
-
-        if not preferences or not self.has_workplace_configured(user_id):
-            return None
-
-        return {
-            "address": preferences.workplace_address,
-            "latitude": preferences.workplace_latitude,
-            "longitude": preferences.workplace_longitude,
-            "max_commute_time": preferences.max_commute_time,
-        }

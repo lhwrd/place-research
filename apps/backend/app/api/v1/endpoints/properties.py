@@ -66,7 +66,7 @@ async def search_property(
     response_model=PropertyEnrichmentResponse,
     status_code=status.HTTP_200_OK,
     summary="Enrich property with detailed analysis",
-    description="Enriches property with walk score, nearby amenities, and distances to custom locations",
+    description="Enriches property with walk score, nearby amenities, and distances to custom locations",  # pylint: disable=line-too-long
 )
 async def enrich_property(
     property_id: int,

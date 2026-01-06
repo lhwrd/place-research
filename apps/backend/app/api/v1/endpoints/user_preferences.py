@@ -39,7 +39,6 @@ async def get_preferences(
     - Walkability thresholds
     - Distance limits for amenities
     - Property criteria
-    - Workplace location
     - Preferred amenity types
     """
     preference_service = UserPreferenceService(db)
@@ -435,14 +434,6 @@ async def get_preferences_summary(
             "price_range": (
                 f"${preferences.min_price:,} - ${preferences.max_price:,}"
                 if preferences.min_price and preferences.max_price
-                else "Not set"
-            ),
-        },
-        "workplace": {
-            "address": preferences.workplace_address or "Not set",
-            "max_commute_time": (
-                f"{preferences.max_commute_time} minutes"
-                if preferences.max_commute_time
                 else "Not set"
             ),
         },

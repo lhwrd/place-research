@@ -34,11 +34,6 @@ class UserPreference(Base):
     # Maximum commute time (in minutes)
     max_commute_time: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
-    # Workplace location (if configured)
-    workplace_address: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    workplace_latitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    workplace_longitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-
     # Preferred amenity types (stored as JSON array)
     # e.g., ["organic_grocery", "gym", "coffee_shop", "library"]
     preferred_amenities: Mapped[Optional[Any]] = mapped_column(JSON, nullable=True)
