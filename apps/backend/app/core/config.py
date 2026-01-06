@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     )
 
     app_name: str = Field("place-research", alias="APP_NAME")
+    base_url: str = Field("http://localhost:8000", alias="BASE_URL")
 
     # API Keys for external services
     walkscore_api_key: Optional[str] = Field(None, alias="WALKSCORE_API_KEY")
@@ -186,6 +187,13 @@ class Settings(BaseSettings):
 
     # Use mock data in development
     use_mock_property_data: bool = Field(False, alias="USE_MOCK_PROPERTY_DATA")
+
+    # Email settings
+    email_smtp_server: str = Field("smtp.example.com", alias="EMAIL_SMTP_SERVER")
+    email_smtp_port: int = Field(587, alias="EMAIL_SMTP_PORT")
+    email_username: str = Field(..., alias="EMAIL_USERNAME")
+    email_password: str = Field(..., alias="EMAIL_PASSWORD")
+    email_from_address: str = Field(..., alias="EMAIL_FROM_ADDRESS")
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

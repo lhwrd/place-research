@@ -29,6 +29,7 @@ from app.schemas.auth import (
     UserResponse,
 )
 from app.schemas.user import UserData
+from app.services.email_service import EmailService
 from app.services.user_service import UserService
 
 logger = logging.getLogger(__name__)
@@ -72,7 +73,7 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)) -> Any:
     refresh_token = create_refresh_token(subject=str(user.id))
 
     return UserResponse(
-        user=UserData.from_orm(user),
+        user=UserData.model_validate(user),
         access_token=access_token,
         refresh_token=refresh_token,
         token_type="bearer",
@@ -287,6 +288,7 @@ async def request_password_reset(
     For security, always returns success even if email doesn't exist.
     """
     user_service = UserService(db)
+    email_service = EmailService()
 
     # Find user
     user = user_service.get_user_by_email(request_data.email)
@@ -295,17 +297,9 @@ async def request_password_reset(
         # Generate reset token (valid for 1 hour)
         reset_token = create_access_token(subject=str(user.id), expires_delta=timedelta(hours=1))
 
-        # TODO: Send email with reset link
-        # For now, just log it (in production, use email service)
-        reset_link = f"http://localhost:3000/reset-password?token={reset_token}"
         logger.info(f"Password reset requested for {user.email}")
-        logger.info(f"Reset link (dev only): {reset_link}")
 
-        # In production, you would:
-        # await email_service.send_password_reset_email(
-        #     email=user.email,
-        #     reset_token=reset_token
-        # )
+        await email_service.send_password_reset_email(email=user.email, reset_token=reset_token)
 
     # Always return success for security (don't reveal if email exists)
     return {"message": "If that email exists, a password reset link has been sent"}
