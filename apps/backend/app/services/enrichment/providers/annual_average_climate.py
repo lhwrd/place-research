@@ -59,8 +59,6 @@ class AnnualAverageClimateProvider(BaseEnrichmentProvider):
             data={
                 "annual_average_temperature": annual_avg_temp,
                 "annual_average_precipitation": annual_avg_precip,
-                "station_id": nearest_station["STATION_ID"],
-                "station_name": nearest_station["STATION_NAME"],
             },
             success=True,
             api_calls_made=0,

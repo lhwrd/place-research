@@ -72,6 +72,16 @@ class PropertyService:
                 longitude=geocode_result["longitude"],
                 address=address,
             )
+            # If property data API returns empty data (address is None), use geocode fallback
+            if not property_data.get("address"):
+                logger.warning("Property data API returned no address, using geocode fallback")
+                property_data = {
+                    "address": geocode_result.get("formatted_address", address),
+                    "city": geocode_result.get("city"),
+                    "state": geocode_result.get("state"),
+                    "zip_code": geocode_result.get("zip_code"),
+                    "county": geocode_result.get("county"),
+                }
         except Exception as e:
             logger.error("Property data fetch failed:  %s", str(e))
             # Create minimal property record with just geocoded data

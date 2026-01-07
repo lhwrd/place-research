@@ -20,16 +20,102 @@ os.environ["EMAIL_PASSWORD"] = "test-password"
 os.environ["EMAIL_FROM_ADDRESS"] = "noreply@example.com"
 os.environ["USE_MOCK_PROPERTY_DATA"] = "true"
 
-from app.core.security import get_password_hash
-from app.db.database import Base, get_db
-from app.main import app
-from app.models.custom_location import CustomLocation
-from app.models.property import Property
-from app.models.saved_property import SavedProperty
-from app.models.user import User
-from app.models.user_preference import UserPreference
 
-# Create test database engine
+# Define mock classes at module level before any imports
+class MockGoogleMapsAPI:
+    """Mock Google Maps API for testing."""
+
+    async def geocode(self, address, components=None):
+        """Mock geocode method."""
+        return {
+            "formatted_address": "1600 Amphitheatre Parkway, Mountain View, CA 94043, USA",
+            "latitude": 37.4224764,
+            "longitude": -122.0842499,
+            "city": "Mountain View",
+            "state": "CA",
+            "zip_code": "94043",
+            "county": "Santa Clara County",
+            "country": "United States",
+            "place_id": "ChIJ2eUgeAK6j4ARbn5u_wAGqWA",
+        }
+
+    async def reverse_geocode(self, latitude, longitude):
+        """Mock reverse geocode method."""
+        return {
+            "formatted_address": f"Address at {latitude}, {longitude}",
+            "latitude": latitude,
+            "longitude": longitude,
+            "city": "Mountain View",
+            "state": "CA",
+            "zip_code": "94043",
+            "county": "Santa Clara County",
+            "country": "United States",
+        }
+
+    async def nearby_search(self, lat, lon, place_type, radius_miles, keyword=None, max_results=20):
+        """Mock nearby search method."""
+        return [
+            {
+                "name": f"Test {place_type} 1",
+                "place_id": f"test_place_{place_type}_1",
+                "vicinity": "123 Test St",
+                "latitude": lat + 0.01,
+                "longitude": lon + 0.01,
+                "rating": 4.5,
+                "distance_miles": 0.5,
+            },
+            {
+                "name": f"Test {place_type} 2",
+                "place_id": f"test_place_{place_type}_2",
+                "vicinity": "456 Test Ave",
+                "latitude": lat + 0.02,
+                "longitude": lon + 0.02,
+                "rating": 4.0,
+                "distance_miles": 1.2,
+            },
+        ]
+
+    async def distance_matrix(self, origin, destinations, mode="driving", departure_time=None):
+        """Mock distance matrix method."""
+        return [
+            {
+                "destination_index": i,
+                "distance_miles": 5.0 + i,
+                "duration_minutes": 10 + i * 2,
+            }
+            for i in range(len(destinations))
+        ]
+
+    async def validate_api_key(self):
+        """Mock API key validation."""
+        return True
+
+    @staticmethod
+    def _calculate_distance(lat1, lon1, lat2, lon2):
+        """Mock distance calculation."""
+        return 5.0
+
+
+def pytest_configure(config):
+    """
+    Pytest hook that runs before test collection.
+
+    Applies mocks for external APIs to prevent real API calls during testing.
+    This runs very early in the pytest lifecycle, before app modules are imported.
+    """
+    # Import and patch at the module level immediately
+    import app.integrations.google_maps_api as google_maps_module
+    import app.integrations.property_data_factory as factory_module
+    from app.integrations.mock_property_data_api import MockPropertyDataAPI
+
+    # Replace GoogleMapsAPI with our mock
+    google_maps_module.GoogleMapsAPI = MockGoogleMapsAPI
+
+    # Replace property data factory function
+    factory_module.get_property_data_api = lambda: MockPropertyDataAPI()
+
+
+# Create test database engine (no app imports yet)
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 TEST_DB_PATH = pathlib.Path("test.db")
 
@@ -65,6 +151,12 @@ def db() -> Generator[Session, None, None]:
 
     This ensures test isolation - each test gets a clean database.
     """
+    # Lazy import after mocks are set up
+    from app.db.database import Base
+
+    # Drop all tables first to ensure clean state
+    Base.metadata.drop_all(bind=engine)
+
     # Create tables
     Base.metadata.create_all(bind=engine)
 
@@ -74,9 +166,14 @@ def db() -> Generator[Session, None, None]:
     try:
         yield session
     finally:
+        # Rollback any pending transactions
+        session.rollback()
+        # Properly close the session
         session.close()
         # Drop all tables after test
         Base.metadata.drop_all(bind=engine)
+        # Dispose of connections in the pool
+        engine.dispose()
 
 
 @pytest.fixture(scope="function")
@@ -84,6 +181,9 @@ def client(db: Session) -> Generator[TestClient, None, None]:
     """
     Create a test client with database session override.
     """
+    # Lazy imports after mocks are set up
+    from app.db.database import get_db
+    from app.main import app
 
     def override_get_db() -> Generator[Session, None, None]:
         try:
@@ -100,8 +200,13 @@ def client(db: Session) -> Generator[TestClient, None, None]:
 
 
 @pytest.fixture
-def test_user(db: Session) -> User:
+def test_user(db: Session):
     """Create a test user."""
+    # Lazy imports after mocks are set up
+    from app.core.security import get_password_hash
+    from app.models.user import User
+    from app.models.user_preference import UserPreference
+
     user = User(
         email="test@example.com",
         hashed_password=get_password_hash("testpassword123"),
@@ -122,10 +227,13 @@ def test_user(db: Session) -> User:
 
 
 @pytest.fixture
-def test_superuser(db: Session) -> User:
+def test_superuser(db: Session):
     """Create a test superuser."""
+    from app.core.security import get_password_hash
+    from app.models.user import User
+
     user = User(
-        email="admin@example. com",
+        email="admin@example.com",
         hashed_password=get_password_hash("adminpassword123"),
         full_name="Admin User",
         is_active=True,
@@ -138,7 +246,7 @@ def test_superuser(db: Session) -> User:
 
 
 @pytest.fixture
-def auth_headers(test_user: User) -> dict:
+def auth_headers(test_user) -> dict:
     """Create authentication headers for test user."""
     from app.core.security import create_access_token
 
@@ -147,8 +255,10 @@ def auth_headers(test_user: User) -> dict:
 
 
 @pytest.fixture
-def test_property(db: Session, test_user: User) -> Property:
+def test_property(db: Session, test_user):
     """Create a test property."""
+    from app.models.property import Property
+
     property_record = Property(
         user_id=test_user.id,
         address="123 Test St",
@@ -173,8 +283,10 @@ def test_property(db: Session, test_user: User) -> Property:
 
 
 @pytest.fixture
-def test_custom_location(db: Session, test_user: User) -> CustomLocation:
+def test_custom_location(db: Session, test_user):
     """Create a test custom location."""
+    from app.models.custom_location import CustomLocation
+
     location = CustomLocation(
         user_id=test_user.id,
         name="Mom's House",
@@ -196,8 +308,10 @@ def test_custom_location(db: Session, test_user: User) -> CustomLocation:
 
 
 @pytest.fixture
-def test_saved_property(db: Session, test_user: User, test_property: Property) -> SavedProperty:
+def test_saved_property(db: Session, test_user, test_property):
     """Create a test saved property."""
+    from app.models.saved_property import SavedProperty
+
     saved = SavedProperty(
         user_id=test_user.id,
         property_id=test_property.id,

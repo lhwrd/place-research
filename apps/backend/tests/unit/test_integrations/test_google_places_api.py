@@ -1,11 +1,11 @@
+"""Tests for Google Places API integration."""
+
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from app.exceptions import GoogleMapsAPIError
 from app.integrations.google_places_api import GooglePlacesAPI
-
-"""Tests for Google Places API integration."""
 
 
 @pytest.fixture
@@ -20,10 +20,10 @@ def google_places_api():
 def sample_place_response():
     """Sample place data from API."""
     return {
-        "id": "ChIJN1t_tDeuEmsRUsoyG83frY4",
         "displayName": {"text": "Walmart Supercenter"},
-        "formattedAddress": {"text": "123 Main St, Los Angeles, CA 90012"},
+        "id": "ChIJN1t_tDeuEmsRUsoyG83frY4",
         "location": {"latitude": 34.052235, "longitude": -118.243683},
+        "formattedAddress": {"text": "123 Main St, Los Angeles, CA 90012"},
         "primaryTypeDisplayName": "Grocery Store",
     }
 

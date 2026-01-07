@@ -5,7 +5,6 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 
-@pytest.mark.usefixtures("mock_google_maps_api", "mock_property_data_api")
 class TestPropertySearchFlow:
     """Test complete property search workflow."""
 

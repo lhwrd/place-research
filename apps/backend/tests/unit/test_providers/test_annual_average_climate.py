@@ -55,7 +55,6 @@ async def test_enrich_finds_nearest_station(provider):
 
     assert result.success is True
     assert result.provider_name == "AnnualAverageClimateProvider"
-    assert result.data["station_id"] == "STATION1"
     assert result.data["annual_average_temperature"] == 55.0
     assert result.data["annual_average_precipitation"] == 45.0
     assert result.api_calls_made == 0
@@ -68,8 +67,6 @@ async def test_enrich_with_different_location(provider):
     result = await provider.enrich(latitude=41.0, longitude=-75.0, address="456 Oak Ave")
 
     assert result.success is True
-    assert result.data["station_id"] == "STATION3"
-    assert result.data["station_name"] == "Station Three"
     assert result.data["annual_average_temperature"] == 53.0
     assert result.data["annual_average_precipitation"] == 47.0
 
@@ -86,7 +83,6 @@ async def test_enrich_with_optional_params(provider):
     )
 
     assert result.success is True
-    assert result.data["station_id"] == "STATION2"
 
 
 @pytest.mark.asyncio

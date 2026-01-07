@@ -468,16 +468,16 @@ async def calculate_distance_from_location(
 
     try:
         distances = await distance_service.calculate_distances(
-            origin_lat=custom_location["latitude"],
-            origin_lon=custom_location["longitude"],
+            origin_lat=custom_location.latitude,
+            origin_lon=custom_location.longitude,
             destinations=[(destination["latitude"], destination["longitude"])],
         )
 
         if distances:
             result = distances[0]
             return {
-                "from_location": custom_location["name"],
-                "from_address": custom_location["address"],
+                "from_location": custom_location.name,
+                "from_address": custom_location.address,
                 "to_address": destination["formatted_address"],
                 "distance_miles": result.get("distance_miles"),
                 "driving_time_minutes": result.get("driving_time_minutes"),
@@ -533,7 +533,7 @@ async def get_distances_to_property(
     # Calculate distances
     distance_service = DistanceService()
 
-    destinations = [(loc["latitude"], loc["longitude"]) for loc in locations]
+    destinations = [(loc.latitude, loc.longitude) for loc in locations]
 
     try:
         distances = await distance_service.calculate_distances(
@@ -547,7 +547,7 @@ async def get_distances_to_property(
         distance_map = {d["location_id"]: d for d in distances}
 
         for loc in locations:
-            distance_info = distance_map.get(loc["id"], {})
+            distance_info = distance_map.get(loc.id, {})
             result.append(
                 CustomLocationWithDistance(
                     distance_miles=distance_info.get("distance_miles"),

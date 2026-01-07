@@ -4,7 +4,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from app.exceptions import GoogleMapsAPIError
-from app.integrations.google_maps_api import GoogleMapsAPI
 
 """Tests for Google Maps API integration."""
 
@@ -12,8 +11,18 @@ from app.integrations.google_maps_api import GoogleMapsAPI
 @pytest.fixture
 def google_maps_api():
     """Create GoogleMapsAPI instance."""
-    with patch("app.integrations.google_maps_api.settings") as mock_settings:
+    # Import the real google maps module to patch its settings reference
+    from tests.unit.test_integrations import conftest
+
+    real_module = conftest._real_module
+
+    # Patch the settings in the real module
+    with patch.object(real_module, "settings") as mock_settings:
         mock_settings.google_maps_api_key = "test_api_key"
+
+        # Import GoogleMapsAPI here to get the unmocked version from the autouse fixture
+        from app.integrations.google_maps_api import GoogleMapsAPI
+
         return GoogleMapsAPI()
 
 

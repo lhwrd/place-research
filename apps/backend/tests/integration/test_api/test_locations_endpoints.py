@@ -1,9 +1,10 @@
+from dataclasses import dataclass
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi import status
 
-from app.schemas.custom_location import LocationTypeEnum
+from app.schemas.custom_location import CustomLocationResponse, LocationTypeEnum
 
 """Tests for custom locations endpoints."""
 
@@ -39,25 +40,25 @@ def mock_property_service():
 @pytest.fixture
 def sample_location():
     """Sample custom location data."""
-    from datetime import datetime
+    import datetime
 
-    return {
-        "id": 1,
-        "user_id": 1,
-        "name": "Mom's House",
-        "description": "Family home",
-        "address": "123 Main St, City, State 12345",
-        "latitude": 40.7128,
-        "longitude": -74.0060,
-        "city": "City",
-        "state": "State",
-        "zip_code": "12345",
-        "location_type": "family",
-        "priority": 80,
-        "is_active": True,
-        "created_at": datetime.now(),
-        "updated_at": datetime.now(),
-    }
+    return CustomLocationResponse(
+        id=1,
+        user_id=1,
+        name="Mom's House",
+        description="Family home",
+        address="123 Main St, City, State 12345",
+        latitude=40.7128,
+        longitude=-74.0060,
+        city="City",
+        state="State",
+        zip_code="12345",
+        location_type=LocationTypeEnum.FAMILY,
+        priority=80,
+        is_active=True,
+        created_at=datetime.datetime.now(datetime.timezone.utc),
+        updated_at=datetime.datetime.now(datetime.timezone.utc),
+    )
 
 
 class TestGetCustomLocations:

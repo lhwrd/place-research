@@ -2,6 +2,7 @@
 
 import logging
 from typing import Any, Dict, List, Optional
+from urllib import response
 
 from app.core.config import settings
 from app.exceptions import GoogleMapsAPIError
@@ -116,11 +117,10 @@ class GooglePlacesAPI(BaseAPIClient):
         }
 
         try:
-            data = await self._make_request(
+            response_data = await self._make_request(
                 "POST", self.NEARBY_SEARCH_ENDPOINT, json_data=data, headers=headers
             )
-
-            results = data.get("places", [])
+            results = response_data.get("places", [])
 
             if not results:
                 return []
@@ -134,7 +134,7 @@ class GooglePlacesAPI(BaseAPIClient):
             return parsed_results
 
         except Exception as e:
-            logger.error(f"Nearby search error for type '{place_types}': {str(e)}")
+            logger.error("Nearby search error for types %s: %s", place_types, str(e))
             raise
 
     @retry_on_failure(max_retries=3, backoff_factor=1.0)
@@ -191,11 +191,11 @@ class GooglePlacesAPI(BaseAPIClient):
         }
 
         try:
-            data = await self._make_request(
+            response_data = await self._make_request(
                 "POST", self.TEXT_SEARCH_ENDPOINT, json_data=data, headers=headers
             )
 
-            results = data.get("places", [])
+            results = response_data.get("places", [])
 
             if not results:
                 return []
@@ -209,7 +209,7 @@ class GooglePlacesAPI(BaseAPIClient):
             return parsed_results
 
         except Exception as e:
-            logger.error(f"Nearby search error for text query '{text_query}': {str(e)}")
+            logger.error("Text search error for query '%s': %s", text_query, str(e))
             raise
 
     @retry_on_failure(max_retries=3, backoff_factor=1.0)
@@ -233,20 +233,20 @@ class GooglePlacesAPI(BaseAPIClient):
         }
 
         try:
-            data = await self._make_request(
+            response_data = await self._make_request(
                 "GET", self.DETAILS_ENDPOINT + place_id, headers=headers
             )
 
-            if not data:
-                error_msg = data.get("error_message", data.get("status"))
+            if not response_data:
+                error_msg = response_data.get("error_message", response_data.get("status"))
                 raise GoogleMapsAPIError(
                     message=f"Place details failed: {error_msg}", api_status_code=200
                 )
 
-            return self._parse_place_result(data)
+            return self._parse_place_result(response_data)
 
         except Exception as e:
-            logger.error(f"Place details error for '{place_id}': {str(e)}")
+            logger.error("Place details error for place_id '%s': %s", place_id, str(e))
             raise
 
     def _parse_place_result(self, place: Dict[str, Any]) -> Dict[str, Any]:

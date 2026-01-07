@@ -18,7 +18,7 @@ class AirQualityAPIClient(BaseAPIClient):
 
     def __init__(self):
         super().__init__(
-            base_url="https://www.airnowapi.org/",
+            base_url="https://www.airnowapi.org",
             api_key=settings.airnow_api_key,
             timeout=10.0,
             rate_limit_per_second=1.0,
@@ -27,10 +27,6 @@ class AirQualityAPIClient(BaseAPIClient):
     def _get_service_name(self) -> str:
         """Return service name."""
         return "air_quality"
-
-    def _get_auth_headers(self) -> Dict[str, str]:
-        """Air Now API uses API key in query parameters, so no auth headers needed."""
-        return {}
 
     async def validate_api_key(self) -> bool:
         """

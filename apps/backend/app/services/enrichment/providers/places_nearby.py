@@ -1,7 +1,8 @@
 import logging
 from typing import Any, Dict, Optional
 
-from app.integrations.google_maps_api import GoogleMapsAPI
+from app.integrations.google_places_api import GooglePlacesAPI
+from app.services.distance_service import DistanceService
 
 from ..base_provider import (
     BaseEnrichmentProvider,
@@ -11,22 +12,21 @@ from ..base_provider import (
 )
 
 
-def categorize_distance(distance_km: float | None) -> str:
+def categorize_distance(distance_miles: float | None) -> str:
     """Categorize distance into predefined categories.
 
     Args:
-        distance_km (float | None): Distance in kilometers.
-
+        distance_miles (float | None): Distance in miles.
     Returns:
         str: Distance category.
     """
-    if distance_km is None:
+    if distance_miles is None:
         return "Unknown"
-    if distance_km < 7:
+    elif distance_miles < 2:
         return "Very Close"
-    elif distance_km < 15:
+    elif distance_miles < 5:
         return "Close"
-    elif distance_km < 30:
+    elif distance_miles < 10:
         return "Far"
     else:
         return "Very Far"
@@ -57,7 +57,8 @@ class PlacesNearbyProvider(BaseEnrichmentProvider):
     """Places nearby provider for fetching place data."""
 
     def __init__(self):
-        self.api_client = GoogleMapsAPI()
+        self.places_api = GooglePlacesAPI()
+        self.distance_service = DistanceService()
         self.logger = logging.getLogger(__name__)
 
     @property
@@ -65,7 +66,7 @@ class PlacesNearbyProvider(BaseEnrichmentProvider):
         return ProviderMetadata(
             name="Places Nearby Provider",
             category=ProviderCategory.NEARBY_PLACES,
-            description="Fetches nearby Walmart Supercenter information using Google Maps API.",
+            description="Fetches nearby place information using Google Maps API.",
             version="1.0.0",
             enabled=True,
             requires_api_key=True,
@@ -96,12 +97,62 @@ class PlacesNearbyProvider(BaseEnrichmentProvider):
         Returns:
             ProviderResult with enrichment data
         """
+        place_types = user_preferences.get("preferred_amenities", []) if user_preferences else []
+        text_queries = user_preferences.get("preferred_places", []) if user_preferences else []
+        places_types_results = await self.places_api.nearby_search(
+            lat=latitude,
+            lon=longitude,
+            place_types=place_types,
+            radius_miles=10.0,
+            max_results=3,
+        )
+
+        text_query_results = []
+
+        for query in text_queries:
+            results = await self.places_api.text_search(
+                text_query=query,
+                lat=latitude,
+                lon=longitude,
+                radius_miles=10.0,
+                max_results=2,
+            )
+            text_query_results.extend(results)
+
+        all_places = places_types_results + text_query_results
+
+        # enriched_places = []
+        # for place in all_places:
+        #     distance_info = await self.distance_service.calculate_distances(
+        #         origin_lat=latitude,
+        #         origin_lon=longitude,
+        #         destinations=[(place["latitude"], place["longitude"])],
+        #     )
+        #     distance_miles = distance_info[0].get("distance_miles", None)
+        #     duration_minutes = distance_info[0].get("duration_minutes", None)
+
+        #     enriched_places.append(
+        #         {
+        #             "name": place["name"],
+        #             "place_id": place["place_id"],
+        #             "latitude": place["latitude"],
+        #             "longitude": place["longitude"],
+        #             "address": place["address"],
+        #             "type": place.get("type", "Unknown"),
+        #             "distance_miles": distance_miles,
+        #             "distance_category": categorize_distance(distance_miles),
+        #             "duration_minutes": duration_minutes,
+        #             "duration_category": categorize_duration(duration_minutes),
+        #         }
+        #     )
 
         return ProviderResult(
             provider_name=self.metadata.name,
-            data={},
+            data={"places_nearby": all_places},
             success=True,
-            api_calls_made=0,
+            error_message=None,
+            api_calls_made=1,
+            cached=False,
         )
 
     async def validate_config(self) -> bool:
@@ -111,4 +162,4 @@ class PlacesNearbyProvider(BaseEnrichmentProvider):
         Returns:
             True if configuration is valid
         """
-        return await self.api_client.validate_api_key()
+        return await self.places_api.validate_api_key()
