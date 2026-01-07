@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
@@ -13,6 +15,7 @@ from app.services.enrichment.orchestrator import EnrichmentOrchestrator
 from app.services.property_service import PropertyService
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.post(
@@ -52,9 +55,13 @@ async def search_property(
             success=True, property=property_data, message="Property found successfully"
         )
 
+    except HTTPException:
+        raise
     except ValueError as e:
+        logger.error("ValueError in search_property: %s", str(e), exc_info=True)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
     except Exception as e:
+        logger.error("Exception in search_property: %s", str(e), exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An error occurred while searching for the property",

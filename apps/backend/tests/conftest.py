@@ -18,6 +18,7 @@ os.environ["JWT_SECRET_KEY"] = "test-secret-key-for-testing-only-not-for-product
 os.environ["EMAIL_USERNAME"] = "test@example.com"
 os.environ["EMAIL_PASSWORD"] = "test-password"
 os.environ["EMAIL_FROM_ADDRESS"] = "noreply@example.com"
+os.environ["USE_MOCK_PROPERTY_DATA"] = "true"
 
 from app.core.security import get_password_hash
 from app.db.database import Base, get_db

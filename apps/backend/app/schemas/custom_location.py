@@ -95,7 +95,6 @@ class CustomLocationWithDistance(CustomLocationResponse):
 
     distance_miles: Optional[float] = None
     driving_time_minutes: Optional[int] = None
-    traffic_time_minutes: Optional[int] = None
 
 
 class CustomLocationList(BaseModel):

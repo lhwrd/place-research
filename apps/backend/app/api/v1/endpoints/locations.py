@@ -169,7 +169,7 @@ async def create_custom_location(
         user_id=current_user.id, location_data=location_dict
     )
 
-    logger.info(f"User {current_user.id} created custom location: {custom_location.name}")
+    logger.info("User %s created custom location: %s", current_user.id, custom_location.name)
 
     return CustomLocationResponse.model_validate(custom_location)
 
@@ -468,27 +468,19 @@ async def calculate_distance_from_location(
 
     try:
         distances = await distance_service.calculate_distances(
-            origin_lat=custom_location.latitude,
-            origin_lon=custom_location.longitude,
-            destinations=[
-                {
-                    "id": 0,
-                    "name": "Destination",
-                    "latitude": destination["latitude"],
-                    "longitude": destination["longitude"],
-                }
-            ],
+            origin_lat=custom_location["latitude"],
+            origin_lon=custom_location["longitude"],
+            destinations=[(destination["latitude"], destination["longitude"])],
         )
 
         if distances:
             result = distances[0]
             return {
-                "from_location": custom_location.name,
-                "from_address": custom_location.address,
+                "from_location": custom_location["name"],
+                "from_address": custom_location["address"],
                 "to_address": destination["formatted_address"],
                 "distance_miles": result.get("distance_miles"),
                 "driving_time_minutes": result.get("driving_time_minutes"),
-                "traffic_time_minutes": result.get("traffic_time_minutes"),
             }
         else:
             raise HTTPException(
@@ -523,7 +515,6 @@ async def get_distances_to_property(
     location_service = CustomLocationService(db)
 
     # Get property
-
     property_service = PropertyService(db)
 
     property_data = await property_service.get_property_by_id(
@@ -542,19 +533,13 @@ async def get_distances_to_property(
     # Calculate distances
     distance_service = DistanceService()
 
+    destinations = [(loc["latitude"], loc["longitude"]) for loc in locations]
+
     try:
         distances = await distance_service.calculate_distances(
             origin_lat=property_data.latitude,
             origin_lon=property_data.longitude,
-            destinations=[
-                {
-                    "id": loc.id,
-                    "name": loc.name,
-                    "latitude": loc.latitude,
-                    "longitude": loc.longitude,
-                }
-                for loc in locations
-            ],
+            destinations=destinations,
         )
 
         # Combine location data with distance data
@@ -562,13 +547,12 @@ async def get_distances_to_property(
         distance_map = {d["location_id"]: d for d in distances}
 
         for loc in locations:
-            distance_info = distance_map.get(loc.id, {})
+            distance_info = distance_map.get(loc["id"], {})
             result.append(
                 CustomLocationWithDistance(
-                    **CustomLocationResponse.model_validate(loc).dict(),
                     distance_miles=distance_info.get("distance_miles"),
                     driving_time_minutes=distance_info.get("driving_time_minutes"),
-                    traffic_time_minutes=distance_info.get("traffic_time_minutes"),
+                    **CustomLocationResponse.model_validate(loc).model_dump(),
                 )
             )
 

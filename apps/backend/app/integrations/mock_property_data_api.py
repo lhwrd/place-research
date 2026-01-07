@@ -69,7 +69,7 @@ class MockPropertyDataAPI:
             "property_type": random.choice(self.PROPERTY_TYPES),
             "estimated_value": estimated_value,
             "last_sold_price": last_sold_price,
-            "last_sold_date": last_sold_date.strftime("%Y-%m-%d"),
+            "last_sold_date": last_sold_date,  # Return datetime object instead of string
             "tax_assessed_value": int(estimated_value * 0.9),
             "annual_tax": int(estimated_value * 0.01),
             "parcel_id": f"{random.randint(1000000000, 9999999999)}",
