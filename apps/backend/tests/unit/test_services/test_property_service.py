@@ -3,8 +3,8 @@
 import pytest
 from sqlalchemy.orm import Session
 
-from app.services.property_service import PropertyService
 from app.models.user import User
+from app.services.property_service import PropertyService
 from tests.factories.user_factory import PropertyFactory
 
 

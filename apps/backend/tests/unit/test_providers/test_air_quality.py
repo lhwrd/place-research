@@ -1,7 +1,9 @@
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from app.services.enrichment.providers.air_quality import AirQualityProvider
+
+import pytest
+
 from app.services.enrichment.base_provider import ProviderCategory
+from app.services.enrichment.providers.air_quality import AirQualityProvider
 
 
 @pytest.fixture

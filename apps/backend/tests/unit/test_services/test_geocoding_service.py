@@ -1,7 +1,9 @@
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from app.services.geocoding_service import GeocodingService
+
+import pytest
+
 from app.exceptions import GeocodingFailedError, InvalidAddressError
+from app.services.geocoding_service import GeocodingService
 
 """Tests for geocoding service."""
 

@@ -1,14 +1,16 @@
-import pytest
 from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
+
+import pytest
+
 from app.exceptions import EnrichmentRateLimitError, PropertyNotFoundError
 from app.models.property import Property
 from app.models.property_enrichment import PropertyEnrichment
 from app.models.user_preference import UserPreference
 from app.services.enrichment.base_provider import (
     ProviderCategory,
-    ProviderResult,
     ProviderMetadata,
+    ProviderResult,
 )
 from app.services.enrichment.orchestrator import EnrichmentOrchestrator
 

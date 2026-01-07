@@ -1,6 +1,8 @@
-import pytest
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
+
 from app.services.enrichment.provider_registry import ProviderRegistry
 
 """Tests for the provider registry module."""

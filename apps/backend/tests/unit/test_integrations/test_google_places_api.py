@@ -1,7 +1,9 @@
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from app.integrations.google_places_api import GooglePlacesAPI
+
+import pytest
+
 from app.exceptions import GoogleMapsAPIError
+from app.integrations.google_places_api import GooglePlacesAPI
 
 """Tests for Google Places API integration."""
 

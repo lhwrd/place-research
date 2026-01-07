@@ -1,7 +1,9 @@
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from app.services.enrichment.providers.flood_zone import FloodZoneProvider
+
+import pytest
+
 from app.services.enrichment.base_provider import ProviderCategory, ProviderResult
+from app.services.enrichment.providers.flood_zone import FloodZoneProvider
 
 
 @pytest.fixture

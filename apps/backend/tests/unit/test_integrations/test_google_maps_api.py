@@ -1,8 +1,10 @@
-import pytest
 from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
-from app.integrations.google_maps_api import GoogleMapsAPI
+
+import pytest
+
 from app.exceptions import GoogleMapsAPIError
+from app.integrations.google_maps_api import GoogleMapsAPI
 
 """Tests for Google Maps API integration."""
 

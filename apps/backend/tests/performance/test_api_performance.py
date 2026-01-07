@@ -1,9 +1,10 @@
 """Performance tests for API endpoints."""
 
-import pytest
 import time
-from fastapi.testclient import TestClient
 from statistics import mean, stdev
+
+import pytest
+from fastapi.testclient import TestClient
 
 
 class TestAPIPerformance:

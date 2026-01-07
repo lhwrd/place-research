@@ -1,8 +1,9 @@
 """Tests for base provider interface."""
 
-import pytest
 from datetime import datetime, timezone
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+
+import pytest
 
 from app.services.enrichment.base_provider import (
     BaseEnrichmentProvider,

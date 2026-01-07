@@ -1,7 +1,9 @@
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
-from app.integrations.walk_score_api import WalkScoreAPI
+
 from app.exceptions import WalkScoreAPIError
+from app.integrations.walk_score_api import WalkScoreAPI
 
 
 @pytest.fixture

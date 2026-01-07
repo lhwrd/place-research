@@ -1,17 +1,18 @@
 """Tests for security utilities."""
 
-from datetime import timedelta, timezone, datetime
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
+
 import pytest
 from jose import jwt
-from app.core.config import settings
 
+from app.core.config import settings
 from app.core.security import (
+    _pre_hash_password,
     create_access_token,
     create_refresh_token,
     get_password_hash,
     verify_password,
-    _pre_hash_password,
 )
 
 

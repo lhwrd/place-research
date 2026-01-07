@@ -1,9 +1,11 @@
-import pytest
 from datetime import datetime, timezone
-from unittest.mock import Mock, MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 from sqlalchemy.orm import Session
-from app.services.saved_property_service import SavedPropertyService
+
 from app.models.saved_property import SavedProperty
+from app.services.saved_property_service import SavedPropertyService
 
 """Tests for saved property service."""
 

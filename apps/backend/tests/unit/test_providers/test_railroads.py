@@ -1,9 +1,10 @@
 """Example tests for RailroadProvider showing improved testability."""
 
-import pytest
-import geopandas as gpd
-from shapely.geometry import LineString, Point
 from unittest.mock import Mock, patch
+
+import geopandas as gpd
+import pytest
+from shapely.geometry import LineString, Point
 
 from app.services.enrichment.providers.railroads import RailroadProvider
 

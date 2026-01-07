@@ -1,5 +1,7 @@
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+
 from app.exceptions.external_api import ExternalAPIError
 from app.integrations.air_quality_api import AirQualityAPIClient
 

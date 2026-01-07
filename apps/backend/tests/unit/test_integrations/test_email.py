@@ -1,6 +1,8 @@
-import pytest
-from unittest.mock import Mock, patch, MagicMock
 import smtplib
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
+
 from app.integrations.email import EmailClient
 
 

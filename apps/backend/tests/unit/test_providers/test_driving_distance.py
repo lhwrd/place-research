@@ -1,8 +1,10 @@
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from app.services.enrichment.providers.driving_distance import DistanceProvider
-from app.services.enrichment.base_provider import ProviderCategory, ProviderResult
+
+import pytest
+
 from app.models.custom_location import CustomLocation
+from app.services.enrichment.base_provider import ProviderCategory, ProviderResult
+from app.services.enrichment.providers.driving_distance import DistanceProvider
 
 
 @pytest.fixture

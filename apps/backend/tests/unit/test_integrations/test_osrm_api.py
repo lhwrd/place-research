@@ -1,7 +1,9 @@
-import pytest
 from unittest.mock import AsyncMock, patch
-from app.integrations.osrm_api import OSRMAPIClient
+
+import pytest
+
 from app.exceptions import OSRMAPIError
+from app.integrations.osrm_api import OSRMAPIClient
 
 
 @pytest.fixture

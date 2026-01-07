@@ -1,10 +1,12 @@
 """Tests for logging middleware."""
 
 import logging
-from unittest.mock import Mock, patch, AsyncMock
+from unittest.mock import AsyncMock, Mock, patch
+
 import pytest
 from fastapi import FastAPI, Response
 from fastapi.testclient import TestClient
+
 from app.middleware.logging import RequestLoggingMiddleware
 
 

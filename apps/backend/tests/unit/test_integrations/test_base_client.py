@@ -3,15 +3,16 @@
 import asyncio
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, Mock, PropertyMock, patch
+
 import httpx
 import pytest
-from app.integrations.base_client import BaseAPIClient, retry_on_failure
 
 from app.exceptions import (
     APIKeyInvalidError,
     APIQuotaExceededError,
     ExternalAPIError,
 )
+from app.integrations.base_client import BaseAPIClient, retry_on_failure
 
 
 class ConcreteAPIClient(BaseAPIClient):

@@ -1,4 +1,5 @@
 import pytest
+
 from app.middleware.metrics import MetricsMiddleware, MetricsRegistry
 
 

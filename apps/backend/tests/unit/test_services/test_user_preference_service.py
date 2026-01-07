@@ -1,8 +1,10 @@
-import pytest
 from datetime import datetime, timezone
-from unittest.mock import Mock, MagicMock
-from app.services.user_preference_service import UserPreferenceService
+from unittest.mock import MagicMock, Mock
+
+import pytest
+
 from app.models.user_preference import UserPreference
+from app.services.user_preference_service import UserPreferenceService
 
 """Tests for user preference service."""
 

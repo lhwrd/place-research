@@ -1,8 +1,10 @@
-import pytest
 from datetime import datetime, timezone
-from unittest.mock import Mock, MagicMock, patch
-from app.services.custom_location_service import CustomLocationService
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
+
 from app.models.custom_location import CustomLocation
+from app.services.custom_location_service import CustomLocationService
 
 """Tests for custom location service."""
 

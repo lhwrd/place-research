@@ -1,7 +1,9 @@
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from app.services.enrichment.providers.walkbike_score import WalkScoreProvider
+
+import pytest
+
 from app.services.enrichment.base_provider import ProviderCategory
+from app.services.enrichment.providers.walkbike_score import WalkScoreProvider
 
 """Tests for Walk Score enrichment provider."""
 

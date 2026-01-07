@@ -1,8 +1,10 @@
 import math
 from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from app.services.enrichment.providers.highways import HighwayProvider
+
 from app.services.enrichment.base_provider import ProviderCategory, ProviderResult
+from app.services.enrichment.providers.highways import HighwayProvider
 
 
 @pytest.fixture

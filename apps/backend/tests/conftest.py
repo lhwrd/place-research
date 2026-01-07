@@ -1,14 +1,15 @@
 """Shared pytest fixtures and configuration."""
 
-import pathlib
-import pytest
 import asyncio
-from typing import Generator, AsyncGenerator
+import os
+import pathlib
+from typing import AsyncGenerator, Generator
+
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
-import os
 
 # Set test environment variables BEFORE importing app
 os.environ["TESTING"] = "1"
@@ -18,14 +19,14 @@ os.environ["EMAIL_USERNAME"] = "test@example.com"
 os.environ["EMAIL_PASSWORD"] = "test-password"
 os.environ["EMAIL_FROM_ADDRESS"] = "noreply@example.com"
 
-from app.main import app
-from app.db.database import Base, get_db
 from app.core.security import get_password_hash
-from app.models.user import User
-from app.models.property import Property
-from app.models.user_preference import UserPreference
+from app.db.database import Base, get_db
+from app.main import app
 from app.models.custom_location import CustomLocation
+from app.models.property import Property
 from app.models.saved_property import SavedProperty
+from app.models.user import User
+from app.models.user_preference import UserPreference
 
 # Create test database engine
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
@@ -282,10 +283,9 @@ def mock_google_maps_api(monkeypatch):
 @pytest.fixture
 def mock_property_data_api(monkeypatch):
     """Mock Property Data API responses."""
-    from app.integrations.mock_property_data_api import MockPropertyDataAPI
-
     # Already a mock, but ensure it's used
     from app.integrations import property_data_factory
+    from app.integrations.mock_property_data_api import MockPropertyDataAPI
 
     monkeypatch.setattr(
         property_data_factory, "get_property_data_api", lambda: MockPropertyDataAPI()

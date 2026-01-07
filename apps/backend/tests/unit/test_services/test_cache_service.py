@@ -1,9 +1,11 @@
-import pytest
 from datetime import datetime, timedelta, timezone
-from unittest.mock import Mock, MagicMock
+from unittest.mock import MagicMock, Mock
+
+import pytest
 from sqlalchemy.orm import Session
-from app.services.cache_service import CacheService
+
 from app.models.cache_entry import CacheEntry
+from app.services.cache_service import CacheService
 
 """Tests for cache service."""
 

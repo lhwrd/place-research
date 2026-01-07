@@ -1,10 +1,12 @@
-import pytest
+from unittest.mock import MagicMock, Mock, patch
+
 import pandas as pd
-from unittest.mock import Mock, patch, MagicMock
+import pytest
+
+from app.services.enrichment.base_provider import ProviderCategory
 from app.services.enrichment.providers.annual_average_climate import (
     AnnualAverageClimateProvider,
 )
-from app.services.enrichment.base_provider import ProviderCategory
 
 
 @pytest.fixture
