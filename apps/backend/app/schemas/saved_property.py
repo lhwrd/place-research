@@ -78,7 +78,7 @@ class SavedPropertyWithDetails(SavedPropertyResponse):
             viewing_date=saved_property.viewing_date,
             saved_at=saved_property.saved_at,
             updated_at=saved_property.updated_at,
-            property=PropertyData.from_orm(saved_property.property),
+            property=PropertyData.model_validate(saved_property.property),
         )
 
 

@@ -1,3 +1,4 @@
+from typing import Any
 from app.exceptions import OSRMAPIError
 from app.integrations.base_client import BaseAPIClient
 
@@ -24,6 +25,10 @@ class OSRMAPIClient(BaseAPIClient):
     def _get_service_name(self) -> str:
         """Return service name."""
         return "osrm"
+
+    async def validate_api_key(self) -> bool:
+        """OSRM does not require an API key, always return True."""
+        return True
 
     async def get_driving_distance_duration(
         self, start_lat: float, start_lon: float, end_lat: float, end_lon: float

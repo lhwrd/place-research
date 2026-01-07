@@ -72,7 +72,7 @@ async def get_custom_locations(
     )
 
     return CustomLocationList(
-        items=[CustomLocationResponse.from_orm(loc) for loc in locations],
+        items=[CustomLocationResponse.model_validate(loc) for loc in locations],
         total=total,
         skip=skip,
         limit=limit,
@@ -171,7 +171,7 @@ async def create_custom_location(
 
     logger.info(f"User {current_user.id} created custom location: {custom_location.name}")
 
-    return CustomLocationResponse.from_orm(custom_location)
+    return CustomLocationResponse.model_validate(custom_location)
 
 
 @router.get(
@@ -271,7 +271,7 @@ async def update_custom_location(
 
     logger.info(f"User {current_user.id} updated custom location {location_id}")
 
-    return CustomLocationResponse.from_orm(custom_location)
+    return CustomLocationResponse.model_validate(custom_location)
 
 
 @router.delete(
@@ -332,7 +332,7 @@ async def toggle_location_active(
     if not custom_location:
         raise NotFoundError(f"Custom location {location_id} not found")
 
-    return CustomLocationResponse.from_orm(custom_location)
+    return CustomLocationResponse.model_validate(custom_location)
 
 
 @router.patch(
@@ -368,7 +368,7 @@ async def update_location_priority(
     if not custom_location:
         raise NotFoundError(f"Custom location {location_id} not found")
 
-    return CustomLocationResponse.from_orm(custom_location)
+    return CustomLocationResponse.model_validate(custom_location)
 
 
 @router.get(
@@ -393,7 +393,7 @@ async def get_active_locations(
     )
 
     return CustomLocationList(
-        items=[CustomLocationResponse.from_orm(loc) for loc in locations],
+        items=[CustomLocationResponse.model_validate(loc) for loc in locations],
         total=total,
         skip=0,
         limit=total,
@@ -565,7 +565,7 @@ async def get_distances_to_property(
             distance_info = distance_map.get(loc.id, {})
             result.append(
                 CustomLocationWithDistance(
-                    **CustomLocationResponse.from_orm(loc).dict(),
+                    **CustomLocationResponse.model_validate(loc).dict(),
                     distance_miles=distance_info.get("distance_miles"),
                     driving_time_minutes=distance_info.get("driving_time_minutes"),
                     traffic_time_minutes=distance_info.get("traffic_time_minutes"),
@@ -723,9 +723,9 @@ async def import_locations(
 
     if errors:
         return {
-            "created": [CustomLocationResponse.from_orm(loc) for loc in created_locations],
+            "created": [CustomLocationResponse.model_validate(loc) for loc in created_locations],
             "errors": errors,
             "message": f"Imported {len(created_locations)} locations with {len(errors)} errors",
         }
 
-    return [CustomLocationResponse.from_orm(loc) for loc in created_locations]
+    return [CustomLocationResponse.model_validate(loc) for loc in created_locations]

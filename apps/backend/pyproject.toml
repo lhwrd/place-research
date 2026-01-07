@@ -26,16 +26,17 @@ dependencies = [
     "geopandas>=1.1.2",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "pytest>=7.4.4",
     "pytest-asyncio>=0.23.3",
     "pytest-cov>=4.1.0",
-    "httpx>=0.26.0",          # For testing
+    "httpx>=0.26.0", # For testing
     "black>=23.12.1",
     "ruff>=0.1.11",
     "mypy>=1.8.0",
     "ipython>=8.19.0",
+    "faker>=40.1.0",
 ]
 
 [build-system]

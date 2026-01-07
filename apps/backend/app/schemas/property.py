@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class PropertySearchRequest(BaseModel):
@@ -10,11 +10,12 @@ class PropertySearchRequest(BaseModel):
         min_length=5,
         max_length=200,
         description="Full street address to search for",
-        example="123 Main St, Seattle, WA 98101",
+        examples=["123 Main St, Seattle, WA 98101"],
     )
 
-    @validator("address")
-    def validate_address(self, v):
+    @field_validator("address")
+    @classmethod
+    def validate_address(cls, v):
         # Basic sanitization
         if any(char in v for char in ["<", ">", ";", "--", '"', "'"]):
             raise ValueError("Invalid characters in address")

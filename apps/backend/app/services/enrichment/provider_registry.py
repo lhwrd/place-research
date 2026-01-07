@@ -71,7 +71,7 @@ class ProviderRegistry:
             except Exception as e:
                 logger.error(f"Failed to load provider module {module_info.name}: {str(e)}")
 
-        logger.info(f"Discovered {len(self._providers)} enrichment providers")
+        logger.info(f"Discovered {len(self.__class__._providers)} enrichment providers")
 
     def register_provider(self, provider_class: Type[BaseEnrichmentProvider]) -> None:
         """
@@ -85,10 +85,10 @@ class ProviderRegistry:
             instance = provider_class()
             provider_name = instance.metadata.name
 
-            if provider_name in self._providers:
+            if provider_name in self.__class__._providers:
                 logger.warning(f"Provider {provider_name} already registered, overwriting")
 
-            self._providers[provider_name] = provider_class
+            self.__class__._providers[provider_name] = provider_class
             logger.info(f"Registered provider: {provider_name}")
 
         except Exception as e:
@@ -104,7 +104,7 @@ class ProviderRegistry:
         Returns:
             Provider instance or None if not found
         """
-        provider_class = self._providers.get(name)
+        provider_class = self.__class__._providers.get(name)
         if provider_class:
             return provider_class()
         return None
@@ -116,7 +116,7 @@ class ProviderRegistry:
         Returns:
             List of provider instances
         """
-        return [cls() for cls in self._providers.values()]
+        return [cls() for cls in self.__class__._providers.values()]
 
     def get_providers_by_category(self, category: ProviderCategory) -> List[BaseEnrichmentProvider]:
         """
@@ -129,7 +129,7 @@ class ProviderRegistry:
             List of provider instances in the category
         """
         providers = []
-        for provider_class in self._providers.values():
+        for provider_class in self.__class__._providers.values():
             instance = provider_class()
             if instance.metadata.category == category:
                 providers.append(instance)
@@ -143,7 +143,7 @@ class ProviderRegistry:
             List of enabled provider instances
         """
         providers = []
-        for provider_class in self._providers.values():
+        for provider_class in self.__class__._providers.values():
             instance = provider_class()
             if instance.metadata.enabled:
                 providers.append(instance)
@@ -157,7 +157,7 @@ class ProviderRegistry:
             List of provider metadata
         """
         metadata_list = []
-        for provider_class in self._providers.values():
+        for provider_class in self.__class__._providers.values():
             instance = provider_class()
             metadata_list.append(instance.metadata)
         return metadata_list

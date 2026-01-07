@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr, Field, validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from app.schemas.user import UserData
 
@@ -30,8 +30,9 @@ class UserCreate(BaseModel):
     password: str = Field(..., min_length=8, max_length=100)
     full_name: Optional[str] = Field(None, max_length=100)
 
-    @validator("password")
-    def password_strength(self, v):
+    @field_validator("password")
+    @classmethod
+    def password_strength(cls, v):
         """Validate password strength."""
         if len(v) < 8:
             raise ValueError("Password must be at least 8 characters")
@@ -59,8 +60,9 @@ class PasswordChange(BaseModel):
     current_password: str
     new_password: str = Field(..., min_length=8, max_length=100)
 
-    @validator("new_password")
-    def password_strength(self, v):
+    @field_validator("new_password")
+    @classmethod
+    def password_strength(cls, v):
         """Validate password strength."""
         if len(v) < 8:
             raise ValueError("Password must be at least 8 characters")
@@ -85,8 +87,9 @@ class PasswordReset(BaseModel):
     token: str
     new_password: str = Field(..., min_length=8, max_length=100)
 
-    @validator("new_password")
-    def password_strength(self, v):
+    @field_validator("new_password")
+    @classmethod
+    def password_strength(cls, v):
         """Validate password strength."""
         if len(v) < 8:
             raise ValueError("Password must be at least 8 characters")

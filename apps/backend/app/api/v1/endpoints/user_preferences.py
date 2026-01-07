@@ -44,7 +44,7 @@ async def get_preferences(
     preference_service = UserPreferenceService(db)
     preferences = preference_service.get_or_create_preferences(current_user.id)
 
-    return UserPreferenceResponse.from_orm(preferences)
+    return UserPreferenceResponse.model_validate(preferences)
 
 
 @router.post(
@@ -82,7 +82,7 @@ async def create_preferences(
 
     logger.info(f"Created preferences for user {current_user.id}")
 
-    return UserPreferenceResponse.from_orm(preferences)
+    return UserPreferenceResponse.model_validate(preferences)
 
 
 @router.put(
@@ -109,7 +109,7 @@ async def update_preferences(
 
     logger.info(f"Updated preferences for user {current_user.id}")
 
-    return UserPreferenceResponse.from_orm(preferences)
+    return UserPreferenceResponse.model_validate(preferences)
 
 
 @router.patch(
@@ -165,7 +165,7 @@ async def update_walkability_preferences(
 
     preferences = preference_service.update_preferences(current_user.id, updates)
 
-    return UserPreferenceResponse.from_orm(preferences)
+    return UserPreferenceResponse.model_validate(preferences)
 
 
 @router.patch(
@@ -203,7 +203,7 @@ async def update_amenity_distances(
 
     preferences = preference_service.update_preferences(current_user.id, updates)
 
-    return UserPreferenceResponse.from_orm(preferences)
+    return UserPreferenceResponse.model_validate(preferences)
 
 
 @router.patch(
@@ -233,7 +233,7 @@ async def update_property_criteria(
     updates = criteria.dict(exclude_unset=True)
     preferences = preference_service.update_preferences(current_user.id, updates)
 
-    return UserPreferenceResponse.from_orm(preferences)
+    return UserPreferenceResponse.model_validate(preferences)
 
 
 @router.put(
@@ -302,7 +302,7 @@ async def set_preferred_amenities(
     updates = {"preferred_amenities": amenities}
     preferences = preference_service.update_preferences(current_user.id, updates)
 
-    return UserPreferenceResponse.from_orm(preferences)
+    return UserPreferenceResponse.model_validate(preferences)
 
 
 @router.put(
@@ -326,7 +326,7 @@ async def set_preferred_places(
     updates = {"preferred_places": places}
     preferences = preference_service.update_preferences(current_user.id, updates)
 
-    return UserPreferenceResponse.from_orm(preferences)
+    return UserPreferenceResponse.model_validate(preferences)
 
 
 @router.patch(
@@ -358,7 +358,7 @@ async def update_notification_preferences(
 
     preferences = preference_service.update_preferences(current_user.id, updates)
 
-    return UserPreferenceResponse.from_orm(preferences)
+    return UserPreferenceResponse.model_validate(preferences)
 
 
 @router.delete(

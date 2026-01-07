@@ -15,11 +15,18 @@ from app.services.enrichment.base_provider import (
 
 
 class RailroadProvider(BaseEnrichmentProvider):
-    def __init__(self):
-        self._raillines_data = None
+    def __init__(self, raillines_data: Optional[gpd.GeoDataFrame] = None):
+        """Initialize the provider.
+
+        Args:
+            raillines_data: Optional pre-loaded railroad lines GeoDataFrame.
+                           If None, data will be loaded from settings.raillines_path.
+        """
+        self._raillines_data = raillines_data
         self.logger = logging.getLogger(__name__)
 
-        self._load_raillines_data()
+        if self._raillines_data is None:
+            self._load_raillines_data()
 
     @property
     def metadata(self) -> ProviderMetadata:
@@ -33,13 +40,19 @@ class RailroadProvider(BaseEnrichmentProvider):
             cost_per_call=0.0,  # No external API calls
         )
 
-    def _load_raillines_data(self):
-        """Load railroad lines data from the configured GeoJSON file."""
+    def _load_raillines_data(self, raillines_path: Optional[str] = None):
+        """Load railroad lines data from the configured GeoJSON file.
+
+        Args:
+            raillines_path: Optional path to raillines file. If None, uses settings.raillines_path.
+        """
         if self._raillines_data is not None:
             self.logger.debug("Railroad lines data already loaded.")
             return
 
-        raillines_path = settings.raillines_path
+        if raillines_path is None:
+            raillines_path = settings.raillines_path
+
         if not raillines_path:
             self.logger.error("RAILLINES_PATH environment variable not set.")
             raise ValueError("raillines_path not configured")
@@ -50,11 +63,22 @@ class RailroadProvider(BaseEnrichmentProvider):
             raise FileNotFoundError(f"Railroad lines file not found: {raillines_path}")
 
         self.logger.debug("Loading railroad lines data from %s", raillines_path)
-        self._raillines_data = gpd.read_file(path)
+        self._raillines_data = self._load_geodataframe(path)
 
         if self._raillines_data.crs is None:
             self.logger.error("Railroad lines data must have a defined CRS.")
             raise ValueError("Railroad lines data must have a defined CRS")
+
+    def _load_geodataframe(self, path: Path) -> gpd.GeoDataFrame:
+        """Load GeoDataFrame from file. Extracted for testability.
+
+        Args:
+            path: Path to the GeoJSON file
+
+        Returns:
+            Loaded GeoDataFrame
+        """
+        return gpd.read_file(path)
 
     async def enrich(
         self,
@@ -84,6 +108,27 @@ class RailroadProvider(BaseEnrichmentProvider):
             raise ValueError("Railroad lines data not loaded")
 
         self.logger.debug("Parsed coordinates for place: %s", (latitude, longitude))
+
+        nearest_distance = self._calculate_nearest_distance(latitude, longitude)
+        self.logger.info("Nearest railroad distance for place: %d meters", nearest_distance)
+
+        return ProviderResult(
+            provider_name=self.metadata.name,
+            data={"railroad_distance_m": nearest_distance},
+            success=True,
+            api_calls_made=0,
+        )
+
+    def _calculate_nearest_distance(self, latitude: float, longitude: float) -> int:
+        """Calculate distance to nearest railroad line.
+
+        Args:
+            latitude: Property latitude
+            longitude: Property longitude
+
+        Returns:
+            Distance to nearest railroad in meters
+        """
         # Swap to (lng, lat) for Point
         place_point = Point(longitude, latitude)
 
@@ -94,16 +139,7 @@ class RailroadProvider(BaseEnrichmentProvider):
         # Find the nearest railroad line
         distances = rail_gdf.distance(point_gdf.geometry[0])
         nearest_idx = distances.idxmin()
-        nearest_distance = int(distances.loc[nearest_idx])
-        self.logger.info("Nearest railroad distance for place: %d meters", nearest_distance)
-
-        # For now, just indicate that railroad data is available
-        return ProviderResult(
-            provider_name=self.metadata.name,
-            data={"railroad_distance_m": nearest_distance},
-            success=True,
-            api_calls_made=0,
-        )
+        return int(distances.loc[nearest_idx])
 
     async def validate_config(self) -> bool:
         """

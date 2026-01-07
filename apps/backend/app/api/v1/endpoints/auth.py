@@ -120,7 +120,7 @@ async def login(
         access_token=access_token,
         refresh_token=refresh_token,
         token_type="bearer",
-        user=UserData.from_orm(user),
+        user=UserData.model_validate(user),
     )
 
 

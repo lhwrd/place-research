@@ -53,7 +53,7 @@ class PropertyService:
         existing_property = await self._find_existing_property(address, user_id)
         if existing_property:
             logger.info("Property found in cache: %s", existing_property.id)
-            return PropertyData.from_orm(existing_property)
+            return PropertyData.model_validate(existing_property)
 
         # Step 2: Geocode the address
         try:
@@ -92,7 +92,7 @@ class PropertyService:
         )
 
         logger.info("Created new property record: %s", property_record.id)
-        return PropertyData.from_orm(property_record)
+        return PropertyData.model_validate(property_record)
 
     async def get_property_by_id(self, property_id: int, user_id: int) -> Optional[PropertyData]:
         """
@@ -118,7 +118,7 @@ class PropertyService:
             # Could add logic here for shared properties
             raise PropertyAccessDeniedError(property_id=property_id)
 
-        return PropertyData.from_orm(property_record)
+        return PropertyData.model_validate(property_record)
 
     async def get_user_properties(
         self, user_id: int, skip: int = 0, limit: int = 100
@@ -143,7 +143,7 @@ class PropertyService:
             .all()
         )
 
-        return [PropertyData.from_orm(prop) for prop in properties]
+        return [PropertyData.model_validate(prop) for prop in properties]
 
     async def delete_property(self, property_id: int, user_id: int) -> bool:
         """
@@ -202,7 +202,7 @@ class PropertyService:
         self.db.commit()
         self.db.refresh(property_record)
 
-        return PropertyData.from_orm(property_record)
+        return PropertyData.model_validate(property_record)
 
     # Private helper methods
 

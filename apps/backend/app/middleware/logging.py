@@ -13,7 +13,7 @@ import time
 import uuid
 from typing import Callable
 
-from apps.backend.app.core.logging_config import clear_log_context, set_log_context, set_request_id
+from app.core.logging_config import clear_log_context, set_log_context, set_request_id
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp

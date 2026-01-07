@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class LocationTypeEnum(str, Enum):
@@ -36,11 +36,12 @@ class CustomLocationCreate(CustomLocationBase):
     latitude: Optional[float] = Field(None, ge=-90, le=90)
     longitude: Optional[float] = Field(None, ge=-180, le=180)
 
-    @validator("longitude")
-    def check_coordinates_or_address(self, v, values):
+    @field_validator("longitude")
+    @classmethod
+    def check_coordinates_or_address(cls, v, info):
         """Ensure either address or coordinates are provided."""
-        address = values.get("address")
-        latitude = values.get("latitude")
+        address = info.data.get("address")
+        latitude = info.data.get("latitude")
 
         # Must have either address or both coordinates
         if not address and (latitude is None or v is None):

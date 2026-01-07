@@ -144,7 +144,7 @@ async def save_property(
 
     logger.info(f"User {current_user.id} saved property {saved_data.property_id}")
 
-    return SavedPropertyResponse.from_orm(saved_property)
+    return SavedPropertyResponse.model_validate(saved_property)
 
 
 @router.get(
@@ -210,7 +210,7 @@ async def update_saved_property(
 
     logger.info(f"User {current_user.id} updated saved property {saved_property_id}")
 
-    return SavedPropertyResponse.from_orm(saved_property)
+    return SavedPropertyResponse.model_validate(saved_property)
 
 
 @router.delete(
@@ -269,7 +269,7 @@ async def toggle_favorite(
     if not saved_property:
         raise NotFoundError(f"Saved property {saved_property_id} not found")
 
-    return SavedPropertyResponse.from_orm(saved_property)
+    return SavedPropertyResponse.model_validate(saved_property)
 
 
 @router.patch(
@@ -300,7 +300,7 @@ async def toggle_archive(
     if not saved_property:
         raise NotFoundError(f"Saved property {saved_property_id} not found")
 
-    return SavedPropertyResponse.from_orm(saved_property)
+    return SavedPropertyResponse.model_validate(saved_property)
 
 
 @router.patch(
@@ -331,7 +331,7 @@ async def update_rating(
     if not saved_property:
         raise NotFoundError(f"Saved property {saved_property_id} not found")
 
-    return SavedPropertyResponse.from_orm(saved_property)
+    return SavedPropertyResponse.model_validate(saved_property)
 
 
 @router.patch(
@@ -360,7 +360,7 @@ async def update_notes(
     if not saved_property:
         raise NotFoundError(f"Saved property {saved_property_id} not found")
 
-    return SavedPropertyResponse.from_orm(saved_property)
+    return SavedPropertyResponse.model_validate(saved_property)
 
 
 @router.patch(
@@ -391,7 +391,7 @@ async def update_tags(
     if not saved_property:
         raise NotFoundError(f"Saved property {saved_property_id} not found")
 
-    return SavedPropertyResponse.from_orm(saved_property)
+    return SavedPropertyResponse.model_validate(saved_property)
 
 
 @router.post(
@@ -436,7 +436,7 @@ async def mark_as_viewed(
     if not saved_property:
         raise NotFoundError(f"Saved property {saved_property_id} not found")
 
-    return SavedPropertyResponse.from_orm(saved_property)
+    return SavedPropertyResponse.model_validate(saved_property)
 
 
 @router.get(
