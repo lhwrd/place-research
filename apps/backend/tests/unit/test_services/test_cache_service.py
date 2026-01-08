@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from sqlalchemy.orm import Session
@@ -25,7 +25,11 @@ def mock_db():
 @pytest.fixture
 def cache_service(mock_db):
     """Cache service instance with mocked database."""
-    return CacheService(mock_db)
+    # Patch the settings to enable cache for tests
+    with patch("app.services.cache_service.get_settings") as mock_settings:
+        mock_settings.return_value.cache_enabled = True
+        service = CacheService(mock_db)
+        yield service
 
 
 class TestGet:
@@ -267,3 +271,59 @@ class TestSerializeDeserialize:
         value = cache_service._deserialize("invalid json")
 
         assert value is None
+
+
+class TestCacheDisabled:
+    """Tests for cache service when caching is disabled."""
+
+    @pytest.mark.asyncio
+    async def test_get_returns_default_when_cache_disabled(self, mock_db):
+        """Test that get returns default when cache is disabled."""
+        with patch("app.services.cache_service.get_settings") as mock_settings:
+            mock_settings.return_value.cache_enabled = False
+            service = CacheService(mock_db)
+
+            result = await service.get("test_key", default="default")
+
+            assert result == "default"
+            # Should not query database
+            mock_db.query.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_set_skips_when_cache_disabled(self, mock_db):
+        """Test that set is skipped when cache is disabled."""
+        with patch("app.services.cache_service.get_settings") as mock_settings:
+            mock_settings.return_value.cache_enabled = False
+            service = CacheService(mock_db)
+
+            await service.set("test_key", "test_value")
+
+            # Should not interact with database
+            mock_db.add.assert_not_called()
+            mock_db.commit.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_delete_returns_false_when_cache_disabled(self, mock_db):
+        """Test that delete returns False when cache is disabled."""
+        with patch("app.services.cache_service.get_settings") as mock_settings:
+            mock_settings.return_value.cache_enabled = False
+            service = CacheService(mock_db)
+
+            result = await service.delete("test_key")
+
+            assert result is False
+            # Should not query database
+            mock_db.query.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_exists_returns_false_when_cache_disabled(self, mock_db):
+        """Test that exists returns False when cache is disabled."""
+        with patch("app.services.cache_service.get_settings") as mock_settings:
+            mock_settings.return_value.cache_enabled = False
+            service = CacheService(mock_db)
+
+            result = await service.exists("test_key")
+
+            assert result is False
+            # Should not query database
+            mock_db.query.assert_not_called()

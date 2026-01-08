@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional
 from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.models.cache_entry import CacheEntry
 
 logger = logging.getLogger(__name__)
@@ -24,10 +25,13 @@ class CacheService:
     - Automatic cleanup of expired entries
     - JSON serialization
     - Cache statistics
+    - Respects cache_enabled setting
     """
 
     def __init__(self, db: Session):
         self.db = db
+        self.settings = get_settings()
+        self._cache_enabled = self.settings.cache_enabled
 
     async def get(self, key: str, default: Optional[Any] = None) -> Optional[Any]:
         """
@@ -40,6 +44,10 @@ class CacheService:
         Returns:
             Cached value or default
         """
+        if not self._cache_enabled:
+            logger.debug("Cache disabled, returning default")
+            return default
+
         cache_entry = self._get_cache_entry(key)
 
         if not cache_entry:
@@ -78,6 +86,10 @@ class CacheService:
             ttl_seconds: Time to live in seconds
             ttl_days: Time to live in days
         """
+        if not self._cache_enabled:
+            logger.debug("Cache disabled, skipping set operation")
+            return
+
         # Calculate expiration
         expires_at = None
         if ttl_seconds:
@@ -114,6 +126,10 @@ class CacheService:
         Returns:
             True if deleted, False if not found
         """
+        if not self._cache_enabled:
+            logger.debug("Cache disabled, skipping delete operation")
+            return False
+
         cache_entry = self._get_cache_entry(key)
 
         if not cache_entry:
@@ -135,6 +151,9 @@ class CacheService:
         Returns:
             True if exists and not expired, False otherwise
         """
+        if not self._cache_enabled:
+            return False
+
         cache_entry = self._get_cache_entry(key)
 
         if not cache_entry:
@@ -307,7 +326,7 @@ class CacheService:
             return json.dumps(value)
         except (TypeError, ValueError) as e:
             logger.error(f"Failed to serialize value:  {e}")
-            raise ValueError(f"Value is not JSON serializable: {type(value)}")
+            raise ValueError(f"Value is not JSON serializable: {type(value)}") from e
 
     def _deserialize(self, value: str) -> Any:
         """Deserialize JSON string to value."""
