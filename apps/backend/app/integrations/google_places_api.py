@@ -2,7 +2,6 @@
 
 import logging
 from typing import Any, Dict, List, Optional
-from urllib import response
 
 from app.core.config import settings
 from app.exceptions import GoogleMapsAPIError
@@ -58,9 +57,16 @@ class GooglePlacesAPI(BaseAPIClient):
     async def validate_api_key(self) -> bool:
         """Validate API key by making a simple geocoding request."""
         try:
+            logger.info("Validating Google Places API key")
             result = await self.place_details(place_id="ChIJN1t_tDeuEmsRUsoyG83frY4")
-            return result is not None
-        except GoogleMapsAPIError:
+            is_valid = result is not None
+            logger.info(
+                "Google Places API key validation: %s",
+                "success" if is_valid else "failed",
+            )
+            return is_valid
+        except GoogleMapsAPIError as e:
+            logger.warning("Google Places API key validation failed: %s", str(e))
             return False
 
     @retry_on_failure(max_retries=3, backoff_factor=1.0)
@@ -102,6 +108,22 @@ class GooglePlacesAPI(BaseAPIClient):
         # Convert miles to meters for API
         radius_meters = int(radius_miles * 1609.34)
 
+        logger.info(
+            "Google Places nearby search: types=%s, radius=%.1f miles (%d meters), max_results=%d",
+            place_types,
+            radius_miles,
+            radius_meters,
+            max_results,
+            extra={
+                "latitude": lat,
+                "longitude": lon,
+                "place_types": place_types,
+                "radius_miles": radius_miles,
+                "radius_meters": radius_meters,
+                "max_results": max_results,
+            },
+        )
+
         data = {
             "includedTypes": place_types,
             "maxResultCount": max_results,
@@ -122,6 +144,14 @@ class GooglePlacesAPI(BaseAPIClient):
             )
             results = response_data.get("places", [])
 
+            logger.info(
+                "Google Places nearby search returned %d results for types %s",
+                len(results),
+                place_types,
+                extra={"result_count": len(results), "place_types": place_types},
+            )
+            logger.debug("Nearby search response data: %s", response_data)
+
             if not results:
                 return []
 
@@ -134,7 +164,20 @@ class GooglePlacesAPI(BaseAPIClient):
             return parsed_results
 
         except Exception as e:
-            logger.error("Nearby search error for types %s: %s", place_types, str(e))
+            logger.error(
+                "Nearby search error for types %s at (%.6f, %.6f): %s",
+                place_types,
+                lat,
+                lon,
+                str(e),
+                extra={
+                    "place_types": place_types,
+                    "latitude": lat,
+                    "longitude": lon,
+                    "error": str(e),
+                },
+                exc_info=True,
+            )
             raise
 
     @retry_on_failure(max_retries=3, backoff_factor=1.0)
@@ -176,6 +219,20 @@ class GooglePlacesAPI(BaseAPIClient):
         # Convert miles to meters for API
         radius_meters = int(radius_miles * 1609.34)
 
+        logger.info(
+            "Google Places text search: query='%s', radius=%.1f miles, max_results=%d",
+            text_query,
+            radius_miles,
+            max_results,
+            extra={
+                "text_query": text_query,
+                "latitude": lat,
+                "longitude": lon,
+                "radius_miles": radius_miles,
+                "max_results": max_results,
+            },
+        )
+
         data = {
             "textQuery": text_query,
             "maxResultCount": max_results,
@@ -197,6 +254,13 @@ class GooglePlacesAPI(BaseAPIClient):
 
             results = response_data.get("places", [])
 
+            logger.info(
+                "Google Places text search returned %d results for query '%s'",
+                len(results),
+                text_query,
+                extra={"result_count": len(results), "text_query": text_query},
+            )
+
             if not results:
                 return []
 
@@ -209,7 +273,20 @@ class GooglePlacesAPI(BaseAPIClient):
             return parsed_results
 
         except Exception as e:
-            logger.error("Text search error for query '%s': %s", text_query, str(e))
+            logger.error(
+                "Text search error for query '%s' at (%.6f, %.6f): %s",
+                text_query,
+                lat,
+                lon,
+                str(e),
+                extra={
+                    "text_query": text_query,
+                    "latitude": lat,
+                    "longitude": lon,
+                    "error": str(e),
+                },
+                exc_info=True,
+            )
             raise
 
     @retry_on_failure(max_retries=3, backoff_factor=1.0)
@@ -228,6 +305,12 @@ class GooglePlacesAPI(BaseAPIClient):
         """
         fields = fields or self.FIELDS
 
+        logger.info(
+            "Google Places fetching details for place_id: %s",
+            place_id,
+            extra={"place_id": place_id, "fields": fields},
+        )
+
         headers = {
             "X-Goog-FieldMask": ",".join(fields),
         }
@@ -239,14 +322,31 @@ class GooglePlacesAPI(BaseAPIClient):
 
             if not response_data:
                 error_msg = response_data.get("error_message", response_data.get("status"))
+                logger.error(
+                    "Place details failed for place_id %s: %s",
+                    place_id,
+                    error_msg,
+                    extra={"place_id": place_id, "error_message": error_msg},
+                )
                 raise GoogleMapsAPIError(
                     message=f"Place details failed: {error_msg}", api_status_code=200
                 )
 
+            logger.info(
+                "Successfully retrieved place details for place_id: %s",
+                place_id,
+                extra={"place_id": place_id},
+            )
             return self._parse_place_result(response_data)
 
         except Exception as e:
-            logger.error("Place details error for place_id '%s': %s", place_id, str(e))
+            logger.error(
+                "Place details error for place_id '%s': %s",
+                place_id,
+                str(e),
+                extra={"place_id": place_id, "error": str(e)},
+                exc_info=True,
+            )
             raise
 
     def _parse_place_result(self, place: Dict[str, Any]) -> Dict[str, Any]:
@@ -256,6 +356,6 @@ class GooglePlacesAPI(BaseAPIClient):
             "place_id": place.get("id"),
             "latitude": place.get("location", {}).get("latitude"),
             "longitude": place.get("location", {}).get("longitude"),
-            "address": place.get("formattedAddress", {}).get("text"),
-            "type": place.get("primaryTypeDisplayName"),
+            "address": place.get("formattedAddress"),
+            "type": place.get("primaryTypeDisplayName", {}).get("text"),
         }

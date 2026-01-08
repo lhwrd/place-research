@@ -40,27 +40,27 @@ class ContextFilter(logging.Filter):
 class CustomJsonFormatter(jsonlogger.JsonFormatter):
     """Custom JSON formatter with additional fields."""
 
-    def add_fields(self, log_record: dict, record: logging.LogRecord, message_dict: dict):
-        super().add_fields(log_record, record, message_dict)
+    def add_fields(self, log_data: dict, record: logging.LogRecord, message_dict: dict):
+        super().add_fields(log_data, record, message_dict)
 
         # Add timestamp in ISO format
-        log_record["timestamp"] = datetime.now(UTC).isoformat()
+        log_data["timestamp"] = datetime.now(UTC).isoformat()
 
         # Add log level
-        log_record["level"] = record.levelname
+        log_data["level"] = record.levelname
 
         # Add logger name
-        log_record["logger"] = record.name
+        log_data["logger"] = record.name
 
         # Add request ID if present
         request_id = getattr(record, "request_id", None)
         if request_id and request_id != "-":
-            log_record["request_id"] = request_id
+            log_data["request_id"] = request_id
 
         # Add any extra context
         context = log_context_var.get()
         if context:
-            log_record["context"] = context
+            log_data["context"] = context
 
 
 class ColoredFormatter(logging.Formatter):
@@ -131,12 +131,12 @@ def setup_logging(
         # Colored text formatter for development
         if log_format == "color":
             formatter = ColoredFormatter(
-                "%(asctime)s [%(levelname)s] %(name)s - %(message)s " "[%(request_id)s]",
+                "%(asctime)s [%(levelname)s] %(name)s - %(message)s [%(request_id)s]",
                 datefmt="%Y-%m-%d %H:%M:%S",
             )
         else:
             formatter = logging.Formatter(
-                "%(asctime)s [%(levelname)s] %(name)s - %(message)s " "[%(request_id)s]",
+                "%(asctime)s [%(levelname)s] %(name)s - %(message)s [%(request_id)s]",
                 datefmt="%Y-%m-%d %H:%M:%S",
             )
 
@@ -147,6 +147,12 @@ def setup_logging(
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("httpcore").setLevel(logging.WARNING)
     logging.getLogger("urllib3").setLevel(logging.WARNING)
+
+    # Suppress SQLAlchemy logging noise
+    logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
+    logging.getLogger("sqlalchemy.pool").setLevel(logging.WARNING)
+    logging.getLogger("sqlalchemy.dialects").setLevel(logging.WARNING)
+    logging.getLogger("sqlalchemy.orm").setLevel(logging.WARNING)
 
     root_logger.info(
         "Logging configured: level=%s, format=%s, app=%s",

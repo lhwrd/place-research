@@ -46,9 +46,16 @@ class GoogleMapsAPI(BaseAPIClient):
     async def validate_api_key(self) -> bool:
         """Validate API key by making a simple geocoding request."""
         try:
+            logger.info("Validating Google Maps API key")
             result = await self.geocode("1600 Amphitheatre Parkway, Mountain View, CA")
-            return result is not None
-        except GoogleMapsAPIError:
+            is_valid = result is not None
+            logger.info(
+                "Google Maps API key validation: %s",
+                "success" if is_valid else "failed",
+            )
+            return is_valid
+        except GoogleMapsAPIError as e:
+            logger.warning("Google Maps API key validation failed: %s", str(e))
             return False
 
     # Geocoding API
@@ -79,6 +86,12 @@ class GoogleMapsAPI(BaseAPIClient):
                 "country": "United States"
             }
         """
+        logger.info(
+            "Geocoding address: %s",
+            address,
+            extra={"address": address, "components": components},
+        )
+
         params = {"address": address, "key": self.api_key}
 
         if components:
@@ -91,18 +104,42 @@ class GoogleMapsAPI(BaseAPIClient):
 
             if data.get("status") == "OK" and data.get("results"):
                 result = data["results"][0]
-                return self._parse_geocode_result(result)
+                parsed_result = self._parse_geocode_result(result)
+                logger.info(
+                    "Successfully geocoded address: %s -> (%.6f, %.6f)",
+                    address,
+                    parsed_result.get("latitude"),
+                    parsed_result.get("longitude"),
+                    extra={"address": address, "result": parsed_result},
+                )
+                return parsed_result
             elif data.get("status") == "ZERO_RESULTS":
-                logger.warning(f"No geocoding results for address: {address}")
+                logger.warning("No geocoding results for address: %s", address)
                 return None
             else:
                 error_msg = data.get("error_message", data.get("status"))
+                logger.error(
+                    "Geocoding failed for address '%s': %s",
+                    address,
+                    error_msg,
+                    extra={
+                        "address": address,
+                        "error_message": error_msg,
+                        "status": data.get("status"),
+                    },
+                )
                 raise GoogleMapsAPIError(
                     message=f"Geocoding failed:  {error_msg}", api_status_code=200
                 )
 
         except Exception as e:
-            logger.error(f"Geocoding error for '{address}': {str(e)}")
+            logger.error(
+                "Geocoding error for address '%s': %s",
+                address,
+                str(e),
+                extra={"address": address, "error": str(e)},
+                exc_info=True,
+            )
             raise
 
     @retry_on_failure(max_retries=3, backoff_factor=1.0)
@@ -117,6 +154,13 @@ class GoogleMapsAPI(BaseAPIClient):
         Returns:
             Dictionary with address information
         """
+        logger.info(
+            "Reverse geocoding coordinates: (%.6f, %.6f)",
+            latitude,
+            longitude,
+            extra={"latitude": latitude, "longitude": longitude},
+        )
+
         params = {"latlng": f"{latitude},{longitude}", "key": self.api_key}
 
         try:
@@ -124,12 +168,36 @@ class GoogleMapsAPI(BaseAPIClient):
 
             if data.get("status") == "OK" and data.get("results"):
                 result = data["results"][0]
-                return self._parse_geocode_result(result)
+                parsed_result = self._parse_geocode_result(result)
+                logger.info(
+                    "Successfully reverse geocoded: (%.6f, %.6f) -> %s",
+                    latitude,
+                    longitude,
+                    parsed_result.get("formatted_address"),
+                    extra={
+                        "latitude": latitude,
+                        "longitude": longitude,
+                        "result": parsed_result,
+                    },
+                )
+                return parsed_result
 
+            logger.warning(
+                "No reverse geocoding results for: (%.6f, %.6f)",
+                latitude,
+                longitude,
+            )
             return None
 
         except Exception as e:
-            logger.error(f"Reverse geocoding error for ({latitude}, {longitude}): {str(e)}")
+            logger.error(
+                "Reverse geocoding error for (%.6f, %.6f): %s",
+                latitude,
+                longitude,
+                str(e),
+                extra={"latitude": latitude, "longitude": longitude, "error": str(e)},
+                exc_info=True,
+            )
             raise
 
     def _parse_geocode_result(self, result: Dict[str, Any]) -> Dict[str, Any]:
@@ -201,6 +269,20 @@ class GoogleMapsAPI(BaseAPIClient):
         origin_str = f"{origin[0]},{origin[1]}"
         destinations_str = "|".join(f"{lat},{lon}" for lat, lon in destinations)
 
+        logger.info(
+            "Distance matrix request: origin=(%.6f, %.6f), %d destinations, mode=%s",
+            origin[0],
+            origin[1],
+            len(destinations),
+            mode,
+            extra={
+                "origin": origin,
+                "destination_count": len(destinations),
+                "mode": mode,
+                "has_departure_time": departure_time is not None,
+            },
+        )
+
         params = {
             "origins": origin_str,
             "destinations": destinations_str,
@@ -223,6 +305,15 @@ class GoogleMapsAPI(BaseAPIClient):
 
             if data.get("status") != "OK":
                 error_msg = data.get("error_message", data.get("status"))
+                logger.error(
+                    "Distance matrix failed: %s",
+                    error_msg,
+                    extra={
+                        "origin": origin,
+                        "destination_count": len(destinations),
+                        "error_message": error_msg,
+                    },
+                )
                 raise GoogleMapsAPIError(
                     message=f"Distance matrix failed: {error_msg}", api_status_code=200
                 )
@@ -269,10 +360,30 @@ class GoogleMapsAPI(BaseAPIClient):
                             }
                         )
 
+            logger.info(
+                "Distance matrix completed: %d results, %d successful",
+                len(results),
+                sum(1 for r in results if r.get("status") == "OK"),
+                extra={
+                    "total_results": len(results),
+                    "successful_results": sum(1 for r in results if r.get("status") == "OK"),
+                },
+            )
             return results
 
         except Exception as e:
-            logger.error(f"Distance matrix error: {str(e)}")
+            logger.error(
+                "Distance matrix error for origin (%.6f, %.6f): %s",
+                origin[0],
+                origin[1],
+                str(e),
+                extra={
+                    "origin": origin,
+                    "destination_count": len(destinations),
+                    "error": str(e),
+                },
+                exc_info=True,
+            )
             raise
 
     # Directions API
@@ -297,6 +408,22 @@ class GoogleMapsAPI(BaseAPIClient):
         Returns:
             Directions with route information and steps
         """
+        logger.info(
+            "Directions request: (%.6f, %.6f) -> (%.6f, %.6f), mode=%s, alternatives=%s",
+            origin[0],
+            origin[1],
+            destination[0],
+            destination[1],
+            mode,
+            alternatives,
+            extra={
+                "origin": origin,
+                "destination": destination,
+                "mode": mode,
+                "alternatives": alternatives,
+            },
+        )
+
         params = {
             "origin": f"{origin[0]},{origin[1]}",
             "destination": f"{destination[0]},{destination[1]}",
@@ -310,6 +437,15 @@ class GoogleMapsAPI(BaseAPIClient):
 
             if data.get("status") != "OK":
                 error_msg = data.get("error_message", data.get("status"))
+                logger.error(
+                    "Directions failed: %s",
+                    error_msg,
+                    extra={
+                        "origin": origin,
+                        "destination": destination,
+                        "error_message": error_msg,
+                    },
+                )
                 raise GoogleMapsAPIError(
                     message=f"Directions failed: {error_msg}", api_status_code=200
                 )
@@ -317,13 +453,20 @@ class GoogleMapsAPI(BaseAPIClient):
             routes = data.get("routes", [])
 
             if not routes:
+                logger.warning(
+                    "No routes found for (%.6f, %.6f) -> (%.6f, %.6f)",
+                    origin[0],
+                    origin[1],
+                    destination[0],
+                    destination[1],
+                )
                 return {}
 
             # Return the first (best) route
             route = routes[0]
             leg = route["legs"][0]  # Single origin/destination has one leg
 
-            return {
+            result = {
                 "distance_miles": round(leg["distance"]["value"] / 1609.34, 2),
                 "duration_minutes": int(leg["duration"]["value"] / 60),
                 "start_address": leg["start_address"],
@@ -339,6 +482,28 @@ class GoogleMapsAPI(BaseAPIClient):
                 "polyline": route["overview_polyline"]["points"],
             }
 
+            logger.info(
+                "Directions completed: %.1f miles, %d minutes, %d steps",
+                result["distance_miles"],
+                result["duration_minutes"],
+                len(result["steps"]),
+                extra={
+                    "distance_miles": result["distance_miles"],
+                    "duration_minutes": result["duration_minutes"],
+                    "step_count": len(result["steps"]),
+                },
+            )
+            return result
+
         except Exception as e:
-            logger.error(f"Directions error:  {str(e)}")
+            logger.error(
+                "Directions error for (%.6f, %.6f) -> (%.6f, %.6f): %s",
+                origin[0],
+                origin[1],
+                destination[0],
+                destination[1],
+                str(e),
+                extra={"origin": origin, "destination": destination, "error": str(e)},
+                exc_info=True,
+            )
             raise

@@ -46,16 +46,33 @@ def retry_on_failure(max_retries: int = 3, backoff_factor: float = 1.0):
                     if attempt < max_retries - 1:
                         wait_time = backoff_factor * (2**attempt)
                         logger.warning(
-                            f"API call failed (attempt {attempt + 1}/{max_retries}), "
-                            f"retrying in {wait_time}s:  {str(e)}"
+                            "API call failed (attempt %d/%d), retrying in %.1fs: %s",
+                            attempt + 1,
+                            max_retries,
+                            wait_time,
+                            str(e),
+                            extra={
+                                "attempt": attempt + 1,
+                                "max_retries": max_retries,
+                                "wait_time": wait_time,
+                            },
                         )
                         await asyncio.sleep(wait_time)
                 except Exception as e:
                     last_exception = e
+                    # Don't retry on unexpected exceptions
+                    logger.error(
+                        "Unexpected error during API call: %s",
+                        str(e),
+                        extra={"error": str(e), "error_type": type(e).__name__},
+                        exc_info=True,
+                    )
                     raise
 
             # All retries exhausted
-            raise last_exception
+            if last_exception:
+                raise last_exception
+            raise RuntimeError("Max retries reached without exception")
 
         return wrapper
 
@@ -125,6 +142,15 @@ class BaseAPIClient(ABC):
 
             if elapsed < min_interval:
                 wait_time = min_interval - elapsed
+                logger.debug(
+                    "Rate limiting: waiting %.3fs (limit: %d req/s)",
+                    wait_time,
+                    self.rate_limit_per_second,
+                    extra={
+                        "wait_time": wait_time,
+                        "rate_limit": self.rate_limit_per_second,
+                    },
+                )
                 await asyncio.sleep(wait_time)
 
         self._last_request_time = datetime.now(timezone.utc)
@@ -165,13 +191,30 @@ class BaseAPIClient(ABC):
             request_headers.update(self._get_auth_headers())
 
         # Log request
-        logger.debug(
-            f"API Request: {method} {url}",
+        logger.info(
+            "%s API request: %s %s",
+            self._get_service_name(),
+            method,
+            endpoint,
             extra={
+                "service": self._get_service_name(),
+                "method": method,
+                "endpoint": endpoint,
+                "url": url,
                 "params": params,
+                "has_body": json_data is not None,
+            },
+        )
+        logger.debug(
+            "%s request details - params: %s",
+            self._get_service_name(),
+            params,
+            extra={
                 "headers": {
-                    k: v for k, v in request_headers.items() if k.lower() != "authorization"
-                },
+                    k: v
+                    for k, v in request_headers.items()
+                    if k.lower() not in ["authorization", "x-goog-api-key"]
+                }
             },
         )
 
@@ -190,10 +233,18 @@ class BaseAPIClient(ABC):
             # Parse response
             data = response.json()
 
-            # Log response
-            logger.debug(
-                f"API Response: {response.status_code}",
-                extra={"response_size": len(response.content)},
+            # Log successful response
+            logger.info(
+                "%s API response: %d - %d bytes",
+                self._get_service_name(),
+                response.status_code,
+                len(response.content),
+                extra={
+                    "service": self._get_service_name(),
+                    "status_code": response.status_code,
+                    "response_size": len(response.content),
+                    "endpoint": endpoint,
+                },
             )
 
             return data
@@ -201,14 +252,34 @@ class BaseAPIClient(ABC):
         except httpx.HTTPStatusError as e:
             await self._handle_http_error(e)
         except httpx.RequestError as e:
-            logger.error(f"API request failed: {str(e)}")
+            logger.error(
+                "%s API request failed: %s",
+                self._get_service_name(),
+                str(e),
+                extra={
+                    "service": self._get_service_name(),
+                    "endpoint": endpoint,
+                    "error": str(e),
+                },
+                exc_info=True,
+            )
             raise ExternalAPIError(
                 service=self._get_service_name(),
                 message=f"Request failed: {str(e)}",
                 status_code=503,
             ) from e
         except Exception as e:
-            logger.error(f"Unexpected API error: {str(e)}")
+            logger.error(
+                "%s unexpected API error: %s",
+                self._get_service_name(),
+                str(e),
+                extra={
+                    "service": self._get_service_name(),
+                    "endpoint": endpoint,
+                    "error": str(e),
+                },
+                exc_info=True,
+            )
             raise ExternalAPIError(
                 service=self._get_service_name(),
                 message=f"Unexpected error: {str(e)}",
@@ -226,7 +297,17 @@ class BaseAPIClient(ABC):
         except ValueError:
             error_message = error.response.text or str(error)
 
-        logger.error(f"API HTTP error: {status_code}", extra={"error_message": error_message})
+        logger.error(
+            "%s API HTTP error: %d - %s",
+            self._get_service_name(),
+            status_code,
+            error_message,
+            extra={
+                "service": self._get_service_name(),
+                "status_code": status_code,
+                "error_message": error_message,
+            },
+        )
 
         # Handle specific status codes
         if status_code == 401:

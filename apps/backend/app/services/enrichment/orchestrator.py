@@ -56,6 +56,20 @@ class EnrichmentOrchestrator:
         Returns:
             Dictionary with all enrichment data organized by provider
         """
+        logger.info(
+            "Starting property enrichment: property_id=%d, user_id=%d, use_cached=%s",
+            property_id,
+            user_id,
+            use_cached,
+            extra={
+                "property_id": property_id,
+                "user_id": user_id,
+                "use_cached": use_cached,
+                "provider_filter": provider_filter,
+                "category_filter": category_filter,
+            },
+        )
+
         # Get property
         property_record = await self._get_property(property_id, user_id)
 
@@ -74,7 +88,17 @@ class EnrichmentOrchestrator:
             user_preferences=user_prefs_dict,
         )
 
-        logger.info(f"Running {len(providers)} providers for property {property_id}")
+        logger.info(
+            "Running %d providers for property %d: %s",
+            len(providers),
+            property_id,
+            [p.metadata.name for p in providers],
+            extra={
+                "property_id": property_id,
+                "provider_count": len(providers),
+                "providers": [p.metadata.name for p in providers],
+            },
+        )
 
         # Execute all providers in parallel
         results = await self._execute_providers(
@@ -89,6 +113,22 @@ class EnrichmentOrchestrator:
 
         # Track API usage
         await self._track_api_usage(user_id, results)
+
+        # Log completion summary
+        success_count = sum(1 for r in results if r.success)
+        error_count = len(results) - success_count
+        logger.info(
+            "Property enrichment completed: property_id=%d, %d/%d providers successful",
+            property_id,
+            success_count,
+            len(results),
+            extra={
+                "property_id": property_id,
+                "total_providers": len(results),
+                "successful": success_count,
+                "failed": error_count,
+            },
+        )
 
         # Format response
         return self._format_response(results)
@@ -154,7 +194,17 @@ class EnrichmentOrchestrator:
         for i, result in enumerate(results):
             if isinstance(result, Exception):
                 provider_name = providers[i].metadata.name
-                logger.error(f"Provider {provider_name} failed: {str(result)}")
+                logger.error(
+                    "Provider %s failed: %s",
+                    provider_name,
+                    str(result),
+                    extra={
+                        "provider": provider_name,
+                        "error": str(result),
+                        "error_type": type(result).__name__,
+                    },
+                    exc_info=result,
+                )
             elif isinstance(result, ProviderResult):
                 valid_results.append(result)
 
@@ -177,7 +227,18 @@ class EnrichmentOrchestrator:
             cached_result = await self.cache_service.get(cache_key)
 
             if cached_result:
-                logger.info(f"Using cached data for provider {provider.metadata.name}")
+                logger.info(
+                    "Cache hit for provider %s at (%.6f, %.6f)",
+                    provider.metadata.name,
+                    latitude,
+                    longitude,
+                    extra={
+                        "provider": provider.metadata.name,
+                        "cached": True,
+                        "latitude": latitude,
+                        "longitude": longitude,
+                    },
+                )
                 return ProviderResult(
                     provider_name=provider.metadata.name,
                     data=cached_result,
@@ -188,12 +249,38 @@ class EnrichmentOrchestrator:
 
         # Run provider
         try:
+            logger.info(
+                "Executing provider %s for (%.6f, %.6f)",
+                provider.metadata.name,
+                latitude,
+                longitude,
+                extra={
+                    "provider": provider.metadata.name,
+                    "latitude": latitude,
+                    "longitude": longitude,
+                },
+            )
+
             result = await provider.enrich(
                 latitude=latitude,
                 longitude=longitude,
                 address=address,
                 property_data=property_data,
                 user_preferences=user_preferences,
+            )
+
+            # Log provider result
+            logger.info(
+                "Provider %s completed: success=%s, api_calls=%d",
+                provider.metadata.name,
+                result.success,
+                result.api_calls_made,
+                extra={
+                    "provider": provider.metadata.name,
+                    "success": result.success,
+                    "api_calls": result.api_calls_made,
+                    "has_data": bool(result.data),
+                },
             )
 
             # Cache the result
@@ -204,17 +291,34 @@ class EnrichmentOrchestrator:
                     value=result.data,
                     ttl_days=provider.metadata.cache_duration_days,
                 )
+                logger.debug(
+                    "Cached result for provider %s (TTL: %d days)",
+                    provider.metadata.name,
+                    provider.metadata.cache_duration_days,
+                    extra={
+                        "provider": provider.metadata.name,
+                        "ttl_days": provider.metadata.cache_duration_days,
+                    },
+                )
 
             return result
 
         except Exception as e:
-            logger.error(f"Provider {provider.metadata.name} failed: {str(e)}")
+            logger.error(
+                "Provider %s execution failed: %s",
+                provider.metadata.name,
+                str(e),
+                extra={"provider": provider.metadata.name, "error": str(e)},
+                exc_info=True,
+            )
+            # Return error result instead of raising
             return ProviderResult(
                 provider_name=provider.metadata.name,
                 data={},
                 success=False,
-                error_message=str(e),
+                cached=False,
                 api_calls_made=0,
+                error_message=str(e),
             )
 
     async def _save_enrichment_results(

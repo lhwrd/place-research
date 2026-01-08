@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, List, Union
 
 from app.core.config import settings
 from app.exceptions.external_api import ExternalAPIError
@@ -69,6 +69,14 @@ class AirQualityAPIClient(BaseAPIClient):
         Returns:
             Air quality data as a dictionary
         """
+        logger.info(
+            "Fetching air quality data for (%.6f, %.6f) within %d miles",
+            latitude,
+            longitude,
+            distance,
+            extra={"latitude": latitude, "longitude": longitude, "distance": distance},
+        )
+
         params = {
             "API_KEY": self.api_key,
             "latitude": str(latitude),
@@ -77,14 +85,42 @@ class AirQualityAPIClient(BaseAPIClient):
             "distance": distance,
         }
         try:
-            data = await self._make_request(
+            response = await self._make_request(
                 method="GET",
                 endpoint=self.FORECAST_ENDPOINT,
                 params=params,
             )
+            # API returns a list of air quality data
+            data: List[Dict[str, Any]] = response if isinstance(response, list) else []
         except ExternalAPIError as e:
-            logger.error(f"Failed to fetch air quality data: {e}")
+            logger.error(
+                "Failed to fetch air quality data for (%.6f, %.6f): %s",
+                latitude,
+                longitude,
+                str(e),
+                extra={"latitude": latitude, "longitude": longitude, "error": str(e)},
+                exc_info=True,
+            )
             return {}
+
         if not data or len(data) == 0:
+            logger.warning(
+                "No air quality data found for (%.6f, %.6f) within %d miles",
+                latitude,
+                longitude,
+                distance,
+            )
             return {}
+
+        logger.debug("Air quality API response: %s", data)
+
+        # logger.info(
+        #     "Air quality data retrieved: AQI=%s, category=%s",
+        #     data[0].get("AQI"),
+        #     data[0].get("Category", {}).get("Name"),
+        #     extra={
+        #         "aqi": data[0].get("AQI"),
+        #         "category": data[0].get("Category", {}).get("Name"),
+        #     },
+        # )
         return data[0]  # Return the first entry

@@ -1,6 +1,6 @@
 """Tests for Google Places API integration."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -23,8 +23,8 @@ def sample_place_response():
         "displayName": {"text": "Walmart Supercenter"},
         "id": "ChIJN1t_tDeuEmsRUsoyG83frY4",
         "location": {"latitude": 34.052235, "longitude": -118.243683},
-        "formattedAddress": {"text": "123 Main St, Los Angeles, CA 90012"},
-        "primaryTypeDisplayName": "Grocery Store",
+        "formattedAddress": "123 Main St, Los Angeles, CA 90012",
+        "primaryTypeDisplayName": {"text": "Grocery Store"},
     }
 
 

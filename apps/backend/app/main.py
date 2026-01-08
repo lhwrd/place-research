@@ -7,6 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.api.v1.router import api_router
 from app.core.config import settings
+from app.core.logging_config import setup_logging
 from app.db.database import Base, engine
 from app.exceptions.base import AppError
 from app.exceptions.handlers import (
@@ -17,6 +18,13 @@ from app.exceptions.handlers import (
 )
 from app.middleware.logging import RequestLoggingMiddleware
 from app.middleware.metrics import MetricsMiddleware, MetricsRegistry
+
+# Initialize logging
+setup_logging(
+    log_level=settings.log_level,
+    log_format=settings.log_format,
+    app_name=settings.app_name,
+)
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
