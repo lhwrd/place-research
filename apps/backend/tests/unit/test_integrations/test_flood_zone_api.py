@@ -75,10 +75,20 @@ async def test_validate_api_key_unauthorized(flood_client):
 
 @pytest.mark.asyncio
 async def test_fetch_flood_zone_data_success(flood_client):
-    expected_data = {"zone": "X", "risk": "minimal"}
+    expected_data = {"flood_zone": "AE", "flood_risk": "High"}
+    return_value = {
+        "result": {
+            "flood.s_fld_haz_ar": [
+                {
+                    "fld_zone": "AE",
+                    "zone_subty": "High",
+                }
+            ]
+        }
+    }
     mock_response = MagicMock(spec=Response)
     mock_response.status_code = 200
-    mock_response.json = MagicMock(return_value=expected_data)
+    mock_response.json = MagicMock(return_value=return_value)
     mock_response.raise_for_status = MagicMock()
 
     mock_client = AsyncMock()

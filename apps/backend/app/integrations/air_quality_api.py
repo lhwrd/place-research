@@ -114,13 +114,15 @@ class AirQualityAPIClient(BaseAPIClient):
 
         logger.debug("Air quality API response: %s", data)
 
-        # logger.info(
-        #     "Air quality data retrieved: AQI=%s, category=%s",
-        #     data[0].get("AQI"),
-        #     data[0].get("Category", {}).get("Name"),
-        #     extra={
-        #         "aqi": data[0].get("AQI"),
-        #         "category": data[0].get("Category", {}).get("Name"),
-        #     },
-        # )
-        return data[0]  # Return the first entry
+        result: dict = data[0]
+
+        logger.info(
+            "Air quality data retrieved: AQI=%s, category=%s",
+            result.get("AQI"),
+            result.get("Category"),
+            extra={
+                "aqi": result.get("AQI"),
+                "category": result.get("Category"),
+            },
+        )
+        return result

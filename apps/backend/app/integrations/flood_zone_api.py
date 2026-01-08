@@ -56,4 +56,14 @@ class FloodZoneAPIClient(BaseAPIClient):
                 headers=headers,
             )
             response.raise_for_status()
-            return response.json()
+            json_data = response.json()
+            return self._parse_flood_zone_data(json_data)
+
+    def _parse_flood_zone_data(self, data: dict) -> dict:
+        """Parse flood zone data from the API response."""
+        s_fld_haz_ar = data.get("result", {}).get("flood.s_fld_haz_ar")[0]
+
+        return {
+            "flood_zone": s_fld_haz_ar.get("fld_zone"),
+            "flood_risk": s_fld_haz_ar.get("zone_subty"),
+        }
