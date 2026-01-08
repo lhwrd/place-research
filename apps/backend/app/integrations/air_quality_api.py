@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
 
 from app.core.config import settings
 from app.exceptions.external_api import ExternalAPIError
