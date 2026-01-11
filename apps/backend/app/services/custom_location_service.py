@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from sqlalchemy import and_, asc, desc
 from sqlalchemy.orm import Session
 
+from app.exceptions.base import ConflictError
 from app.models.custom_location import CustomLocation
 
 logger = logging.getLogger(__name__)
@@ -68,6 +69,25 @@ class CustomLocationService:
 
     def create_location(self, user_id: int, location_data: Dict[str, Any]) -> CustomLocation:
         """Create a new custom location."""
+        # Check for duplicate address
+        address = location_data.get("address")
+        if address:
+            existing_location = (
+                self.db.query(CustomLocation)
+                .filter(
+                    and_(
+                        CustomLocation.user_id == user_id,
+                        CustomLocation.address == address,
+                    )
+                )
+                .first()
+            )
+            if existing_location:
+                raise ConflictError(
+                    f"A custom location with address '{address}' already exists",
+                    details={"existing_location_id": existing_location.id},
+                )
+
         custom_location = CustomLocation(user_id=user_id, **location_data)
 
         self.db.add(custom_location)
