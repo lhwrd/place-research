@@ -2,18 +2,16 @@
  * Property card component for displaying property summary
  */
 import { Link } from "react-router-dom";
-import {
-  MapPin,
-  Bed,
-  Bath,
-  Maximize,
-  Calendar,
-  Heart,
-  TrendingUp,
-  DollarSign,
-} from "lucide-react";
+import { MapPin, Bed, Bath, Maximize, Heart } from "lucide-react";
 import { Property } from "@/types";
-import { Card, CardContent } from "@mui/material";
+import {
+  Card,
+  CardContent,
+  Box,
+  IconButton,
+  Grid,
+  Typography,
+} from "@mui/material";
 import { Chip } from "@mui/material";
 import { Button } from "@mui/material";
 import { cn } from "@/lib/utils";
@@ -64,194 +62,275 @@ const PropertyCard = ({
 
   if (variant === "compact") {
     return (
-      <Link to={`/properties/${property.id}`}>
-        <Card
-          className={cn(
-            "overflow-hidden hover:shadow-md transition-shadow",
-            className
-          )}
-        >
-          <CardContent className="p-4">
-            <div className="flex items-start justify-between mb-2">
-              <div>
-                <h3 className="font-semibold text-neutral-900 line-clamp-1">
-                  {property.address}
-                </h3>
-                <p className="text-sm text-neutral-500">
-                  {property.city}, {property.state} {property.zip_code}
-                </p>
-              </div>
-              {showActions && (
-                <button
-                  onClick={handleSaveToggle}
-                  className="p-1 rounded-lg hover:bg-neutral-100 transition-colors"
+      <Card
+        sx={{
+          overflow: "hidden",
+          "&:hover": {
+            boxShadow: 3,
+          },
+          transition: "box-shadow 0.2s",
+        }}
+        className={className}
+      >
+        <CardContent sx={{ p: 1.5 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Link
+              to={`/properties/${property.id}`}
+              style={{
+                flexGrow: 1,
+                minWidth: 0,
+                textDecoration: "none",
+                color: "inherit",
+              }}
+            >
+              <Box
+                sx={{
+                  fontSize: "0.875rem",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                <Box
+                  component="span"
+                  sx={{ fontWeight: 600, color: "neutral.900" }}
                 >
-                  <Heart
-                    className={cn(
-                      "w-5 h-5",
-                      isSaved ? "fill-red-500 text-red-500" : "text-neutral-400"
-                    )}
-                  />
-                </button>
-              )}
-            </div>
+                  {property.address}
+                </Box>
+                <Box component="span" sx={{ color: "neutral.500", ml: 1 }}>
+                  {property.city}, {property.state} {property.zip_code}
+                </Box>
+                {property.bedrooms && (
+                  <Box component="span" sx={{ color: "neutral.600", ml: 2 }}>
+                    <Bed
+                      style={{
+                        width: 16,
+                        height: 16,
+                        display: "inline",
+                        marginRight: 4,
+                      }}
+                    />
+                    {property.bedrooms}
+                  </Box>
+                )}
+                {property.bathrooms && (
+                  <Box component="span" sx={{ color: "neutral.600", ml: 1.5 }}>
+                    <Bath
+                      style={{
+                        width: 16,
+                        height: 16,
+                        display: "inline",
+                        marginRight: 4,
+                      }}
+                    />
+                    {property.bathrooms}
+                  </Box>
+                )}
+                {property.square_feet && (
+                  <Box component="span" sx={{ color: "neutral.600", ml: 1.5 }}>
+                    <Maximize
+                      style={{
+                        width: 16,
+                        height: 16,
+                        display: "inline",
+                        marginRight: 4,
+                      }}
+                    />
+                    {formatNumber(property.square_feet)} sqft
+                  </Box>
+                )}
+              </Box>
+            </Link>
 
-            <div className="flex items-center gap-4 text-sm text-neutral-600">
-              {property.bedrooms && (
-                <div className="flex items-center gap-1">
-                  <Bed className="w-4 h-4" />
-                  <span>{property.bedrooms}</span>
-                </div>
-              )}
-              {property.bathrooms && (
-                <div className="flex items-center gap-1">
-                  <Bath className="w-4 h-4" />
-                  <span>{property.bathrooms}</span>
-                </div>
-              )}
-              {property.square_feet && (
-                <div className="flex items-center gap-1">
-                  <Maximize className="w-4 h-4" />
-                  <span>{formatNumber(property.square_feet)} sqft</span>
-                </div>
-              )}
-            </div>
-
-            <div className="mt-3 flex items-center justify-between">
-              <span className="text-xl font-bold text-neutral-900">
-                {formatCurrency(property.estimated_value)}
-              </span>
-              {property.property_type && (
-                <Chip label={property.property_type} size="small" />
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </Link>
+            {/* Save button */}
+            {showActions && (
+              <IconButton
+                onClick={handleSaveToggle}
+                sx={{
+                  p: 0.5,
+                  flexShrink: 0,
+                  "&:hover": {
+                    backgroundColor: "neutral.100",
+                  },
+                }}
+              >
+                <Heart
+                  style={{
+                    width: 20,
+                    height: 20,
+                    fill: isSaved ? "#ef4444" : "none",
+                    color: isSaved ? "#ef4444" : "#a3a3a3",
+                  }}
+                />
+              </IconButton>
+            )}
+          </Box>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <Link to={`/properties/${property.id}`}>
+    <Link to={`/properties/${property.id}`} style={{ textDecoration: "none" }}>
       <Card
-        className={cn(
-          "overflow-hidden hover:shadow-md transition-shadow",
-          className
-        )}
+        sx={{
+          overflow: "hidden",
+          "&:hover": {
+            boxShadow: 3,
+          },
+          transition: "box-shadow 0.2s",
+        }}
+        className={className}
       >
         {/* Property Image Placeholder */}
-        <div className="relative h-48 bg-gradient-to-br from-neutral-100 to-neutral-200">
-          <div className="absolute inset-0 flex items-center justify-center">
-            <MapPin className="w-12 h-12 text-neutral-400" />
-          </div>
-
-          {/* Top badges */}
-          <div className="absolute top-3 left-3 flex gap-2">
-            {property.property_type && (
-              <Chip label={property.property_type} size="small" />
-            )}
-          </div>
+        <Box
+          sx={{
+            position: "relative",
+            height: 192,
+            background: "linear-gradient(135deg, #f5f5f5 0%, #e5e5e5 100%)",
+          }}
+        >
+          <Box
+            sx={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <MapPin style={{ width: 48, height: 48, color: "#a3a3a3" }} />
+          </Box>
 
           {/* Save button */}
           {showActions && (
-            <button
+            <IconButton
               onClick={handleSaveToggle}
-              className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-md hover:shadow-lg transition-shadow"
+              sx={{
+                position: "absolute",
+                top: 12,
+                right: 12,
+                p: 1,
+                backgroundColor: "white",
+                boxShadow: 2,
+                "&:hover": {
+                  boxShadow: 4,
+                  backgroundColor: "white",
+                },
+              }}
             >
               <Heart
-                className={cn(
-                  "w-5 h-5",
-                  isSaved ? "fill-red-500 text-red-500" : "text-neutral-400"
-                )}
+                style={{
+                  width: 20,
+                  height: 20,
+                  fill: isSaved ? "#ef4444" : "none",
+                  color: isSaved ? "#ef4444" : "#a3a3a3",
+                }}
               />
-            </button>
+            </IconButton>
           )}
-        </div>
+        </Box>
 
         {/* Property Details */}
-        <CardContent className="p-4">
-          {/* Price */}
-          <div className="mb-3">
-            <div className="text-2xl font-bold text-neutral-900">
-              {formatCurrency(property.estimated_value)}
-            </div>
-            {property.last_sold_price && (
-              <div className="flex items-center gap-1 text-sm text-neutral-500 mt-1">
-                <TrendingUp className="w-4 h-4" />
-                <span>
-                  Last sold: {formatCurrency(property.last_sold_price)}
-                </span>
-              </div>
-            )}
-          </div>
-
+        <CardContent sx={{ p: 2 }}>
           {/* Address */}
-          <div className="mb-3">
-            <h3 className="font-semibold text-neutral-900">
+          <Box sx={{ mb: 1.5 }}>
+            <Typography
+              variant="h6"
+              sx={{ fontWeight: 600, color: "neutral.900" }}
+            >
               {property.address}
-            </h3>
-            <p className="text-sm text-neutral-500 flex items-center gap-1">
-              <MapPin className="w-4 h-4" />
+            </Typography>
+            <Box
+              sx={{
+                fontSize: "0.875rem",
+                color: "neutral.500",
+                display: "flex",
+                alignItems: "center",
+                gap: 0.5,
+              }}
+            >
+              <MapPin style={{ width: 16, height: 16 }} />
               {property.city}, {property.state} {property.zip_code}
-            </p>
-          </div>
+            </Box>
+          </Box>
 
           {/* Property Stats */}
-          <div className="grid grid-cols-3 gap-3 py-3 border-t border-neutral-100">
+          <Grid
+            container
+            spacing={1.5}
+            sx={{
+              py: 1.5,
+              borderTop: 1,
+              borderColor: "neutral.100",
+            }}
+          >
             {property.bedrooms && (
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-1 text-neutral-600">
-                  <Bed className="w-4 h-4" />
-                  <span className="font-semibold">{property.bedrooms}</span>
-                </div>
-                <p className="text-xs text-neutral-500 mt-1">Beds</p>
-              </div>
+              <Grid item xs={4}>
+                <Box
+                  sx={{
+                    textAlign: "center",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 0.5,
+                    color: "neutral.600",
+                  }}
+                >
+                  <Bed style={{ width: 16, height: 16 }} />
+                  <Typography component="span" sx={{ fontWeight: 600 }}>
+                    {property.bedrooms} Beds
+                  </Typography>
+                </Box>
+              </Grid>
             )}
             {property.bathrooms && (
-              <div className="text-center border-x border-neutral-100">
-                <div className="flex items-center justify-center gap-1 text-neutral-600">
-                  <Bath className="w-4 h-4" />
-                  <span className="font-semibold">{property.bathrooms}</span>
-                </div>
-                <p className="text-xs text-neutral-500 mt-1">Baths</p>
-              </div>
+              <Grid item xs={4}>
+                <Box
+                  sx={{
+                    textAlign: "center",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 0.5,
+                    color: "neutral.600",
+                  }}
+                >
+                  <Bath style={{ width: 16, height: 16 }} />
+                  <Typography component="span" sx={{ fontWeight: 600 }}>
+                    {property.bathrooms} Baths
+                  </Typography>
+                </Box>
+              </Grid>
             )}
             {property.square_feet && (
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-1 text-neutral-600">
-                  <Maximize className="w-4 h-4" />
-                  <span className="font-semibold">
-                    {(property.square_feet / 1000).toFixed(1)}K
-                  </span>
-                </div>
-                <p className="text-xs text-neutral-500 mt-1">Sqft</p>
-              </div>
+              <Grid item xs={4}>
+                <Box
+                  sx={{
+                    textAlign: "center",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 0.5,
+                    color: "neutral.600",
+                  }}
+                >
+                  <Maximize style={{ width: 16, height: 16 }} />
+                  <Typography component="span" sx={{ fontWeight: 600 }}>
+                    {(property.square_feet / 1000).toFixed(1)}K sqft
+                  </Typography>
+                </Box>
+              </Grid>
             )}
-          </div>
-
-          {/* Additional Info */}
-          <div className="grid grid-cols-2 gap-2 pt-3 border-t border-neutral-100 text-sm">
-            {property.year_built && (
-              <div className="flex items-center gap-1 text-neutral-600">
-                <Calendar className="w-4 h-4" />
-                <span>Built {property.year_built}</span>
-              </div>
-            )}
-            {property.annual_tax && (
-              <div className="flex items-center gap-1 text-neutral-600">
-                <DollarSign className="w-4 h-4" />
-                <span>${(property.annual_tax / 1000).toFixed(1)}K/yr tax</span>
-              </div>
-            )}
-          </div>
+          </Grid>
 
           {/* Actions */}
           {showActions && (
-            <div className="mt-4 flex gap-2">
+            <Box sx={{ mt: 2, display: "flex", gap: 1 }}>
               <Button variant="outlined" size="small" fullWidth>
                 View Details
               </Button>
-            </div>
+            </Box>
           )}
         </CardContent>
       </Card>

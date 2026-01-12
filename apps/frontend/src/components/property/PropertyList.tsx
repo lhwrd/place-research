@@ -2,7 +2,8 @@
  * Property list component with grid/list view
  */
 import { useState } from "react";
-import { Grid, List as ListIcon } from "lucide-react";
+import { Grid as GridIcon, List as ListIcon } from "lucide-react";
+import { Grid } from "@mui/material";
 import { Property } from "@/types";
 import { PropertyCard } from "./PropertyCard";
 import { EmptyState, LoadingSpinner } from "@/components/layout";
@@ -70,7 +71,7 @@ const PropertyList = ({
                 : "text-neutral-600 hover:text-neutral-900"
             )}
           >
-            <Grid className="w-4 h-4" />
+            <GridIcon className="w-4 h-4" />
           </button>
           <button
             onClick={() => setViewMode("list")}
@@ -87,24 +88,34 @@ const PropertyList = ({
       </div>
 
       {/* Properties Grid/List */}
-      <div
-        className={cn(
-          viewMode === "grid"
-            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-            : "space-y-4"
-        )}
-      >
-        {properties.map((property) => (
-          <PropertyCard
-            key={property.id}
-            property={property}
-            onSave={onSaveProperty}
-            onRemove={onRemoveProperty}
-            isSaved={savedPropertyIds.includes(property.id)}
-            variant={viewMode === "list" ? "compact" : "default"}
-          />
-        ))}
-      </div>
+      {viewMode === "grid" ? (
+        <Grid container spacing={3}>
+          {properties.map((property) => (
+            <Grid item xs={12} sm={6} md={4} key={property.id}>
+              <PropertyCard
+                property={property}
+                onSave={onSaveProperty}
+                onRemove={onRemoveProperty}
+                isSaved={savedPropertyIds.includes(property.id)}
+                variant="default"
+              />
+            </Grid>
+          ))}
+        </Grid>
+      ) : (
+        <div className="space-y-4">
+          {properties.map((property) => (
+            <PropertyCard
+              key={property.id}
+              property={property}
+              onSave={onSaveProperty}
+              onRemove={onRemoveProperty}
+              isSaved={savedPropertyIds.includes(property.id)}
+              variant="compact"
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

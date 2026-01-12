@@ -73,7 +73,30 @@ export interface CustomLocationDistance {
   traffic_time_minutes: number | null;
 }
 
+export interface EnrichmentProviderData {
+  data: any;
+  success: boolean;
+  cached: boolean;
+  error: string | null;
+  enriched_at: string | null;
+}
+
+export interface EnrichmentMetadata {
+  total_providers: number;
+  successful_providers: number;
+  failed_providers: number;
+  total_api_calls: number;
+  cached_providers: number;
+}
+
 export interface EnrichmentData {
+  success: boolean;
+  enrichment_data: Record<string, EnrichmentProviderData>;
+  metadata: EnrichmentMetadata;
+}
+
+// Legacy interfaces for backward compatibility
+export interface LegacyEnrichmentData {
   walk_scores: WalkScore;
   nearby_places: NearbyPlace[];
   custom_location_distances: CustomLocationDistance[];

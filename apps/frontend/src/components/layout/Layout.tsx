@@ -33,7 +33,7 @@ export const Layout = () => {
       >
         <MobileHeader onDrawerToggle={handleDrawerToggle} />
         <Box sx={{ flexGrow: 1, p: { xs: 2, md: 3 } }}>
-          <Box sx={{ maxWidth: "1280px", margin: "0 auto" }}>
+          <Box sx={{ maxWidth: "1600px", margin: "0 auto", width: "100%" }}>
             <Outlet />
           </Box>
         </Box>
