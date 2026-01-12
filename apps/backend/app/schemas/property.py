@@ -27,14 +27,22 @@ class PropertyBase(BaseModel):
     city: Optional[str]
     state: Optional[str]
     zip_code: Optional[str]
+    county: Optional[str]
     latitude: float
     longitude: float
     bedrooms: Optional[int]
     bathrooms: Optional[float]
     square_feet: Optional[int]
+    lot_size: Optional[float]
     year_built: Optional[int]
     property_type: Optional[str]
     estimated_value: Optional[int]
+    last_sold_price: Optional[int]
+    last_sold_date: Optional[datetime]
+    tax_assessed_value: Optional[int]
+    annual_tax: Optional[int]
+    description: Optional[str]
+    parcel_id: Optional[str]
 
 
 class PropertyData(PropertyBase):

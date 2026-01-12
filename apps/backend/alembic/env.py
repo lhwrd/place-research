@@ -9,6 +9,16 @@ from app.core.config import settings
 from app.db.database import Base
 
 # Import all models to ensure they're registered
+from app.models import (
+    api_usage,
+    cache_entry,
+    custom_location,
+    property,
+    property_enrichment,
+    saved_property,
+    user,
+    user_preference,
+)
 
 # Alembic Config object
 config = context.config

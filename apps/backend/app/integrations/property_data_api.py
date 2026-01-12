@@ -358,28 +358,52 @@ class PropertyDataAPI(BaseAPIClient):
             building_data = property_data.get("building", {})
             size_data = building_data.get("size", {})
             rooms_data = building_data.get("rooms", {})
-            summary_data = building_data.get("summary", {})
+            # Summary is at property level, not building level
+            summary_data = property_data.get("summary", {})
+            building_summary_data = building_data.get("summary", {})
             assessment_data = property_data.get("assessment", {})
             market_data = property_data.get("assessment", {}).get("market", {})
             sale_data = property_data.get("sale", {})
+
+            # Helper to safely convert to int
+            def safe_int(value):
+                if value is None:
+                    return None
+                try:
+                    return int(float(value))
+                except (ValueError, TypeError):
+                    return None
+
+            # Helper to safely convert to float
+            def safe_float(value):
+                if value is None:
+                    return None
+                try:
+                    return float(value)
+                except (ValueError, TypeError):
+                    return None
 
             return {
                 "address": address_data.get("line1"),
                 "city": address_data.get("locality"),
                 "state": address_data.get("countrySubd"),
                 "zip_code": address_data.get("postal1"),
-                "county": area_data.get("CountrySecSubd"),
-                "bedrooms": rooms_data.get("beds"),
-                "bathrooms": rooms_data.get("bathsTotal"),
-                "square_feet": size_data.get("livingSize"),
-                "lot_size": property_data.get("lot", {}).get("lotSize1"),
-                "year_built": summary_data.get("yearBuilt"),
+                "county": area_data.get("countrySecSubd"),
+                "bedrooms": safe_int(rooms_data.get("beds")),
+                "bathrooms": safe_float(rooms_data.get("bathsTotal")),
+                "square_feet": safe_int(
+                    size_data.get("livingSize") or size_data.get("universalSize")
+                ),
+                "lot_size": safe_float(property_data.get("lot", {}).get("lotSize1")),
+                "year_built": safe_int(summary_data.get("yearBuilt")),
                 "property_type": summary_data.get("propertyType"),
-                "estimated_value": market_data.get("mktTtlValue"),
-                "last_sold_price": sale_data.get("saleAmountData", {}).get("saleAmt"),
+                "estimated_value": safe_int(market_data.get("mktTtlValue")),
+                "last_sold_price": safe_int(sale_data.get("saleAmountData", {}).get("saleAmt")),
                 "last_sold_date": sale_data.get("saleAmountData", {}).get("saleRecDate"),
-                "tax_assessed_value": assessment_data.get("assessed", {}).get("assdTtlValue"),
-                "annual_tax": assessment_data.get("tax", {}).get("taxAmt"),
+                "tax_assessed_value": safe_int(
+                    assessment_data.get("assessed", {}).get("assdTtlValue")
+                ),
+                "annual_tax": safe_int(assessment_data.get("tax", {}).get("taxAmt")),
                 "parcel_id": property_data.get("identifier", {}).get("apn"),
                 "description": summary_data.get("propSubType"),
             }

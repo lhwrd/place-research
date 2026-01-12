@@ -31,7 +31,7 @@ class Property(Base):
     bedrooms: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     bathrooms: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     square_feet: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    lot_size: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)  # in square feet
+    lot_size: Mapped[Optional[float]] = mapped_column(Float, nullable=True)  # can be acres (float)
     year_built: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     property_type: Mapped[Optional[str]] = mapped_column(
         String, nullable=True
