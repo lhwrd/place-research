@@ -956,18 +956,6 @@ export const PropertyDetailPage = () => {
               </CardContent>
             </Card>
           )}
-
-          {/* Debug: Show all providers */}
-          <Card variant="outlined" sx={{ bgcolor: "grey.50" }}>
-            <CardContent>
-              <Typography variant="h6" fontWeight="600" gutterBottom>
-                Debug: All Providers Data
-              </Typography>
-              <Box component="pre" sx={{ overflow: "auto", fontSize: "12px" }}>
-                {JSON.stringify(enrichment.enrichment_data, null, 2)}
-              </Box>
-            </CardContent>
-          </Card>
         </>
       )}
 
