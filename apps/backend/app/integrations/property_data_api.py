@@ -26,6 +26,7 @@ class PropertyDataAPI(BaseAPIClient):
     """
 
     # API endpoints
+    PROPERTY_BASIC_PROFILE_ENDPOINT = "property/basicprofile"
     PROPERTY_DETAIL_ENDPOINT = "property/detail"
     PROPERTY_SEARCH_ENDPOINT = "property/search"
     PROPERTY_SNAPSHOT_ENDPOINT = "property/snapshot"
@@ -76,7 +77,7 @@ class PropertyDataAPI(BaseAPIClient):
 
     @retry_on_failure(max_retries=3, backoff_factor=1.0)
     async def get_property_details(
-        self, latitude: float, longitude: float, address: Optional[str] = None
+        self, latitude: float, longitude: float, address: str
     ) -> Dict[str, Any]:
         """
         Get comprehensive property details by coordinates.
@@ -120,13 +121,17 @@ class PropertyDataAPI(BaseAPIClient):
             return await self._get_property_details_generic(latitude, longitude, address)
 
     async def _get_property_details_attom(
-        self, latitude: float, longitude: float, address: Optional[str] = None
+        self, latitude: float, longitude: float, address: str
     ) -> Dict[str, Any]:
         """Get property details from Attom Data Solutions."""
-        params = {"latitude": latitude, "longitude": longitude}
+        address1 = address.split(",")[0].strip()
+        address2 = address.split(",", 1)[1].strip()
+        params = {"address1": address1, "address2": address2}
 
         try:
-            data = await self._make_request("GET", self.PROPERTY_SNAPSHOT_ENDPOINT, params=params)
+            data = await self._make_request(
+                "GET", self.PROPERTY_BASIC_PROFILE_ENDPOINT, params=params
+            )
 
             if not data or "property" not in data:
                 logger.warning(
@@ -348,6 +353,7 @@ class PropertyDataAPI(BaseAPIClient):
         """Parse Attom API response into standard format."""
         try:
             property_data = data.get("property", [{}])[0]
+            area_data = property_data.get("area", {})
             address_data = property_data.get("address", {})
             building_data = property_data.get("building", {})
             size_data = building_data.get("size", {})
@@ -362,20 +368,20 @@ class PropertyDataAPI(BaseAPIClient):
                 "city": address_data.get("locality"),
                 "state": address_data.get("countrySubd"),
                 "zip_code": address_data.get("postal1"),
-                "county": address_data.get("county"),
+                "county": area_data.get("CountrySecSubd"),
                 "bedrooms": rooms_data.get("beds"),
-                "bathrooms": rooms_data.get("bathstotal"),
-                "square_feet": size_data.get("livingsize"),
-                "lot_size": property_data.get("lot", {}).get("lotsize1"),
-                "year_built": summary_data.get("yearbuilt"),
-                "property_type": summary_data.get("proptype"),
-                "estimated_value": market_data.get("mktttlvalue"),
-                "last_sold_price": sale_data.get("amount", {}).get("saleamt"),
-                "last_sold_date": sale_data.get("amount", {}).get("salerecdate"),
-                "tax_assessed_value": assessment_data.get("assessed", {}).get("assdttlvalue"),
-                "annual_tax": assessment_data.get("tax", {}).get("taxamt"),
-                "parcel_id": property_data.get("lot", {}).get("apn"),
-                "description": summary_data.get("propsubtype"),
+                "bathrooms": rooms_data.get("bathsTotal"),
+                "square_feet": size_data.get("livingSize"),
+                "lot_size": property_data.get("lot", {}).get("lotSize1"),
+                "year_built": summary_data.get("yearBuilt"),
+                "property_type": summary_data.get("propertyType"),
+                "estimated_value": market_data.get("mktTtlValue"),
+                "last_sold_price": sale_data.get("saleAmountData", {}).get("saleAmt"),
+                "last_sold_date": sale_data.get("saleAmountData", {}).get("saleRecDate"),
+                "tax_assessed_value": assessment_data.get("assessed", {}).get("assdTtlValue"),
+                "annual_tax": assessment_data.get("tax", {}).get("taxAmt"),
+                "parcel_id": property_data.get("identifier", {}).get("apn"),
+                "description": summary_data.get("propSubType"),
             }
         except Exception as e:
             logger.error(f"Failed to parse Attom response: {str(e)}")

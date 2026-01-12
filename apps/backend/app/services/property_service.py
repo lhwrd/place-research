@@ -60,17 +60,19 @@ class PropertyService:
             geocode_result = await self.geocoding_service.geocode_address(address)
         except Exception as e:
             logger.error("Geocoding failed for address %s:  %s", address, str(e))
-            raise InvalidAddressError(address=address, reason="Unable to geocode address")
+            raise InvalidAddressError(address=address, reason="Unable to geocode address") from e
 
         if not geocode_result:
             raise InvalidAddressError(address=address, reason="Address not found")
 
         # Step 3: Fetch property data from external API
+        # Get formatted address from geocode for more accurate results
+        formatted_address = geocode_result.get("formatted_address", address)
         try:
             property_data = await self.property_data_api.get_property_details(
                 latitude=geocode_result["latitude"],
                 longitude=geocode_result["longitude"],
-                address=address,
+                address=formatted_address,
             )
             # If property data API returns empty data (address is None), use geocode fallback
             if not property_data.get("address"):

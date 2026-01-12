@@ -198,13 +198,13 @@ class Settings(BaseSettings):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        # Set provider-specific API key
-        if self.property_data_provider == "attom":
+        # Set provider-specific API key (only override if provider-specific key exists)
+        if self.property_data_provider == "attom" and self.attom_api_key:
             self.property_data_api_key = self.attom_api_key
-        elif self.property_data_provider == "zillow":
+        elif self.property_data_provider == "zillow" and self.zillow_rapid_api_key:
             self.property_data_api_key = self.zillow_rapid_api_key
             self.property_data_api_base_url = "https://zillow-com1.p.rapidapi.com"
-        elif self.property_data_provider == "realty_mole":
+        elif self.property_data_provider == "realty_mole" and self.realty_mole_api_key:
             self.property_data_api_key = self.realty_mole_api_key
             self.property_data_api_base_url = "https://realty-mole-property-api.p.rapidapi.com"
 
