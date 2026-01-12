@@ -1,4 +1,5 @@
 import logging
+import threading
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -15,18 +16,35 @@ from app.services.enrichment.base_provider import (
 
 
 class RailroadProvider(BaseEnrichmentProvider):
+    # Class-level shared data (singleton pattern)
+    _shared_raillines_data: Optional[gpd.GeoDataFrame] = None
+    _shared_raillines_data_3857: Optional[gpd.GeoDataFrame] = None
+    _data_lock = threading.Lock()
+
     def __init__(self, raillines_data: Optional[gpd.GeoDataFrame] = None):
         """Initialize the provider.
 
         Args:
             raillines_data: Optional pre-loaded railroad lines GeoDataFrame.
-                           If None, data will be loaded from settings.raillines_path.
+                           If None, data will be loaded from settings.raillines_path
+                           and shared across all instances.
         """
-        self._raillines_data = raillines_data
         self.logger = logging.getLogger(__name__)
+        self._raillines_data = None  # Initialize instance variable
 
-        if self._raillines_data is None:
-            self._load_raillines_data()
+        if raillines_data is not None:
+            # Use provided data for testing
+            self._raillines_data = raillines_data
+        else:
+            # Use shared class-level data (singleton pattern)
+            if self.__class__._shared_raillines_data is None:
+                with self.__class__._data_lock:
+                    # Double-check pattern for thread safety
+                    if self.__class__._shared_raillines_data is None:
+                        self._load_raillines_data()
+                        self.__class__._shared_raillines_data = self._raillines_data
+                        self.logger.info("Loaded and cached railroad lines data")
+            self._raillines_data = self.__class__._shared_raillines_data
 
     @property
     def metadata(self) -> ProviderMetadata:
@@ -40,7 +58,7 @@ class RailroadProvider(BaseEnrichmentProvider):
             cost_per_call=0.0,  # No external API calls
         )
 
-    def _load_raillines_data(self, raillines_path: Optional[str] = None):
+    def _load_raillines_data(self, raillines_path: Optional[Path] = None):
         """Load railroad lines data from the configured GeoJSON file.
 
         Args:
@@ -57,7 +75,7 @@ class RailroadProvider(BaseEnrichmentProvider):
             self.logger.error("RAILLINES_PATH environment variable not set.")
             raise ValueError("raillines_path not configured")
 
-        path = Path(raillines_path)
+        path = raillines_path if isinstance(raillines_path, Path) else Path(raillines_path)
         if not path.exists():
             self.logger.error("Railroad lines file not found: %s", raillines_path)
             raise FileNotFoundError(f"Railroad lines file not found: {raillines_path}")
@@ -68,6 +86,11 @@ class RailroadProvider(BaseEnrichmentProvider):
         if self._raillines_data.crs is None:
             self.logger.error("Railroad lines data must have a defined CRS.")
             raise ValueError("Railroad lines data must have a defined CRS")
+
+        # Build spatial index for faster distance queries
+        # This property access triggers index creation if not already built
+        _ = self._raillines_data.sindex
+        self.logger.debug("Built spatial index for railroad lines")
 
     def _load_geodataframe(self, path: Path) -> gpd.GeoDataFrame:
         """Load GeoDataFrame from file. Extracted for testability.
@@ -129,14 +152,23 @@ class RailroadProvider(BaseEnrichmentProvider):
         Returns:
             Distance to nearest railroad in meters
         """
-        # Swap to (lng, lat) for Point
-        place_point = Point(longitude, latitude)
+        # Use pre-transformed cached data for performance
+        # This eliminates expensive CRS transformations on every call
+        if self.__class__._shared_raillines_data_3857 is None:
+            with self.__class__._data_lock:
+                if self.__class__._shared_raillines_data_3857 is None:
+                    self.logger.debug("Pre-transforming railroad data to EPSG:3857")
+                    self.__class__._shared_raillines_data_3857 = self._raillines_data.to_crs(
+                        epsg=3857
+                    )
 
-        # Ensure both GeoDataFrames are in the same CRS
-        rail_gdf = self._raillines_data.to_crs(epsg=3857)
+        rail_gdf = self.__class__._shared_raillines_data_3857
+
+        # Swap to (lng, lat) for Point and transform to EPSG:3857
+        place_point = Point(longitude, latitude)
         point_gdf = gpd.GeoDataFrame(geometry=[place_point], crs="EPSG:4326").to_crs(epsg=3857)
 
-        # Find the nearest railroad line
+        # Find the nearest railroad line using spatial index
         distances = rail_gdf.distance(point_gdf.geometry[0])
         nearest_idx = distances.idxmin()
         return int(distances.loc[nearest_idx])
