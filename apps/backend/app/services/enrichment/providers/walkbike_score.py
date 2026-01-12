@@ -23,7 +23,7 @@ class WalkScoreProvider(BaseEnrichmentProvider):
     @property
     def metadata(self) -> ProviderMetadata:
         return ProviderMetadata(
-            name="walk_score",
+            name="walk_score_provider",
             category=ProviderCategory.WALKABILITY,
             description="Provides walk, bike, and transit scores",
             version="1.0.0",

@@ -15,7 +15,7 @@ class AirQualityProvider(BaseEnrichmentProvider):
     @property
     def metadata(self) -> ProviderMetadata:
         return ProviderMetadata(
-            name="AirQualityProvider",
+            name="air_quality_provider",
             category=ProviderCategory.ENVIRONMENTAL,
             enabled=True,
             description="Provides air quality data using the AirNow API.",

@@ -20,7 +20,7 @@ class AnnualAverageClimateProvider(BaseEnrichmentProvider):
     @property
     def metadata(self) -> ProviderMetadata:
         return ProviderMetadata(
-            name="AnnualAverageClimateProvider",
+            name="annual_average_climate_provider",
             category=ProviderCategory.ENVIRONMENTAL,
             enabled=True,
             description="Provides annual average climate data from NOAA.",

@@ -64,7 +64,7 @@ class PlacesNearbyProvider(BaseEnrichmentProvider):
     @property
     def metadata(self) -> ProviderMetadata:
         return ProviderMetadata(
-            name="Places Nearby Provider",
+            name="places_nearby_provider",
             category=ProviderCategory.NEARBY_PLACES,
             description="Fetches nearby place information using Google Maps API.",
             version="1.0.0",
