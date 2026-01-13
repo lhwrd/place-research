@@ -12,5 +12,7 @@ cache/
 config.json
 *.egg-info
 
-*.json
 *.db
+
+*.coverage
+coverage.xml

@@ -99,6 +99,14 @@ CACHE_TTL_WALKABILITY=3600     # 1 hour
 CACHE_ENABLED=false
 ```
 
+When caching is disabled:
+
+- All cache operations (`get`, `set`, `delete`, `exists`) are no-ops
+- `get` returns the default value immediately
+- `set`, `delete` operations are skipped
+- No database queries are made to the cache table
+- The application functions normally without caching
+
 **In-memory with custom default TTL:**
 
 ```bash

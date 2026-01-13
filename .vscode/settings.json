@@ -1,7 +1,11 @@
 {
-    "python.testing.pytestArgs": [
-        "tests"
-    ],
     "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true
+    "python.testing.pytestEnabled": true,
+    "python-envs.pythonProjects": [
+        {
+            "path": "apps/backend",
+            "envManager": "ms-python.python:venv",
+            "packageManager": "ms-python.python:pip"
+        }
+    ]
 }
