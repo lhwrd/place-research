@@ -50,11 +50,11 @@ jobs:
 
       - name: Run linting
         run: |
-          ruff check .
-          black --check .
+          uv run ruff check .
+          uv run black --check .
 
       - name: Run type checking
-        run: mypy app/
+        run: uv run mypy app/
         continue-on-error: true
 
       - name: Run tests with coverage
@@ -63,7 +63,7 @@ jobs:
           JWT_SECRET_KEY: test-secret-key-for-ci-testing-only
           TESTING: true
         run: |
-          pytest --cov=app --cov-report=xml --cov-report=term-missing
+          uv run pytest --cov=app --cov-report=xml --cov-report=term-missing
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
