@@ -1,6 +1,5 @@
 """Tests for base API client functionality."""
 
-import asyncio
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, Mock, PropertyMock, patch
 

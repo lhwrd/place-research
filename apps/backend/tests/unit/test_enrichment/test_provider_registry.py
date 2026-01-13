@@ -1,17 +1,15 @@
-from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+"""Tests for the provider registry module."""
+
+from unittest.mock import MagicMock, patch
 
 import pytest
-
-from app.services.enrichment.provider_registry import ProviderRegistry
-
-"""Tests for the provider registry module."""
 
 from app.services.enrichment.base_provider import (
     BaseEnrichmentProvider,
     ProviderCategory,
     ProviderMetadata,
 )
+from app.services.enrichment.provider_registry import ProviderRegistry
 
 
 class MockProvider(BaseEnrichmentProvider):
@@ -213,7 +211,7 @@ def test_discover_providers(mock_import, mock_iter_modules, clean_registry):
     mock_import.return_value = mock_module
 
     with patch("inspect.getmembers", return_value=[("MockProvider", MockProvider)]):
-        registry = ProviderRegistry()
+        _ = ProviderRegistry()
 
     assert "mock_provider" in ProviderRegistry._providers
 
@@ -223,7 +221,7 @@ def test_discover_providers_no_directory(mock_exists, clean_registry):
     """Test discovery when providers directory doesn't exist."""
     mock_exists.return_value = False
 
-    registry = ProviderRegistry()
+    _ = ProviderRegistry()
 
     assert len(ProviderRegistry._providers) == 0
 
@@ -237,7 +235,7 @@ def test_discover_providers_import_error(mock_import, mock_iter_modules, clean_r
     mock_iter_modules.return_value = [mock_module_info]
     mock_import.side_effect = ImportError("Module not found")
 
-    registry = ProviderRegistry()
+    _ = ProviderRegistry()
 
     # Should not raise, just log error
     assert len(ProviderRegistry._providers) == 0

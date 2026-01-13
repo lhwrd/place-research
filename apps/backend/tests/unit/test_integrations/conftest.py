@@ -1,7 +1,6 @@
 """Conftest for integration tests that need real API implementations."""
 
 import importlib.util
-import sys
 from pathlib import Path
 
 import pytest

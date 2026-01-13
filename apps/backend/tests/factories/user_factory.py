@@ -8,7 +8,6 @@ from sqlalchemy.orm import Session
 from app.core.security import get_password_hash
 from app.models.custom_location import CustomLocation
 from app.models.property import Property
-from app.models.saved_property import SavedProperty
 from app.models.user import User
 
 fake = Faker()

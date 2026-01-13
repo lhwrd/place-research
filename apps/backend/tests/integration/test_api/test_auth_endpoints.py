@@ -1,6 +1,5 @@
 """Integration tests for authentication endpoints."""
 
-import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 

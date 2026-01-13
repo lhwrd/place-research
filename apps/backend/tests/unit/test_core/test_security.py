@@ -1,9 +1,7 @@
 """Tests for security utilities."""
 
 from datetime import datetime, timedelta, timezone
-from unittest.mock import patch
 
-import pytest
 from jose import jwt
 
 from app.core.config import settings
@@ -94,7 +92,6 @@ class TestAccessToken:
 
         before_creation = datetime.now(timezone.utc)
         token = create_access_token(subject, expires_delta)
-        after_creation = datetime.now(timezone.utc)
 
         decoded = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
 

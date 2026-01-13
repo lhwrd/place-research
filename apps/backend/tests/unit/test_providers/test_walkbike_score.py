@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -32,7 +32,7 @@ class TestWalkScoreProviderMetadata:
     def test_metadata_properties(self, provider):
         """Test metadata returns correct values."""
         metadata = provider.metadata
-        assert metadata.name == "walk_score"
+        assert metadata.name == "walk_score_provider"
         assert metadata.category == ProviderCategory.WALKABILITY
         assert metadata.version == "1.0.0"
         assert metadata.enabled is True
@@ -55,7 +55,7 @@ class TestWalkScoreProviderEnrich:
         )
 
         assert result.success is True
-        assert result.provider_name == "walk_score"
+        assert result.provider_name == "walk_score_provider"
         assert result.data["walk_score"] == 85
         assert result.data["bike_score"] == 75
         assert result.data["transit_score"] == 65
@@ -84,7 +84,7 @@ class TestWalkScoreProviderEnrich:
         result = await provider.enrich(40.7128, -74.0060, "123 Main St")
 
         assert result.success is False
-        assert result.provider_name == "walk_score"
+        assert result.provider_name == "walk_score_provider"
         assert result.data == {}
         assert result.error_message == "API Error"
         assert result.api_calls_made == 0

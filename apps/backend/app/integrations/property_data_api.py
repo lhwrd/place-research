@@ -360,7 +360,6 @@ class PropertyDataAPI(BaseAPIClient):
             rooms_data = building_data.get("rooms", {})
             # Summary is at property level, not building level
             summary_data = property_data.get("summary", {})
-            building_summary_data = building_data.get("summary", {})
             assessment_data = property_data.get("assessment", {})
             market_data = property_data.get("assessment", {}).get("market", {})
             sale_data = property_data.get("sale", {})

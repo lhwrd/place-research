@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from app.models.custom_location import CustomLocation
-from app.services.enrichment.base_provider import ProviderCategory, ProviderResult
+from app.services.enrichment.base_provider import ProviderCategory
 from app.services.enrichment.providers.driving_distance import DistanceProvider
 
 

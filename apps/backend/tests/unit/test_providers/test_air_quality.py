@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -25,7 +25,7 @@ class TestAirQualityProvider:
         """Test that metadata is correctly defined."""
         metadata = air_quality_provider.metadata
 
-        assert metadata.name == "AirQualityProvider"
+        assert metadata.name == "air_quality_provider"
         assert metadata.category == ProviderCategory.ENVIRONMENTAL
         assert metadata.enabled is True
         assert metadata.description == "Provides air quality data using the AirNow API."
@@ -44,7 +44,7 @@ class TestAirQualityProvider:
             latitude=37.7749, longitude=-122.4194, address="San Francisco, CA"
         )
 
-        assert result.provider_name == "AirQualityProvider"
+        assert result.provider_name == "air_quality_provider"
         assert result.data == mock_response
         assert result.success is True
         assert result.error_message is None
@@ -64,7 +64,7 @@ class TestAirQualityProvider:
             latitude=37.7749, longitude=-122.4194, address="San Francisco, CA"
         )
 
-        assert result.provider_name == "AirQualityProvider"
+        assert result.provider_name == "air_quality_provider"
         assert result.data is None
         assert result.success is False
         assert result.error_message == "Failed to fetch air quality data"

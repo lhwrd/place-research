@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
@@ -389,7 +389,7 @@ async def test_track_api_usage(orchestrator, mock_db):
         ),
     ]
 
-    with patch("app.models.api_usage.APIUsage") as mock_usage:
+    with patch("app.models.api_usage.APIUsage") as _:
         await orchestrator._track_api_usage(user_id=1, results=results)
 
         assert mock_db.add.call_count == 1
