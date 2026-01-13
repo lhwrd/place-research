@@ -1,36 +1,41 @@
 version: "3.8"
 
 services:
-  # PostgreSQL Database
+  # PostgreSQL Database - Production Environment
   postgres:
     image: postgres:16-alpine
-    container_name: place-research-db
+    container_name: place-research-prod-db
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-place_research}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
-      POSTGRES_DB: ${POSTGRES_DB:-place_research}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - postgres_prod_data:/var/lib/postgresql/data
+      - ./backups:/backups
+    networks:
+      - prod-network
+    restart: always
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-place_research}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - app-network
-    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 2G
+        reservations:
+          cpus: "1"
+          memory: 1G
 
-  # Backend API
+  # Backend API - Production Environment
   backend:
-    build:
-      context: ..
-      dockerfile: docker/backend.Dockerfile
-    container_name: place-research-backend
+    image: ghcr.io/${GITHUB_REPOSITORY}/backend:${IMAGE_TAG:-latest}
+    container_name: place-research-prod-backend
     environment:
       # Database
-      DATABASE_URL: postgresql://${POSTGRES_USER:-place_research}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-place_research}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
 
       # JWT Authentication
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
@@ -39,8 +44,8 @@ services:
       JWT_REFRESH_TOKEN_EXPIRE_DAYS: ${JWT_REFRESH_TOKEN_EXPIRE_DAYS:-7}
 
       # Auth Settings
-      REQUIRE_AUTHENTICATION: ${REQUIRE_AUTHENTICATION:-false}
-      ALLOW_API_KEY_CREATION: ${ALLOW_API_KEY_CREATION:-true}
+      REQUIRE_AUTHENTICATION: true
+      ALLOW_API_KEY_CREATION: false
 
       # External API Keys
       GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY}
@@ -52,9 +57,10 @@ services:
       FBI_API_KEY: ${FBI_API_KEY}
 
       # Application Settings
-      LOG_LEVEL: ${LOG_LEVEL:-INFO}
-      LOG_FORMAT: ${LOG_FORMAT:-json}
+      LOG_LEVEL: ${LOG_LEVEL:-WARNING}
+      LOG_FORMAT: json
       APP_NAME: ${APP_NAME:-Property Research API}
+      ENVIRONMENT: production
 
       # File Paths
       RAILLINES_PATH: ${RAILLINES_PATH}
@@ -62,11 +68,11 @@ services:
       DISTANCE_CONFIG_PATH: ${DISTANCE_CONFIG_PATH}
 
     volumes:
-      - ./logs:/app/logs
+      - ./logs/backend:/app/logs
       - ./data:/app/data
 
     ports:
-      - "${BACKEND_PORT:-8000}:8000"
+      - "8000:8000"
 
     depends_on:
       postgres:
@@ -86,21 +92,25 @@ services:
       start_period: 40s
 
     networks:
-      - app-network
+      - prod-network
 
-    restart: unless-stopped
+    restart: always
 
-  # Frontend
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 2G
+        reservations:
+          cpus: "1"
+          memory: 1G
+
+  # Frontend - Production Environment
   frontend:
-    build:
-      context: ..
-      dockerfile: docker/frontend.Dockerfile
-      args:
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000/api/v1}
-        VITE_APP_NAME: ${VITE_APP_NAME:-Property Research}
-    container_name: place-research-frontend
+    image: ghcr.io/${GITHUB_REPOSITORY}/frontend:${IMAGE_TAG:-latest}
+    container_name: place-research-prod-frontend
     ports:
-      - "${FRONTEND_PORT:-3000}:8080"
+      - "3000:8080"
     depends_on:
       - backend
     healthcheck:
@@ -118,13 +128,22 @@ services:
       retries: 3
       start_period: 5s
     networks:
-      - app-network
-    restart: unless-stopped
+      - prod-network
+    restart: always
+
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
+        reservations:
+          cpus: "0.5"
+          memory: 256M
 
 volumes:
-  postgres_data:
+  postgres_prod_data:
     driver: local
 
 networks:
-  app-network:
+  prod-network:
     driver: bridge

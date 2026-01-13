@@ -1,36 +1,33 @@
 version: "3.8"
 
 services:
-  # PostgreSQL Database
+  # PostgreSQL Database - Test Environment
   postgres:
     image: postgres:16-alpine
-    container_name: place-research-db
+    container_name: place-research-test-db
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-place_research}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
-      POSTGRES_DB: ${POSTGRES_DB:-place_research}
+      POSTGRES_USER: ${POSTGRES_USER:-place_research_test}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-place_research_test}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - postgres_test_data:/var/lib/postgresql/data
+      - ./backups:/backups
+    networks:
+      - test-network
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-place_research}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-place_research_test}"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - app-network
-    restart: unless-stopped
 
-  # Backend API
+  # Backend API - Test Environment
   backend:
-    build:
-      context: ..
-      dockerfile: docker/backend.Dockerfile
-    container_name: place-research-backend
+    image: ghcr.io/${GITHUB_REPOSITORY}/backend:${IMAGE_TAG:-latest}
+    container_name: place-research-test-backend
     environment:
       # Database
-      DATABASE_URL: postgresql://${POSTGRES_USER:-place_research}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-place_research}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-place_research_test}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-place_research_test}
 
       # JWT Authentication
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
@@ -39,7 +36,7 @@ services:
       JWT_REFRESH_TOKEN_EXPIRE_DAYS: ${JWT_REFRESH_TOKEN_EXPIRE_DAYS:-7}
 
       # Auth Settings
-      REQUIRE_AUTHENTICATION: ${REQUIRE_AUTHENTICATION:-false}
+      REQUIRE_AUTHENTICATION: ${REQUIRE_AUTHENTICATION:-true}
       ALLOW_API_KEY_CREATION: ${ALLOW_API_KEY_CREATION:-true}
 
       # External API Keys
@@ -52,9 +49,10 @@ services:
       FBI_API_KEY: ${FBI_API_KEY}
 
       # Application Settings
-      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_LEVEL: ${LOG_LEVEL:-DEBUG}
       LOG_FORMAT: ${LOG_FORMAT:-json}
-      APP_NAME: ${APP_NAME:-Property Research API}
+      APP_NAME: ${APP_NAME:-Property Research API (Test)}
+      ENVIRONMENT: test
 
       # File Paths
       RAILLINES_PATH: ${RAILLINES_PATH}
@@ -62,11 +60,11 @@ services:
       DISTANCE_CONFIG_PATH: ${DISTANCE_CONFIG_PATH}
 
     volumes:
-      - ./logs:/app/logs
+      - ./logs/backend:/app/logs
       - ./data:/app/data
 
     ports:
-      - "${BACKEND_PORT:-8000}:8000"
+      - "8000:8000"
 
     depends_on:
       postgres:
@@ -86,21 +84,16 @@ services:
       start_period: 40s
 
     networks:
-      - app-network
+      - test-network
 
     restart: unless-stopped
 
-  # Frontend
+  # Frontend - Test Environment
   frontend:
-    build:
-      context: ..
-      dockerfile: docker/frontend.Dockerfile
-      args:
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000/api/v1}
-        VITE_APP_NAME: ${VITE_APP_NAME:-Property Research}
-    container_name: place-research-frontend
+    image: ghcr.io/${GITHUB_REPOSITORY}/frontend:${IMAGE_TAG:-latest}
+    container_name: place-research-test-frontend
     ports:
-      - "${FRONTEND_PORT:-3000}:8080"
+      - "3000:8080"
     depends_on:
       - backend
     healthcheck:
@@ -118,13 +111,13 @@ services:
       retries: 3
       start_period: 5s
     networks:
-      - app-network
+      - test-network
     restart: unless-stopped
 
 volumes:
-  postgres_data:
+  postgres_test_data:
     driver: local
 
 networks:
-  app-network:
+  test-network:
     driver: bridge
