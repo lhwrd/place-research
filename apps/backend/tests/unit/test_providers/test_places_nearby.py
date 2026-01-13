@@ -55,8 +55,9 @@ class TestCategorizeDuration:
 class TestPlacesNearbyProvider:
     @pytest.fixture
     def provider(self):
-        with patch("app.services.enrichment.providers.places_nearby.GooglePlacesAPI"), patch(
-            "app.services.enrichment.providers.places_nearby.DistanceService"
+        with (
+            patch("app.services.enrichment.providers.places_nearby.GooglePlacesAPI"),
+            patch("app.services.enrichment.providers.places_nearby.DistanceService"),
         ):
             return PlacesNearbyProvider()
 
