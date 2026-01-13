@@ -46,7 +46,7 @@ jobs:
 
             - name: Install dependencies
               run: |
-                  uv pip install --system -e --all-extras
+                  uv pip install --system --all-extras -e .
 
             - name: Run linting
               run: |
