@@ -2,7 +2,6 @@ import {
   Home,
   Search,
   Heart,
-  MapPin,
   Settings,
   HelpCircle,
   Building2,
@@ -11,12 +10,8 @@ import { Link } from "react-router-dom";
 import {
   Box,
   Drawer,
-  Toolbar,
-  List,
-  ListItem,
   ListItemButton,
   ListItemIcon,
-  ListItemText,
   Typography,
 } from "@mui/material";
 import { NavMain } from "./NavMain";

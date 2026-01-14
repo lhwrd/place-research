@@ -1,14 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
-  Building2,
   MapPin,
   Bed,
   Bath,
   Maximize,
-  Calendar,
   DollarSign,
-  TrendingUp,
   Heart,
   ArrowLeft,
   Sparkles,
@@ -43,13 +40,7 @@ export const PropertyDetailPage = () => {
   const [isSaved, setIsSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (id) {
-      fetchProperty();
-    }
-  }, [id]);
-
-  const fetchProperty = async () => {
+  const fetchProperty = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
@@ -60,13 +51,21 @@ export const PropertyDetailPage = () => {
       } else {
         setError("Property not found");
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error fetching property:", err);
       setError(err.response?.data?.detail || "Failed to load property details");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    if (id) {
+      fetchProperty();
+    }
+  }, [id, fetchProperty]);
+
+  // fetchProperty is now wrapped in useCallback above
 
   const handleEnrich = async () => {
     if (!property) return;
@@ -85,7 +84,10 @@ export const PropertyDetailPage = () => {
         );
         // Log each provider's data
         Object.entries(response.enrichment.enrichment_data || {}).forEach(
-          ([key, value]: [string, any]) => {
+          ([key, value]: [
+            string,
+            { success: boolean; cached?: boolean; data?: unknown }
+          ]) => {
             console.log(`Provider: ${key}`, {
               success: value.success,
               cached: value.cached,
@@ -95,7 +97,7 @@ export const PropertyDetailPage = () => {
           }
         );
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error enriching property:", err);
       setError(
         err.response?.data?.detail ||
@@ -115,7 +117,7 @@ export const PropertyDetailPage = () => {
         is_favorite: false,
       });
       setIsSaved(true);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Save error:", err);
       setError(err.response?.data?.detail || "Failed to save property");
     }
@@ -797,7 +799,15 @@ export const PropertyDetailPage = () => {
                   </Box>
                   <Grid container spacing={2} sx={{ mt: 1 }}>
                     {enrichment.enrichment_data.places_nearby_provider.data.places_nearby.map(
-                      (place: any, index: number) => (
+                      (
+                        place: {
+                          name: string;
+                          type: string;
+                          distance_miles?: number;
+                          rating?: number;
+                        },
+                        index: number
+                      ) => (
                         <Grid item xs={12} sm={6} md={4} key={index}>
                           <Card variant="outlined">
                             <CardContent>
@@ -873,7 +883,13 @@ export const PropertyDetailPage = () => {
                   </Box>
                   <Grid container spacing={2} sx={{ mt: 1 }}>
                     {enrichment.enrichment_data.distance_provider.data.distances.map(
-                      (location: any) => (
+                      (location: {
+                        location_id: string;
+                        location_name: string;
+                        distance_miles?: number;
+                        duration_minutes?: number;
+                        duration_in_traffic_minutes?: number;
+                      }) => (
                         <Grid item xs={12} sm={6} key={location.location_id}>
                           <Card variant="outlined">
                             <CardContent>

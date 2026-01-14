@@ -23,7 +23,6 @@ import {
   FormControlLabel,
   IconButton,
   InputAdornment,
-  LinearProgress,
 } from "@mui/material";
 
 export const RegisterPage = () => {
@@ -85,7 +84,7 @@ export const RegisterPage = () => {
         password: password,
         full_name: fullName,
       });
-    } catch (err: any) {
+    } catch (err) {
       setError(
         err.response?.data?.detail || "Registration failed. Please try again."
       );

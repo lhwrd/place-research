@@ -12,9 +12,7 @@ import {
   Grid,
   Typography,
 } from "@mui/material";
-import { Chip } from "@mui/material";
 import { Button } from "@mui/material";
-import { cn } from "@/lib/utils";
 
 export interface PropertyCardProps {
   property: Property;
@@ -35,15 +33,6 @@ const PropertyCard = ({
   variant = "default",
   className,
 }: PropertyCardProps) => {
-  const formatCurrency = (value: number | null) => {
-    if (!value) return "N/A";
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
   const formatNumber = (value: number | null) => {
     if (!value) return "N/A";
     return new Intl.NumberFormat("en-US").format(value);

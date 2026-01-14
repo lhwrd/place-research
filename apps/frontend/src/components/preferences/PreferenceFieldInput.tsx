@@ -21,8 +21,11 @@ import { PreferenceField } from "@/config/preferences";
 
 interface PreferenceFieldInputProps {
   field: PreferenceField;
-  value: any;
-  onChange: (key: string, value: any) => void;
+  value: string | number | boolean | string[] | undefined;
+  onChange: (
+    key: string,
+    value: string | number | boolean | string[] | undefined
+  ) => void;
   disabled?: boolean;
 }
 
@@ -34,7 +37,7 @@ export const PreferenceFieldInput: React.FC<PreferenceFieldInputProps> = ({
 }) => {
   const [localValue, setLocalValue] = useState(value ?? field.defaultValue);
 
-  const handleChange = (newValue: any) => {
+  const handleChange = (newValue: string | number | boolean | string[] | undefined) => {
     setLocalValue(newValue);
     onChange(field.key, newValue);
   };

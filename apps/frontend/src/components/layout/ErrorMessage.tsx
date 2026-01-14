@@ -1,6 +1,5 @@
 import { AlertCircle } from "lucide-react";
 import { Box, Typography, Button } from "@mui/material";
-import { cn } from "@/lib/utils";
 
 interface ErrorMessageProps {
   title?: string;

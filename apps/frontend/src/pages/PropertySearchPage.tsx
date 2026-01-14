@@ -49,7 +49,7 @@ export const PropertySearchPage = () => {
       } else {
         setError(response.message || "Property not found");
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("Search error:", err);
       setError(
         err.response?.data?.detail ||
@@ -67,7 +67,7 @@ export const PropertySearchPage = () => {
         is_favorite: false,
       });
       setIsSaved(true);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Save error:", err);
       setError(err.response?.data?.detail || "Failed to save property");
     }

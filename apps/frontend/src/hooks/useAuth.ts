@@ -4,7 +4,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { authApi, LoginData, RegisterData } from '@/api/auth';
+import { authApi } from '@/api/auth';
 import { useAuthStore } from '@/store/auth';
 
 export const useAuth = () => {

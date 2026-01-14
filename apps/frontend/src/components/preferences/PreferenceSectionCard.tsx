@@ -16,8 +16,8 @@ import { PreferenceFieldInput } from "./PreferenceFieldInput";
 
 interface PreferenceSectionCardProps {
   section: PreferenceSection;
-  values: Record<string, any>;
-  onChange: (key: string, value: any) => void;
+  values: Record<string, string | number | boolean | string[] | undefined>;
+  onChange: (key: string, value: string | number | boolean | string[] | undefined) => void;
   disabled?: boolean;
 }
 

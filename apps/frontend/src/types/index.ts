@@ -74,7 +74,7 @@ export interface CustomLocationDistance {
 }
 
 export interface EnrichmentProviderData {
-  data: any;
+  data: string | Record<string, string | number | boolean | string[]> | null;
   success: boolean;
   cached: boolean;
   error: string | null;
@@ -180,7 +180,7 @@ export interface ApiResponse<T> {
   error?: {
     message:  string;
     type: string;
-    details?: Record<string, any>;
+    details?: Record<string, string | string[]>;
   };
 }
 

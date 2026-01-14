@@ -1,6 +1,6 @@
 import { useState, FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { Mail, ArrowLeft, Check, AlertCircle, Info } from "lucide-react";
+import { Mail, ArrowLeft, Check } from "lucide-react";
 import {
   Button,
   TextField,
@@ -9,7 +9,6 @@ import {
   Box,
   Typography,
   Alert,
-  AlertTitle,
 } from "@mui/material";
 import apiClient from "@/lib/axios";
 
@@ -36,7 +35,7 @@ export const ForgotPasswordPage = () => {
       });
 
       setIsSubmitted(true);
-    } catch (err: any) {
+    } catch (err) {
       setError(
         err.response?.data?.detail ||
           "Failed to send reset email. Please try again."
