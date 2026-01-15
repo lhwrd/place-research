@@ -16,6 +16,7 @@ WORKDIR /app
 
 # Copy dependency files
 COPY apps/backend/pyproject.toml ./
+COPY apps/backend/README.md ./
 
 # Install uv for faster dependency management
 RUN pip install --no-cache-dir uv
