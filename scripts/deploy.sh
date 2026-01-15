@@ -18,11 +18,11 @@ echo "=========================================="
 
 # Set environment-specific variables
 if [ "$ENVIRONMENT" = "production" ]; then
-    COMPOSE_FILE="docker/docker-compose.prod.yml"
+    COMPOSE_FILE="/opt/place-research-prod/docker/docker-compose.prod.yml"
     ENV_FILE=".env.prod"
     PROJECT_NAME="place-research-prod"
 elif [ "$ENVIRONMENT" = "test" ]; then
-    COMPOSE_FILE="docker/docker-compose.test.yml"
+    COMPOSE_FILE="/opt/place-research-test/docker/docker-compose.test.yml"
     ENV_FILE=".env.test"
     PROJECT_NAME="place-research-test"
 else
