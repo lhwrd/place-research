@@ -20,7 +20,7 @@ fi
 
 ENVIRONMENT=${1:-test}
 
-if [ "$ENVIRONMENT" = "production" ]; then
+if [ "$ENVIRONMENT" = "prod" ]; then
     APP_DIR="/opt/place-research-prod"
     APP_USER="placeapp-prod"
 elif [ "$ENVIRONMENT" = "test" ]; then
