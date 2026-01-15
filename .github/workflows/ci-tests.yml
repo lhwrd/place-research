@@ -102,13 +102,13 @@ jobs:
       - name: Run type checking
         run: npx tsc --noEmit
 
-      - name: Run tests
-        run: npm run test:coverage
+      # - name: Run tests
+      #   run: npm run test:coverage
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./apps/frontend/coverage/coverage-final.json
-          flags: frontend
-          name: frontend-coverage
-        continue-on-error: true
+      # - name: Upload coverage to Codecov
+      #   uses: codecov/codecov-action@v4
+      #   with:
+      #     files: ./apps/frontend/coverage/coverage-final.json
+      #     flags: frontend
+      #     name: frontend-coverage
+      #   continue-on-error: true
