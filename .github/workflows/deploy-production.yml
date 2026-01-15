@@ -75,7 +75,7 @@ jobs:
                   EMAIL_SMTP_SERVER=${{ vars.EMAIL_SMTP_SERVER }}
                   EMAIL_SMTP_PORT=587
                   EMAIL_USERNAME=${{ vars.EMAIL_USERNAME }}
-                  EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}
+                  EMAIL_PASSWORD="${{ secrets.EMAIL_PASSWORD }}"
                   EMAIL_FROM_ADDRESS=${{ vars.EMAIL_FROM_ADDRESS }}
                   EOF
 
