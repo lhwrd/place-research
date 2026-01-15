@@ -27,7 +27,7 @@ elif [ "$ENVIRONMENT" = "test" ]; then
     APP_DIR="/opt/place-research-test"
     APP_USER="placeapp-test"
 else
-    echo "Error: Invalid environment. Use 'test' or 'production'"
+    echo "Error: Invalid environment. Use 'test' or 'prod'"
     exit 1
 fi
 
