@@ -34,7 +34,7 @@ jobs:
 
             - name: Add server to known hosts
               env:
-                  PROD_SERVER_HOST: ${{ secrets.PROD_SERVER_HOST }}
+                  PROD_SERVER_HOST: ${{ vars.PROD_SERVER_HOST }}
               run: |
                   mkdir -p ~/.ssh
                   ssh-keyscan -H $PROD_SERVER_HOST >> ~/.ssh/known_hosts
@@ -43,7 +43,7 @@ jobs:
               run: |
                   cat << EOF > .env.prod
                   # Database
-                  DATABASE_URL=postgresql://${{ secrets.PROD_POSTGRES_USER }}:${{ secrets.PROD_POSTGRES_PASSWORD }}@localhost:${{ secrets.PROD_POSTGRES_PORT }}/${{ secrets.PROD_POSTGRES_DB }}
+                  DATABASE_URL=postgresql://${{ vars.PROD_POSTGRES_USER }}:${{ secrets.PROD_POSTGRES_PASSWORD }}@localhost:${{ vars.PROD_POSTGRES_PORT }}/${{ vars.PROD_POSTGRES_DB }}
 
                   # JWT
                   JWT_SECRET_KEY=${{ secrets.PROD_JWT_SECRET_KEY }}
@@ -73,24 +73,24 @@ jobs:
                   VITE_APP_NAME=Property Research
 
                   # Email
-                  EMAIL_SMTP_SERVER=${{ secrets.EMAIL_SMTP_SERVER }}
+                  EMAIL_SMTP_SERVER=${{ vars.EMAIL_SMTP_SERVER }}
                   EMAIL_SMTP_PORT=587
-                  EMAIL_USERNAME=${{ secrets.EMAIL_USERNAME }}
+                  EMAIL_USERNAME=${{ vars.EMAIL_USERNAME }}
                   EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}
-                  EMAIL_FROM_ADDRESS=${{ secrets.EMAIL_FROM_ADDRESS }}
+                  EMAIL_FROM_ADDRESS=${{ vars.EMAIL_FROM_ADDRESS }}
                   EOF
 
             - name: Copy files to server
               env:
-                  SERVER_USER: ${{ secrets.PROD_SERVER_USER }}
-                  SERVER_HOST: ${{ secrets.PROD_SERVER_HOST }}
+                  SERVER_USER: ${{ vars.PROD_SERVER_USER }}
+                  SERVER_HOST: ${{ vars.PROD_SERVER_HOST }}
               run: |
                   scp -r docker scripts .env.prod $SERVER_USER@$SERVER_HOST:/opt/place-research-prod/
 
             - name: Create backup before deployment
               env:
-                  SERVER_USER: ${{ secrets.PROD_SERVER_USER }}
-                  SERVER_HOST: ${{ secrets.PROD_SERVER_HOST }}
+                  SERVER_USER: ${{ vars.PROD_SERVER_USER }}
+                  SERVER_HOST: ${{ vars.PROD_SERVER_HOST }}
               run: |
                   ssh $SERVER_USER@$SERVER_HOST << 'ENDSSH'
                     cd /opt/place-research-prod
@@ -99,8 +99,8 @@ jobs:
 
             - name: Deploy on server
               env:
-                  SERVER_USER: ${{ secrets.PROD_SERVER_USER }}
-                  SERVER_HOST: ${{ secrets.PROD_SERVER_HOST }}
+                  SERVER_USER: ${{ vars.PROD_SERVER_USER }}
+                  SERVER_HOST: ${{ vars.PROD_SERVER_HOST }}
                   IMAGE_TAG: ${{ github.sha }}
               run: |
                   ssh $SERVER_USER@$SERVER_HOST << 'ENDSSH'
@@ -116,8 +116,8 @@ jobs:
 
             - name: Health check
               env:
-                  SERVER_USER: ${{ secrets.PROD_SERVER_USER }}
-                  SERVER_HOST: ${{ secrets.PROD_SERVER_HOST }}
+                  SERVER_USER: ${{ vars.PROD_SERVER_USER }}
+                  SERVER_HOST: ${{ vars.PROD_SERVER_HOST }}
               run: |
                   ssh $SERVER_USER@$SERVER_HOST << 'ENDSSH'
                     cd /opt/place-research-prod
@@ -127,19 +127,10 @@ jobs:
             - name: Rollback on failure
               if: failure()
               env:
-                  SERVER_USER: ${{ secrets.PROD_SERVER_USER }}
-                  SERVER_HOST: ${{ secrets.PROD_SERVER_HOST }}
+                  SERVER_USER: ${{ vars.PROD_SERVER_USER }}
+                  SERVER_HOST: ${{ vars.PROD_SERVER_HOST }}
               run: |
                   ssh $SERVER_USER@$SERVER_HOST << 'ENDSSH'
                     cd /opt/place-research-prod
                     bash scripts/rollback.sh
                   ENDSSH
-
-            - name: Notify deployment status
-              if: always()
-              uses: 8398a7/action-slack@v3
-              with:
-                  status: ${{ job.status }}
-                  text: "Production deployment ${{ job.status }}"
-                  webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-              continue-on-error: true
