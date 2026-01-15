@@ -89,21 +89,25 @@ jobs:
         run: |
           scp -r docker scripts .env.test $SERVER_USER@$SERVER_HOST:/opt/place-research-test/
 
+      - name: Set short SHA
+        id: vars
+        run: echo "SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_ENV
+
       - name: Deploy on server
         env:
           SERVER_USER: ${{ vars.TEST_SERVER_USER }}
           SERVER_HOST: ${{ vars.TEST_SERVER_HOST }}
-          IMAGE_TAG: ${{ github.sha }}
+          IMAGE_TAG: main-${{ env.SHORT_SHA }}
         run: |
           ssh $SERVER_USER@$SERVER_HOST << 'ENDSSH'
             cd /opt/place-research-test
 
             # Pull latest images
-            docker pull ghcr.io/${{ github.repository }}/backend:frontend-${{ github.sha }}
-            docker pull ghcr.io/${{ github.repository }}/frontend:frontend-${{ github.sha }}
+            docker pull ghcr.io/${{ github.repository }}/backend:${IMAGE_TAG}
+            docker pull ghcr.io/${{ github.repository }}/frontend:${IMAGE_TAG}
 
             # Run deployment script
-            bash scripts/deploy.sh test ${{ github.sha }}
+            bash scripts/deploy.sh test ${IMAGE_TAG}
           ENDSSH
 
       - name: Health check

@@ -1,135 +1,139 @@
 name: Deploy to Production
 
 on:
-    push:
-        branches:
-            - main
-        tags:
-            - "v*"
-    workflow_dispatch:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  workflow_dispatch:
 
 jobs:
-    deploy-production:
-        name: Deploy to Production Server
-        runs-on: ubuntu-latest
-        environment:
-            name: production
-            url: https://yourapp.com
+  deploy-production:
+    name: Deploy to Production Server
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://yourapp.com
 
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-            - name: Connect to Tailscale
-              uses: tailscale/github-action@v2
-              with:
-                  oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
-                  oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
-                  tags: tag:ci
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
 
-            - name: Setup SSH
-              uses: webfactory/ssh-agent@v0.9.0
-              with:
-                  ssh-private-key: ${{ secrets.PROD_SERVER_SSH_KEY }}
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.PROD_SERVER_SSH_KEY }}
 
-            - name: Add server to known hosts
-              env:
-                  PROD_SERVER_HOST: ${{ vars.PROD_SERVER_HOST }}
-              run: |
-                  mkdir -p ~/.ssh
-                  ssh-keyscan -H $PROD_SERVER_HOST >> ~/.ssh/known_hosts
+      - name: Add server to known hosts
+        env:
+          PROD_SERVER_HOST: ${{ vars.PROD_SERVER_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H $PROD_SERVER_HOST >> ~/.ssh/known_hosts
 
-            - name: Create .env file
-              run: |
-                  cat << EOF > .env.prod
-                  # Database
-                  DATABASE_URL=postgresql://${{ vars.PROD_POSTGRES_USER }}:${{ secrets.PROD_POSTGRES_PASSWORD }}@localhost:${{ vars.PROD_POSTGRES_PORT }}/${{ vars.PROD_POSTGRES_DB }}
+      - name: Create .env file
+        run: |
+          cat << EOF > .env.prod
+          # Database
+          DATABASE_URL=postgresql://${{ vars.PROD_POSTGRES_USER }}:${{ secrets.PROD_POSTGRES_PASSWORD }}@localhost:${{ vars.PROD_POSTGRES_PORT }}/${{ vars.PROD_POSTGRES_DB }}
 
-                  # JWT
-                  JWT_SECRET_KEY=${{ secrets.PROD_JWT_SECRET_KEY }}
+          # JWT
+          JWT_SECRET_KEY=${{ secrets.PROD_JWT_SECRET_KEY }}
 
-                  # Auth
-                  REQUIRE_AUTHENTICATION=true
-                  ALLOW_API_KEY_CREATION=false
+          # Auth
+          REQUIRE_AUTHENTICATION=true
+          ALLOW_API_KEY_CREATION=false
 
-                  # API Keys
-                  GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_API_KEY }}
-                  GOOGLE_MAPS_MAP_ID=${{ secrets.GOOGLE_MAPS_MAP_ID }}
-                  NATIONAL_FLOOD_DATA_API_KEY=${{ secrets.NATIONAL_FLOOD_DATA_API_KEY }}
-                  NATIONAL_FLOOD_DATA_CLIENT_ID=${{ secrets.NATIONAL_FLOOD_DATA_CLIENT_ID }}
-                  WALKSCORE_API_KEY=${{ secrets.WALKSCORE_API_KEY }}
-                  AIRNOW_API_KEY=${{ secrets.AIRNOW_API_KEY }}
+          # API Keys
+          GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_API_KEY }}
+          GOOGLE_MAPS_MAP_ID=${{ secrets.GOOGLE_MAPS_MAP_ID }}
+          NATIONAL_FLOOD_DATA_API_KEY=${{ secrets.NATIONAL_FLOOD_DATA_API_KEY }}
+          NATIONAL_FLOOD_DATA_CLIENT_ID=${{ secrets.NATIONAL_FLOOD_DATA_CLIENT_ID }}
+          WALKSCORE_API_KEY=${{ secrets.WALKSCORE_API_KEY }}
+          AIRNOW_API_KEY=${{ secrets.AIRNOW_API_KEY }}
 
-                  # Paths
-                  RAILLINES_PATH=/opt/place-research-prod/data/raillines.geojson
-                  ANNUAL_CLIMATE_PATH=/opt/place-research-prod/data/annual_climate.csv
+          # Paths
+          RAILLINES_PATH=/opt/place-research-prod/data/raillines.geojson
+          ANNUAL_CLIMATE_PATH=/opt/place-research-prod/data/annual_climate.csv
 
-                  # Application
-                  LOG_LEVEL=WARNING
-                  APP_NAME="Property Research"
+          # Application
+          LOG_LEVEL=WARNING
+          APP_NAME="Property Research"
 
-                  # Frontend
-                  VITE_API_BASE_URL=https://api.yourapp.com/api/v1
-                  VITE_APP_NAME="Property Research"
-                  # Email
-                  EMAIL_SMTP_SERVER=${{ vars.EMAIL_SMTP_SERVER }}
-                  EMAIL_SMTP_PORT=587
-                  EMAIL_USERNAME=${{ vars.EMAIL_USERNAME }}
-                  EMAIL_PASSWORD="${{ secrets.EMAIL_PASSWORD }}"
-                  EMAIL_FROM_ADDRESS=${{ vars.EMAIL_FROM_ADDRESS }}
-                  EOF
+          # Frontend
+          VITE_API_BASE_URL=https://api.yourapp.com/api/v1
+          VITE_APP_NAME="Property Research"
+          # Email
+          EMAIL_SMTP_SERVER=${{ vars.EMAIL_SMTP_SERVER }}
+          EMAIL_SMTP_PORT=587
+          EMAIL_USERNAME=${{ vars.EMAIL_USERNAME }}
+          EMAIL_PASSWORD="${{ secrets.EMAIL_PASSWORD }}"
+          EMAIL_FROM_ADDRESS=${{ vars.EMAIL_FROM_ADDRESS }}
+          EOF
 
-            - name: Copy files to server
-              env:
-                  SERVER_USER: ${{ vars.PROD_SERVER_USER }}
-                  SERVER_HOST: ${{ vars.PROD_SERVER_HOST }}
-              run: |
-                  scp -r docker scripts .env.prod $SERVER_USER@$SERVER_HOST:/opt/place-research-prod/
+      - name: Copy files to server
+        env:
+          SERVER_USER: ${{ vars.PROD_SERVER_USER }}
+          SERVER_HOST: ${{ vars.PROD_SERVER_HOST }}
+        run: |
+          scp -r docker scripts .env.prod $SERVER_USER@$SERVER_HOST:/opt/place-research-prod/
 
-            - name: Create backup before deployment
-              env:
-                  SERVER_USER: ${{ vars.PROD_SERVER_USER }}
-                  SERVER_HOST: ${{ vars.PROD_SERVER_HOST }}
-              run: |
-                  ssh $SERVER_USER@$SERVER_HOST << 'ENDSSH'
-                    cd /opt/place-research-prod
-                    bash scripts/backup.sh
-                  ENDSSH
+      - name: Create backup before deployment
+        env:
+          SERVER_USER: ${{ vars.PROD_SERVER_USER }}
+          SERVER_HOST: ${{ vars.PROD_SERVER_HOST }}
+        run: |
+          ssh $SERVER_USER@$SERVER_HOST << 'ENDSSH'
+            cd /opt/place-research-prod
+            bash scripts/backup.sh
+          ENDSSH
 
-            - name: Deploy on server
-              env:
-                  SERVER_USER: ${{ vars.PROD_SERVER_USER }}
-                  SERVER_HOST: ${{ vars.PROD_SERVER_HOST }}
-                  IMAGE_TAG: ${{ github.sha }}
-              run: |
-                  ssh $SERVER_USER@$SERVER_HOST << 'ENDSSH'
-                    cd /opt/place-research-prod
+      - name: Set short SHA
+        id: vars
+        run: echo "SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_ENV
 
-                    # Pull latest images
-                    docker pull ghcr.io/${{ github.repository }}/backend:main-${{ github.sha }}
-                    docker pull ghcr.io/${{ github.repository }}/frontend:main-${{ github.sha }}
+      - name: Deploy on server
+        env:
+          SERVER_USER: ${{ vars.PROD_SERVER_USER }}
+          SERVER_HOST: ${{ vars.PROD_SERVER_HOST }}
+          IMAGE_TAG: main-${{ env.SHORT_SHA }}
+        run: |
+          ssh $SERVER_USER@$SERVER_HOST << 'ENDSSH'
+            cd /opt/place-research-prod
 
-                    # Run deployment script
-                    bash scripts/deploy.sh production ${{ github.sha }}
-                  ENDSSH
+            # Pull latest images
+            docker pull ghcr.io/${{ github.repository }}/backend:${IMAGE_TAG}
+            docker pull ghcr.io/${{ github.repository }}/frontend:${IMAGE_TAG}
 
-            - name: Health check
-              env:
-                  SERVER_USER: ${{ vars.PROD_SERVER_USER }}
-                  SERVER_HOST: ${{ vars.PROD_SERVER_HOST }}
-              run: |
-                  ssh $SERVER_USER@$SERVER_HOST << 'ENDSSH'
-                    cd /opt/place-research-prod
-                    bash scripts/health-check.sh
-                  ENDSSH
+            # Run deployment script
+            bash scripts/deploy.sh production ${IMAGE_TAG}
+          ENDSSH
 
-            - name: Rollback on failure
-              if: failure()
-              env:
-                  SERVER_USER: ${{ vars.PROD_SERVER_USER }}
-                  SERVER_HOST: ${{ vars.PROD_SERVER_HOST }}
-              run: |
-                  ssh $SERVER_USER@$SERVER_HOST << 'ENDSSH'
-                    cd /opt/place-research-prod
-                    bash scripts/rollback.sh
-                  ENDSSH
+      - name: Health check
+        env:
+          SERVER_USER: ${{ vars.PROD_SERVER_USER }}
+          SERVER_HOST: ${{ vars.PROD_SERVER_HOST }}
+        run: |
+          ssh $SERVER_USER@$SERVER_HOST << 'ENDSSH'
+            cd /opt/place-research-prod
+            bash scripts/health-check.sh
+          ENDSSH
+
+      - name: Rollback on failure
+        if: failure()
+        env:
+          SERVER_USER: ${{ vars.PROD_SERVER_USER }}
+          SERVER_HOST: ${{ vars.PROD_SERVER_HOST }}
+        run: |
+          ssh $SERVER_USER@$SERVER_HOST << 'ENDSSH'
+            cd /opt/place-research-prod
+            bash scripts/rollback.sh
+          ENDSSH
