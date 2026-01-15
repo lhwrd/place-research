@@ -1,6 +1,6 @@
 """Tests for base provider interface."""
 
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any, Dict, Optional
 
 import pytest

@@ -1,7 +1,7 @@
 """Tests for logging middleware."""
 
 import logging
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import patch
 
 import pytest
 from fastapi import FastAPI, Response
@@ -123,9 +123,11 @@ async def test_performance_timing(app, caplog):
 @pytest.mark.asyncio
 async def test_log_context_management():
     """Test that log context is set and cleared properly."""
-    with patch("app.middleware.logging.set_request_id") as mock_set_id, patch(
-        "app.middleware.logging.set_log_context"
-    ) as mock_set_context, patch("app.middleware.logging.clear_log_context") as mock_clear:
+    with (
+        patch("app.middleware.logging.set_request_id") as mock_set_id,
+        patch("app.middleware.logging.set_log_context") as mock_set_context,
+        patch("app.middleware.logging.clear_log_context") as mock_clear,
+    ):
 
         app = FastAPI()
 

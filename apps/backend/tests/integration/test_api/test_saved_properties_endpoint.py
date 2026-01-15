@@ -1,7 +1,7 @@
 """Tests for saved properties endpoints."""
 
 from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from fastapi import HTTPException, status
@@ -19,11 +19,9 @@ from app.api.v1.endpoints.saved_properties import (
     update_saved_property,
 )
 from app.exceptions import DuplicatePropertyError, NotFoundError, PropertyNotFoundError
-from app.schemas.property import PropertyData
 from app.schemas.saved_property import (
     SavedPropertyCreate,
     SavedPropertyUpdate,
-    SavedPropertyWithDetails,
 )
 
 
@@ -58,6 +56,14 @@ def mock_property_data():
     mock_property.year_built = 2020
     mock_property.property_type = "Single Family"
     mock_property.estimated_value = 500000
+    mock_property.county = "King"
+    mock_property.lot_size = 5000
+    mock_property.last_sold_price = 480000
+    mock_property.last_sold_date = datetime(2022, 5, 20)
+    mock_property.tax_assessed_value = 490000
+    mock_property.annual_tax = 6000
+    mock_property.description = "A lovely family home."
+    mock_property.parcel_id = "9876543210"
     mock_property.created_at = datetime(2024, 1, 1, tzinfo=timezone.utc)
     mock_property.updated_at = datetime(2024, 1, 1, tzinfo=timezone.utc)
     return mock_property

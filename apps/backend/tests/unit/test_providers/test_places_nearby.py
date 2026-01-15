@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -55,14 +55,15 @@ class TestCategorizeDuration:
 class TestPlacesNearbyProvider:
     @pytest.fixture
     def provider(self):
-        with patch("app.services.enrichment.providers.places_nearby.GooglePlacesAPI"), patch(
-            "app.services.enrichment.providers.places_nearby.DistanceService"
+        with (
+            patch("app.services.enrichment.providers.places_nearby.GooglePlacesAPI"),
+            patch("app.services.enrichment.providers.places_nearby.DistanceService"),
         ):
             return PlacesNearbyProvider()
 
     def test_metadata(self, provider):
         metadata = provider.metadata
-        assert metadata.name == "Places Nearby Provider"
+        assert metadata.name == "places_nearby_provider"
         assert metadata.category == ProviderCategory.NEARBY_PLACES
         assert metadata.version == "1.0.0"
         assert metadata.enabled is True
@@ -76,7 +77,7 @@ class TestPlacesNearbyProvider:
         result = await provider.enrich(latitude=40.7128, longitude=-74.0060, address="123 Test St")
 
         assert result.success is True
-        assert result.provider_name == "Places Nearby Provider"
+        assert result.provider_name == "places_nearby_provider"
         provider.places_api.nearby_search.assert_called_once()
 
     @pytest.mark.asyncio

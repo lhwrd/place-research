@@ -20,7 +20,6 @@ from app.models.user import User
 from app.schemas.user_preference import (
     AmenityPreferencesUpdate,
     UserPreferenceCreate,
-    UserPreferenceResponse,
     UserPreferenceUpdate,
 )
 

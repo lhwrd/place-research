@@ -1,6 +1,6 @@
 """Tests for Property Data API integration."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -38,19 +38,19 @@ def sample_attom_response():
                     "county": "King County",
                 },
                 "building": {
-                    "size": {"livingsize": 2100},
-                    "rooms": {"beds": 3, "bathstotal": 2.5},
+                    "size": {"livingSize": 2100},
+                    "rooms": {"beds": 3, "bathsTotal": 2.5},
                     "summary": {
                         "yearbuilt": 2005,
                         "proptype": "Single Family",
                         "propsubtype": "Residential",
                     },
                 },
-                "lot": {"lotsize1": 5000, "apn": "1234567890"},
+                "lot": {"lotSize1": 5000, "apn": "1234567890"},
                 "assessment": {
-                    "assessed": {"assdttlvalue": 800000},
+                    "assessed": {"assdTtlValue": 800000},
                     "tax": {"taxamt": 8500},
-                    "market": {"mktttlvalue": 850000},
+                    "market": {"mktTtlValue": 850000},
                 },
                 "sale": {"amount": {"saleamt": 650000, "salerecdate": "2018-05-15"}},
             }
@@ -110,7 +110,9 @@ class TestPropertyDataAPI:
         """Test getting property details from Attom."""
         property_api._make_request = AsyncMock(return_value=sample_attom_response)
 
-        result = await property_api.get_property_details(47.6062, -122.3321)
+        result = await property_api.get_property_details(
+            47.6062, -122.3321, "123 Main St, Seattle, WA"
+        )
 
         assert result["address"] == "123 Main St"
         assert result["city"] == "Seattle"
@@ -124,7 +126,9 @@ class TestPropertyDataAPI:
         """Test getting property details with no data returned."""
         property_api._make_request = AsyncMock(return_value={})
 
-        result = await property_api.get_property_details(47.6062, -122.3321)
+        result = await property_api.get_property_details(
+            47.6062, -122.3321, "123 Main St, Seattle, WA"
+        )
 
         assert result["address"] is None
         assert result["city"] is None
@@ -133,7 +137,9 @@ class TestPropertyDataAPI:
         """Test getting property details with error."""
         property_api._make_request = AsyncMock(side_effect=Exception("API Error"))
 
-        result = await property_api.get_property_details(47.6062, -122.3321)
+        result = await property_api.get_property_details(
+            47.6062, -122.3321, "123 Main St, Seattle, WA"
+        )
 
         assert result["address"] is None
 

@@ -58,8 +58,9 @@ class TestRailroadProviderTestability:
         mock_gdf = gpd.GeoDataFrame(geometry=[Point(0, 0)], crs="EPSG:4326")
         provider._load_geodataframe = Mock(return_value=mock_gdf)
 
-        with patch("app.services.enrichment.providers.railroads.settings") as mock_settings, patch(
-            "app.services.enrichment.providers.railroads.Path.exists", return_value=True
+        with (
+            patch("app.services.enrichment.providers.railroads.settings") as mock_settings,
+            patch("app.services.enrichment.providers.railroads.Path.exists", return_value=True),
         ):
             mock_settings.raillines_path = "/fake/path.geojson"
             provider._load_raillines_data()

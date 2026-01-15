@@ -23,8 +23,8 @@ import {
   FormControlLabel,
   IconButton,
   InputAdornment,
-  LinearProgress,
 } from "@mui/material";
+import axios from "axios";
 
 export const RegisterPage = () => {
   const { register, isAuthenticated } = useAuth();
@@ -85,10 +85,16 @@ export const RegisterPage = () => {
         password: password,
         full_name: fullName,
       });
-    } catch (err: any) {
-      setError(
-        err.response?.data?.detail || "Registration failed. Please try again."
-      );
+    } catch (err: unknown) {
+      console.error("Registration error:", err);
+      if (axios.isAxiosError(err)) {
+        setError(
+          err.response?.data?.detail ||
+            "Registration failed. Please try again."
+        );
+      } else {
+      setError("Registration failed. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }

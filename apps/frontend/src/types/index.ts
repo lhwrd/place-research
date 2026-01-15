@@ -73,8 +73,77 @@ export interface CustomLocationDistance {
   traffic_time_minutes: number | null;
 }
 
-export interface EnrichmentProviderData {
-  data: any;
+
+// WalkScore Provider Data
+export interface WalkScoreProviderData {
+  walk_score: number | null;
+  bike_score: number | null;
+  transit_score: number | null;
+  description: string | null;
+}
+
+// Air Quality Provider Data
+export interface AirQualityProviderData {
+  DateIssue: string;
+  DateForecast: string;
+  ReportingArea: string;
+  StateCode: string;
+  Latitude: number;
+  Longitude: number;
+  ParameterName: string;
+  AQI: number;
+  Category: {
+    Number: number;
+    Name: string;
+  };
+  ActionDay: boolean;
+  Discussion: string;
+}
+
+// Annual Average Climate Provider Data
+export interface AnnualAverageClimateProviderData {
+  annual_average_temperature: number;
+  annual_average_precipitation: number;
+}
+
+// Flood Zone Provider Data
+export interface FloodZoneProviderData {
+  flood_zone: string;
+  flood_risk: string;
+}
+
+// Highway Provider Data
+export interface HighwayProviderData {
+  highway_distance_m: number;
+  nearest_highway_type: string;
+  road_noise_level_db: number;
+  road_noise_category: string;
+}
+
+// Railroad Provider Data
+export interface RailroadProviderData {
+  railroad_distance_m: number;
+}
+
+// Places Nearby Provider Data
+export interface PlacesNearbyProviderData {
+  places_nearby: NearbyPlace[];
+}
+
+// Distance Provider Data
+export interface DistanceProviderData {
+  distances: CustomLocationDistance[];
+}
+
+// Generic Enrichment Provider Data (fallback)
+export interface GenericProviderData {
+  // Define as unknown for maximum type safety
+  [key: string]: unknown;
+}
+
+// Make EnrichmentProviderData generic
+export interface EnrichmentProviderData<T = GenericProviderData> {
+  data: T | null;
   success: boolean;
   cached: boolean;
   error: string | null;
@@ -89,20 +158,20 @@ export interface EnrichmentMetadata {
   cached_providers: number;
 }
 
+
 export interface EnrichmentData {
   success: boolean;
-  enrichment_data: Record<string, EnrichmentProviderData>;
+  enrichment_data: {
+    walkscore_provider?: EnrichmentProviderData<WalkScoreProviderData>;
+    air_quality_provider?: EnrichmentProviderData<AirQualityProviderData>;
+    annual_average_climate_provider?: EnrichmentProviderData<AnnualAverageClimateProviderData>;
+    flood_zone_provider?: EnrichmentProviderData<FloodZoneProviderData>;
+    highway_provider?: EnrichmentProviderData<HighwayProviderData>;
+    railroad_provider?: EnrichmentProviderData<RailroadProviderData>;
+    places_nearby_provider?: EnrichmentProviderData<PlacesNearbyProviderData>;
+    distance_provider?: EnrichmentProviderData<DistanceProviderData>;
+  };
   metadata: EnrichmentMetadata;
-}
-
-// Legacy interfaces for backward compatibility
-export interface LegacyEnrichmentData {
-  walk_scores: WalkScore;
-  nearby_places: NearbyPlace[];
-  custom_location_distances: CustomLocationDistance[];
-  is_cached: boolean;
-  cached_at: string | null;
-  enriched_at: string;
 }
 
 // Saved Property types
@@ -180,7 +249,7 @@ export interface ApiResponse<T> {
   error?: {
     message:  string;
     type: string;
-    details?: Record<string, any>;
+    details?: Record<string, string | string[]>;
   };
 }
 

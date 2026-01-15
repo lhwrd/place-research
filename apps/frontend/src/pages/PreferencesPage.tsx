@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Save,
@@ -40,10 +40,11 @@ import { PREFERENCE_SECTIONS } from "@/config/preferences";
 import { PreferenceSectionCard } from "@/components/preferences/PreferenceSectionCard";
 import { locationsApi, CustomLocationCreate } from "@/api/locations";
 import type { LocationType } from "@/types";
+import axios from "axios";
 
 const MAX_CUSTOM_LOCATIONS = 5;
 
-const LOCATION_TYPE_ICONS: Record<LocationType, any> = {
+const LOCATION_TYPE_ICONS: Record<LocationType, React.ElementType> = {
   family: Home,
   friend: Users,
   work: Briefcase,
@@ -59,17 +60,6 @@ const LOCATION_TYPE_LABELS: Record<LocationType, string> = {
 
 export const PreferencesPage = () => {
   const queryClient = useQueryClient();
-  const [formValues, setFormValues] = useState<Partial<UserPreferences>>({});
-  const [hasChanges, setHasChanges] = useState(false);
-  const [isAddLocationOpen, setIsAddLocationOpen] = useState(false);
-  const [newLocation, setNewLocation] = useState<CustomLocationCreate>({
-    name: "",
-    address: "",
-    location_type: "family",
-    priority: 50,
-  });
-
-  // Fetch preferences
   const {
     data: preferences,
     isLoading,
@@ -79,19 +69,25 @@ export const PreferencesPage = () => {
     queryFn: preferencesApi.getPreferences,
   });
 
+  const [formValues, setFormValues] = useState<Partial<UserPreferences>>(
+    () => preferences || {}
+  );
+  const [hasChanges, setHasChanges] = useState(false);
+  const [isAddLocationOpen, setIsAddLocationOpen] = useState(false);
+  const [newLocation, setNewLocation] = useState<CustomLocationCreate>({
+    name: "",
+    address: "",
+    location_type: "family",
+    priority: 50,
+  });
+
   // Fetch custom locations
   const { data: locationsData, isLoading: isLoadingLocations } = useQuery({
     queryKey: ["customLocations"],
     queryFn: () => locationsApi.getLocations({ limit: MAX_CUSTOM_LOCATIONS }),
   });
 
-  // Initialize form values when preferences load
-  useEffect(() => {
-    if (preferences) {
-      setFormValues(preferences);
-      setHasChanges(false);
-    }
-  }, [preferences]);
+  // No effect needed to sync formValues from preferences
 
   // Update mutation
   const updateMutation = useMutation({
@@ -103,8 +99,14 @@ export const PreferencesPage = () => {
       setHasChanges(false);
       toast.success("Preferences saved successfully!");
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || "Failed to save preferences");
+    onError: (error: unknown) => {
+      if (axios.isAxiosError(error)) {
+        toast.error(
+          error.response?.data?.detail || "Failed to save preferences"
+        );
+      } else {
+        toast.error("Failed to save preferences");
+      }
     },
   });
 
@@ -123,8 +125,12 @@ export const PreferencesPage = () => {
       });
       toast.success("Location added successfully!");
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || "Failed to add location");
+    onError: (error: unknown) => {
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.detail || "Failed to add location");
+      } else {
+        toast.error("Failed to add location");
+      }
     },
   });
 
@@ -135,13 +141,22 @@ export const PreferencesPage = () => {
       queryClient.invalidateQueries({ queryKey: ["customLocations"] });
       toast.success("Location deleted successfully!");
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || "Failed to delete location");
+    onError: (error: unknown) => {
+      if (axios.isAxiosError(error)) {
+        toast.error(
+          error.response?.data?.detail || "Failed to delete location"
+        );
+      } else {
+        toast.error("Failed to delete location");
+      }
     },
   });
 
   // Handle field change
-  const handleFieldChange = (key: string, value: any) => {
+  const handleFieldChange = (
+    key: string,
+    value: string | number | boolean | string[] | undefined
+  ) => {
     setFormValues((prev) => ({
       ...prev,
       [key]: value,
@@ -550,7 +565,12 @@ export const PreferencesPage = () => {
           <PreferenceSectionCard
             key={section.id}
             section={section}
-            values={formValues}
+            values={
+              formValues as Record<
+                string,
+                string | number | boolean | string[] | undefined
+              >
+            }
             onChange={handleFieldChange}
             disabled={updateMutation.isPending}
           />

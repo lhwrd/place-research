@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import patch
 
 import pandas as pd
 import pytest
@@ -40,7 +40,7 @@ def provider(mock_climate_data):
 def test_metadata(provider):
     """Test provider metadata."""
     metadata = provider.metadata
-    assert metadata.name == "AnnualAverageClimateProvider"
+    assert metadata.name == "annual_average_climate_provider"
     assert metadata.category == ProviderCategory.ENVIRONMENTAL
     assert metadata.enabled is True
     assert metadata.requires_api_key is False
@@ -54,7 +54,7 @@ async def test_enrich_finds_nearest_station(provider):
     result = await provider.enrich(latitude=40.1, longitude=-74.1, address="123 Main St")
 
     assert result.success is True
-    assert result.provider_name == "AnnualAverageClimateProvider"
+    assert result.provider_name == "annual_average_climate_provider"
     assert result.data["annual_average_temperature"] == 55.0
     assert result.data["annual_average_precipitation"] == 45.0
     assert result.api_calls_made == 0
@@ -130,5 +130,5 @@ def test_load_data():
             "app.services.enrichment.providers.annual_average_climate.settings"
         ) as mock_settings:
             mock_settings.annual_climate_path = "/fake/path/climate.csv"
-            provider = AnnualAverageClimateProvider()
+            _ = AnnualAverageClimateProvider()
             mock_read_csv.assert_called_once_with("/fake/path/climate.csv")

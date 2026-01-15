@@ -27,7 +27,7 @@ class TestAPIPerformance:
             response = client.post(
                 "/api/v1/properties/search",
                 headers=auth_headers,
-                json={"address": f"123 Test St, Seattle, WA"},
+                json={"address": "1600 Amphitheatre Parkway, Mountain View, CA"},
             )
             end = time.time()
 
@@ -37,7 +37,7 @@ class TestAPIPerformance:
         avg_time = mean(times)
         std_dev = stdev(times) if len(times) > 1 else 0
 
-        print(f"\nProperty Search Performance:")
+        print("\nProperty Search Performance:")
         print(f"  Average:  {avg_time*1000:.2f}ms")
         print(f"  Std Dev: {std_dev*1000:.2f}ms")
         print(f"  Min: {min(times)*1000:.2f}ms")

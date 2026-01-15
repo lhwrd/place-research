@@ -24,7 +24,7 @@ export interface PreferenceField {
   description?: string;
   options?: Array<{ value: string; label: string }>;
   placeholder?: string;
-  defaultValue?: any;
+  defaultValue?: string | number | boolean | string[] | null;
 }
 
 export interface PreferenceSection {

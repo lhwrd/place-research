@@ -15,14 +15,16 @@ import {
   Chip,
   OutlinedInput,
   InputAdornment,
-  SelectChangeEvent,
 } from "@mui/material";
 import { PreferenceField } from "@/config/preferences";
 
 interface PreferenceFieldInputProps {
   field: PreferenceField;
-  value: any;
-  onChange: (key: string, value: any) => void;
+  value: string | number | boolean | string[] | undefined;
+  onChange: (
+    key: string,
+    value: string | number | boolean | string[] | undefined
+  ) => void;
   disabled?: boolean;
 }
 
@@ -34,7 +36,9 @@ export const PreferenceFieldInput: React.FC<PreferenceFieldInputProps> = ({
 }) => {
   const [localValue, setLocalValue] = useState(value ?? field.defaultValue);
 
-  const handleChange = (newValue: any) => {
+  const handleChange = (
+    newValue: string | number | boolean | string[] | undefined
+  ) => {
     setLocalValue(newValue);
     onChange(field.key, newValue);
   };
@@ -42,9 +46,17 @@ export const PreferenceFieldInput: React.FC<PreferenceFieldInputProps> = ({
   const handleBlur = () => {
     // Ensure value is within bounds for number inputs
     if (field.type === "number" || field.type === "currency") {
-      let numValue = parseFloat(localValue);
+      let numValue =
+        typeof localValue === "number"
+          ? localValue
+          : typeof localValue === "string"
+          ? parseFloat(localValue)
+          : field.min ?? 0;
       if (isNaN(numValue)) {
-        numValue = field.defaultValue ?? null;
+        numValue =
+          typeof field.defaultValue === "number"
+            ? field.defaultValue
+            : field.min ?? 0;
       } else {
         if (field.min !== undefined) numValue = Math.max(field.min, numValue);
         if (field.max !== undefined) numValue = Math.min(field.max, numValue);
@@ -73,8 +85,10 @@ export const PreferenceFieldInput: React.FC<PreferenceFieldInputProps> = ({
             </Typography>
           </Box>
           <Slider
-            value={localValue ?? field.min ?? 0}
-            onChange={(_, newValue) => handleChange(newValue)}
+            value={typeof localValue === "number" ? localValue : field.min ?? 0}
+            onChange={(_, newValue) =>
+              handleChange(Array.isArray(newValue) ? newValue[0] : newValue)
+            }
             min={field.min ?? 0}
             max={field.max ?? 100}
             step={field.step ?? 1}
@@ -139,7 +153,7 @@ export const PreferenceFieldInput: React.FC<PreferenceFieldInputProps> = ({
         <FormControlLabel
           control={
             <Switch
-              checked={localValue ?? false}
+              checked={!!localValue}
               onChange={(e) => handleChange(e.target.checked)}
               disabled={disabled}
             />
@@ -154,9 +168,7 @@ export const PreferenceFieldInput: React.FC<PreferenceFieldInputProps> = ({
           fullWidth
           multiple
           value={localValue ?? []}
-          onChange={(e: SelectChangeEvent<string[]>) =>
-            handleChange(e.target.value)
-          }
+          onChange={(e) => handleChange(e.target.value as string[])}
           disabled={disabled}
           input={<OutlinedInput />}
           renderValue={(selected) => (

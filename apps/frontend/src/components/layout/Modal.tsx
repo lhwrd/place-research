@@ -1,12 +1,5 @@
 import { ReactNode } from "react";
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  IconButton,
-  SxProps,
-  Theme,
-} from "@mui/material";
+import { Dialog, DialogTitle, DialogContent, IconButton } from "@mui/material";
 import { X } from "lucide-react";
 
 interface ModalProps {

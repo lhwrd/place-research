@@ -16,3 +16,5 @@ config.json
 
 *.coverage
 coverage.xml
+
+node_modules/

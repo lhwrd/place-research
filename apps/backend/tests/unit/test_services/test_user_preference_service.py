@@ -1,5 +1,5 @@
-from datetime import datetime, timezone
-from unittest.mock import MagicMock, Mock
+from datetime import datetime
+from unittest.mock import Mock
 
 import pytest
 
@@ -56,7 +56,7 @@ class TestGetOrCreatePreferences:
         """Test get_or_create creating new preferences."""
         mock_db.query.return_value.filter.return_value.first.return_value = None
 
-        result = service.get_or_create_preferences(1)
+        _ = service.get_or_create_preferences(1)
 
         mock_db.add.assert_called_once()
         mock_db.commit.assert_called_once()
@@ -66,7 +66,7 @@ class TestGetOrCreatePreferences:
 class TestCreatePreferences:
     def test_create_with_defaults(self, service, mock_db):
         """Test creating preferences with default values."""
-        result = service.create_preferences(1)
+        _ = service.create_preferences(1)
 
         mock_db.add.assert_called_once()
         mock_db.commit.assert_called_once()
@@ -81,7 +81,7 @@ class TestCreatePreferences:
         """Test creating preferences with custom values."""
         custom_data = {"max_grocery_distance": 5.0, "notify_new_listings": True}
 
-        result = service.create_preferences(1, custom_data)
+        _ = service.create_preferences(1, custom_data)
 
         call_args = mock_db.add.call_args[0][0]
         assert call_args.max_grocery_distance == 5.0
@@ -108,7 +108,7 @@ class TestUpdatePreferences:
         mock_db.query.return_value.filter.return_value.first.return_value = None
 
         updates = {"max_grocery_distance": 5.0}
-        result = service.update_preferences(1, updates)
+        _ = service.update_preferences(1, updates)
 
         mock_db.add.assert_called_once()
 

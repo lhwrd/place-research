@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -124,7 +124,7 @@ class TestCreateLocation:
                 "app.services.custom_location_service.CustomLocation",
                 return_value=mock_location,
             ):
-                result = service.create_location(100, location_data)
+                _ = service.create_location(100, location_data)
 
                 mock_db.add.assert_called_once()
                 mock_db.commit.assert_called_once()

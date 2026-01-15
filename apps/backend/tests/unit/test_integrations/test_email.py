@@ -1,5 +1,5 @@
 import smtplib
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -58,9 +58,10 @@ async def test_send_email_os_error(email_client):
 @pytest.mark.asyncio
 async def test_send_email_logs_error(email_client):
     """Test that errors are logged properly."""
-    with patch("smtplib.SMTP") as mock_smtp, patch.object(
-        email_client.logger, "error"
-    ) as mock_logger:
+    with (
+        patch("smtplib.SMTP") as mock_smtp,
+        patch.object(email_client.logger, "error") as mock_logger,
+    ):
         mock_smtp.return_value.__enter__.side_effect = smtplib.SMTPException("SMTP error")
 
         await email_client.send_email(

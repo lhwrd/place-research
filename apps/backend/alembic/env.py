@@ -10,14 +10,14 @@ from app.db.database import Base
 
 # Import all models to ensure they're registered
 from app.models import (
-    api_usage,
-    cache_entry,
-    custom_location,
-    property,
-    property_enrichment,
-    saved_property,
-    user,
-    user_preference,
+    api_usage,  # noqa: F401
+    cache_entry,  # noqa: F401
+    custom_location,  # noqa: F401
+    property,  # noqa: F401
+    property_enrichment,  # noqa: F401
+    saved_property,  # noqa: F401
+    user,  # noqa: F401
+    user_preference,  # noqa: F401
 )
 
 # Alembic Config object

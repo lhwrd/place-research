@@ -24,7 +24,12 @@ export const authApi = {
     login: async (data: LoginData): Promise<AuthTokens> => {
         const response = await apiClient.post<AuthTokens>(
             '/auth/login',
-            new URLSearchParams(data),
+            new URLSearchParams(
+                Object.entries(data).reduce((acc, [key, value]) => {
+                    acc[key] = String(value);
+                    return acc;
+                }, {} as Record<string, string>)
+            ),
             {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',

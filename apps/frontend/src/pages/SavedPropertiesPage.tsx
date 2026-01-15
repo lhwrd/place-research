@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heart, Search, AlertCircle, Star, Archive } from "lucide-react";
+import { Heart, Search, Star, Archive } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -17,6 +17,7 @@ import { savedPropertiesApi } from "@/api/savedProperties";
 import { SavedProperty } from "@/types";
 import { PropertyList } from "@/components/property/PropertyList";
 import { LoadingSpinner } from "@/components/layout";
+import axios from "axios";
 
 type TabType = "all" | "favorites" | "archived";
 
@@ -33,7 +34,7 @@ export const SavedPropertiesPage = () => {
   });
 
   // Fetch saved properties
-  const fetchSavedProperties = async () => {
+  const fetchSavedProperties = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
@@ -69,17 +70,23 @@ export const SavedPropertiesPage = () => {
         favorites: favoritesResponse.total,
         archived: archivedResponse.total,
       });
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error fetching saved properties:", err);
-      setError(err.response?.data?.detail || "Failed to load saved properties");
+      if (axios.isAxiosError(err)) {
+        setError(
+          err.response?.data?.detail || "Failed to load saved properties"
+        );
+      } else {
+        setError("Failed to load saved properties");
+      }
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [activeTab]);
 
   useEffect(() => {
     fetchSavedProperties();
-  }, [activeTab]);
+  }, [fetchSavedProperties]);
 
   // Handle removing a saved property
   const handleRemoveProperty = async (propertyId: number) => {
@@ -93,9 +100,13 @@ export const SavedPropertiesPage = () => {
 
       // Refresh the list
       await fetchSavedProperties();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error removing saved property:", err);
-      setError(err.response?.data?.detail || "Failed to remove property");
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.detail || "Failed to remove property");
+      } else {
+        setError("Failed to remove property");
+      }
     }
   };
 

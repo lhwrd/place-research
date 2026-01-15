@@ -1,5 +1,5 @@
 from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -177,7 +177,7 @@ class TestGeocode:
         """Test geocoding with component filters."""
         google_maps_api._make_request = AsyncMock(return_value=mock_geocode_response)
 
-        result = await google_maps_api.geocode(
+        _ = await google_maps_api.geocode(
             "Main Street", components={"country": "US", "postal_code": "98101"}
         )
 

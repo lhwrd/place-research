@@ -1,6 +1,5 @@
 """End-to-end tests for property search workflow."""
 
-import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 

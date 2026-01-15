@@ -1,19 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
-  Building2,
   MapPin,
   Bed,
   Bath,
   Maximize,
-  Calendar,
   DollarSign,
-  TrendingUp,
   Heart,
   ArrowLeft,
   Sparkles,
   Map,
-  Star,
 } from "lucide-react";
 import {
   Card,
@@ -30,8 +26,9 @@ import {
 } from "@mui/material";
 import { propertiesApi } from "@/api/properties";
 import { savedPropertiesApi } from "@/api/savedProperties";
-import { Property, EnrichmentData } from "@/types";
+import { Property, EnrichmentData, NearbyPlace } from "@/types";
 import { LoadingSpinner } from "@/components/layout";
+import axios from "axios";
 
 export const PropertyDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -43,13 +40,7 @@ export const PropertyDetailPage = () => {
   const [isSaved, setIsSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (id) {
-      fetchProperty();
-    }
-  }, [id]);
-
-  const fetchProperty = async () => {
+  const fetchProperty = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
@@ -60,13 +51,27 @@ export const PropertyDetailPage = () => {
       } else {
         setError("Property not found");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error fetching property:", err);
-      setError(err.response?.data?.detail || "Failed to load property details");
+      if (axios.isAxiosError(err)) {
+        setError(
+          err.response?.data?.detail || "Failed to load property details"
+        );
+      } else {
+        setError("Failed to load property details");
+      }
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    if (id) {
+      fetchProperty();
+    }
+  }, [id, fetchProperty]);
+
+  // fetchProperty is now wrapped in useCallback above
 
   const handleEnrich = async () => {
     if (!property) return;
@@ -85,7 +90,10 @@ export const PropertyDetailPage = () => {
         );
         // Log each provider's data
         Object.entries(response.enrichment.enrichment_data || {}).forEach(
-          ([key, value]: [string, any]) => {
+          ([key, value]: [
+            string,
+            { success: boolean; cached?: boolean; data?: unknown }
+          ]) => {
             console.log(`Provider: ${key}`, {
               success: value.success,
               cached: value.cached,
@@ -95,12 +103,18 @@ export const PropertyDetailPage = () => {
           }
         );
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error enriching property:", err);
-      setError(
-        err.response?.data?.detail ||
+      if (axios.isAxiosError(err)) {
+        setError(
+          err.response?.data?.detail ||
+            "Failed to enrich property. You may have reached your rate limit."
+        );
+      } else {
+        setError(
           "Failed to enrich property. You may have reached your rate limit."
-      );
+        );
+      }
     } finally {
       setIsEnriching(false);
     }
@@ -115,9 +129,13 @@ export const PropertyDetailPage = () => {
         is_favorite: false,
       });
       setIsSaved(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Save error:", err);
-      setError(err.response?.data?.detail || "Failed to save property");
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.detail || "Failed to save property");
+      } else {
+        setError("Failed to save property");
+      }
     }
   };
 
@@ -236,7 +254,7 @@ export const PropertyDetailPage = () => {
             Property Overview
           </Typography>
           <Grid container spacing={3} sx={{ mt: 1 }}>
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Box
                 sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}
               >
@@ -249,7 +267,7 @@ export const PropertyDetailPage = () => {
                 {formatCurrency(property.estimated_value)}
               </Typography>
             </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Box
                 sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}
               >
@@ -262,7 +280,7 @@ export const PropertyDetailPage = () => {
                 {property.bedrooms || "N/A"}
               </Typography>
             </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Box
                 sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}
               >
@@ -275,7 +293,7 @@ export const PropertyDetailPage = () => {
                 {property.bathrooms || "N/A"}
               </Typography>
             </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <Box
                 sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}
               >
@@ -299,13 +317,13 @@ export const PropertyDetailPage = () => {
             Property Details
           </Typography>
           <Grid container spacing={3} sx={{ mt: 1 }}>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 Property Type
               </Typography>
               <Chip label={property.property_type || "Unknown"} />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 Year Built
               </Typography>
@@ -313,7 +331,7 @@ export const PropertyDetailPage = () => {
                 {property.year_built || "N/A"}
               </Typography>
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 Lot Size
               </Typography>
@@ -323,7 +341,7 @@ export const PropertyDetailPage = () => {
                   : "N/A"}
               </Typography>
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 County
               </Typography>
@@ -339,7 +357,7 @@ export const PropertyDetailPage = () => {
             Financial Information
           </Typography>
           <Grid container spacing={3} sx={{ mt: 1 }}>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 Last Sold Price
               </Typography>
@@ -347,7 +365,7 @@ export const PropertyDetailPage = () => {
                 {formatCurrency(property.last_sold_price)}
               </Typography>
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 Last Sold Date
               </Typography>
@@ -357,7 +375,7 @@ export const PropertyDetailPage = () => {
                   : "N/A"}
               </Typography>
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 Tax Assessed Value
               </Typography>
@@ -365,7 +383,7 @@ export const PropertyDetailPage = () => {
                 {formatCurrency(property.tax_assessed_value)}
               </Typography>
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 Annual Tax
               </Typography>
@@ -402,7 +420,7 @@ export const PropertyDetailPage = () => {
                     )}
                   </Box>
                   <Grid container spacing={3}>
-                    <Grid item xs={12} sm={4}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <Typography
                         variant="body2"
                         color="text.secondary"
@@ -415,7 +433,7 @@ export const PropertyDetailPage = () => {
                           .walk_score || "N/A"}
                       </Typography>
                     </Grid>
-                    <Grid item xs={12} sm={4}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <Typography
                         variant="body2"
                         color="text.secondary"
@@ -428,7 +446,7 @@ export const PropertyDetailPage = () => {
                           .bike_score || "N/A"}
                       </Typography>
                     </Grid>
-                    <Grid item xs={12} sm={4}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <Typography
                         variant="body2"
                         color="text.secondary"
@@ -443,7 +461,7 @@ export const PropertyDetailPage = () => {
                     </Grid>
                     {enrichment.enrichment_data.walkscore_provider.data
                       .description && (
-                      <Grid item xs={12}>
+                      <Grid size={{ xs: 12 }}>
                         <Typography variant="body2" color="text.secondary">
                           {
                             enrichment.enrichment_data.walkscore_provider.data
@@ -478,7 +496,7 @@ export const PropertyDetailPage = () => {
                     )}
                   </Box>
                   <Grid container spacing={3}>
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <Typography
                         variant="body2"
                         color="text.secondary"
@@ -510,7 +528,7 @@ export const PropertyDetailPage = () => {
                         sx={{ mt: 1 }}
                       />
                     </Grid>
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <Typography
                         variant="body2"
                         color="text.secondary"
@@ -559,7 +577,7 @@ export const PropertyDetailPage = () => {
                     )}
                   </Box>
                   <Grid container spacing={3}>
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <Typography
                         variant="body2"
                         color="text.secondary"
@@ -574,7 +592,7 @@ export const PropertyDetailPage = () => {
                         °F
                       </Typography>
                     </Grid>
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <Typography
                         variant="body2"
                         color="text.secondary"
@@ -596,7 +614,7 @@ export const PropertyDetailPage = () => {
 
           {/* Flood Zone */}
           {enrichment.enrichment_data?.flood_zone_provider?.success &&
-            enrichment.enrichment_data.flood_zone_provider.data?.result && (
+            enrichment.enrichment_data.flood_zone_provider.data && (
               <Card>
                 <CardContent>
                   <Box
@@ -615,62 +633,32 @@ export const PropertyDetailPage = () => {
                     )}
                   </Box>
                   <Grid container spacing={3}>
-                    {enrichment.enrichment_data.flood_zone_provider.data.result[
-                      "flood.s_fld_haz_ar"
-                    ]?.[0] && (
-                      <>
-                        <Grid item xs={12} sm={6}>
-                          <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            gutterBottom
-                          >
-                            Flood Zone
-                          </Typography>
-                          <Typography
-                            variant="h4"
-                            fontWeight="600"
-                            color="primary"
-                          >
-                            {
-                              enrichment.enrichment_data.flood_zone_provider
-                                .data.result["flood.s_fld_haz_ar"][0].fld_zone
-                            }
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {
-                              enrichment.enrichment_data.flood_zone_provider
-                                .data.result["flood.s_fld_haz_ar"][0].zone_subty
-                            }
-                          </Typography>
-                        </Grid>
-                        <Grid item xs={12} sm={6}>
-                          <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            gutterBottom
-                          >
-                            In Special Flood Hazard Area
-                          </Typography>
-                          <Chip
-                            label={
-                              enrichment.enrichment_data.flood_zone_provider
-                                .data.result["flood.s_fld_haz_ar"][0]
-                                .sfha_tf === "T"
-                                ? "Yes"
-                                : "No"
-                            }
-                            color={
-                              enrichment.enrichment_data.flood_zone_provider
-                                .data.result["flood.s_fld_haz_ar"][0]
-                                .sfha_tf === "T"
-                                ? "warning"
-                                : "success"
-                            }
-                          />
-                        </Grid>
-                      </>
-                    )}
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        gutterBottom
+                      >
+                        Flood Zone
+                      </Typography>
+                      <Typography variant="h4" fontWeight="600" color="primary">
+                        {enrichment.enrichment_data.flood_zone_provider.data
+                          .flood_zone || "N/A"}
+                      </Typography>
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        gutterBottom
+                      >
+                        Flood Risk
+                      </Typography>
+                      <Typography variant="h4" fontWeight="600" color="primary">
+                        {enrichment.enrichment_data.flood_zone_provider.data
+                          .flood_risk || "N/A"}
+                      </Typography>
+                    </Grid>
                   </Grid>
                 </CardContent>
               </Card>
@@ -688,7 +676,7 @@ export const PropertyDetailPage = () => {
                   {enrichment.enrichment_data?.highway_provider?.success &&
                     enrichment.enrichment_data.highway_provider.data && (
                       <>
-                        <Grid item xs={12} sm={6}>
+                        <Grid size={{ xs: 12, sm: 6 }}>
                           <Typography
                             variant="body2"
                             color="text.secondary"
@@ -710,7 +698,7 @@ export const PropertyDetailPage = () => {
                             }
                           </Typography>
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid size={{ xs: 12, sm: 6 }}>
                           <Typography
                             variant="body2"
                             color="text.secondary"
@@ -747,7 +735,7 @@ export const PropertyDetailPage = () => {
                     )}
                   {enrichment.enrichment_data?.railroad_provider?.success &&
                     enrichment.enrichment_data.railroad_provider.data && (
-                      <Grid item xs={12} sm={6}>
+                      <Grid size={{ xs: 12, sm: 6 }}>
                         <Typography
                           variant="body2"
                           color="text.secondary"
@@ -796,54 +784,30 @@ export const PropertyDetailPage = () => {
                     )}
                   </Box>
                   <Grid container spacing={2} sx={{ mt: 1 }}>
-                    {enrichment.enrichment_data.places_nearby_provider.data.places_nearby.map(
-                      (place: any, index: number) => (
-                        <Grid item xs={12} sm={6} md={4} key={index}>
-                          <Card variant="outlined">
-                            <CardContent>
-                              <Typography
-                                variant="subtitle2"
-                                fontWeight="600"
-                                gutterBottom
-                              >
-                                {place.name}
-                              </Typography>
-                              <Chip
-                                label={place.type}
-                                size="small"
-                                sx={{ mb: 1 }}
-                              />
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                              >
-                                {place.distance_miles?.toFixed(2) || "N/A"}{" "}
-                                miles away
-                              </Typography>
-                              {place.rating && (
-                                <Box
-                                  sx={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 0.5,
-                                    mt: 1,
-                                  }}
-                                >
-                                  <Star
-                                    size={14}
-                                    fill="#fbbf24"
-                                    color="#fbbf24"
-                                  />
-                                  <Typography variant="body2">
-                                    {place.rating}
-                                  </Typography>
-                                </Box>
-                              )}
-                            </CardContent>
-                          </Card>
-                        </Grid>
-                      )
-                    )}
+                    {(
+                      enrichment.enrichment_data.places_nearby_provider.data
+                        .places_nearby as NearbyPlace[]
+                    ).map((place: NearbyPlace, index: number) => (
+                      <Grid size={{ xs: 12, sm: 6, md: 4 }} key={index}>
+                        <Typography variant="body2" fontWeight="bold">
+                          {place.name}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {place.type}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {place.distance_miles !== null &&
+                          place.distance_miles !== undefined
+                            ? `${place.distance_miles} mi`
+                            : "N/A"}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {place.rating !== null && place.rating !== undefined
+                            ? place.rating
+                            : "N/A"}
+                        </Typography>
+                      </Grid>
+                    ))}
                   </Grid>
                 </CardContent>
               </Card>
@@ -873,8 +837,17 @@ export const PropertyDetailPage = () => {
                   </Box>
                   <Grid container spacing={2} sx={{ mt: 1 }}>
                     {enrichment.enrichment_data.distance_provider.data.distances.map(
-                      (location: any) => (
-                        <Grid item xs={12} sm={6} key={location.location_id}>
+                      (location: {
+                        location_id: number;
+                        location_name: string;
+                        distance_miles?: number;
+                        duration_minutes?: number;
+                        duration_in_traffic_minutes?: number;
+                      }) => (
+                        <Grid
+                          size={{ xs: 12, sm: 6 }}
+                          key={location.location_id}
+                        >
                           <Card variant="outlined">
                             <CardContent>
                               <Typography
@@ -919,7 +892,7 @@ export const PropertyDetailPage = () => {
                   Enrichment Summary
                 </Typography>
                 <Grid container spacing={2}>
-                  <Grid item xs={6} sm={3}>
+                  <Grid size={{ xs: 6, sm: 3 }}>
                     <Typography variant="body2" color="text.secondary">
                       Providers Run
                     </Typography>
@@ -928,7 +901,7 @@ export const PropertyDetailPage = () => {
                       {enrichment.metadata.total_providers}
                     </Typography>
                   </Grid>
-                  <Grid item xs={6} sm={3}>
+                  <Grid size={{ xs: 6, sm: 3 }}>
                     <Typography variant="body2" color="text.secondary">
                       API Calls
                     </Typography>
@@ -936,7 +909,7 @@ export const PropertyDetailPage = () => {
                       {enrichment.metadata.total_api_calls}
                     </Typography>
                   </Grid>
-                  <Grid item xs={6} sm={3}>
+                  <Grid size={{ xs: 6, sm: 3 }}>
                     <Typography variant="body2" color="text.secondary">
                       Cached Results
                     </Typography>
@@ -944,7 +917,7 @@ export const PropertyDetailPage = () => {
                       {enrichment.metadata.cached_providers}
                     </Typography>
                   </Grid>
-                  <Grid item xs={6} sm={3}>
+                  <Grid size={{ xs: 6, sm: 3 }}>
                     <Typography variant="body2" color="text.secondary">
                       Failed
                     </Typography>

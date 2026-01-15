@@ -11,6 +11,7 @@ import {
   Box,
   Typography,
 } from "@mui/material";
+import axios from "axios";
 
 export const LoginPage = () => {
   const { login, isAuthenticated } = useAuth();
@@ -30,11 +31,15 @@ export const LoginPage = () => {
         username: email,
         password: password,
       });
-    } catch (err: any) {
-      setError(
-        err.response?.data?.detail ||
-          "Invalid email or password. Please try again."
-      );
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        setError(
+          err.response?.data?.detail ||
+            "Invalid email or password. Please try again."
+        );
+      } else {
+        setError("Invalid email or password. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -42,7 +47,12 @@ export const LoginPage = () => {
 
   // Redirect if already authenticated - back to where they came from or home
   if (isAuthenticated) {
-    const from = (location.state as any)?.from?.pathname || "/";
+    interface LocationState {
+      from?: {
+      pathname: string;
+      };
+    }
+    const from = (location.state as LocationState)?.from?.pathname || "/";
     return <Navigate to={from} replace />;
   }
 
