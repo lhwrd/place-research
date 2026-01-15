@@ -63,11 +63,11 @@ jobs:
 
           # Application
           LOG_LEVEL=DEBUG
-          APP_NAME=Property Research (Test)
+          APP_NAME="Property Research (Test)"
 
           # Frontend
           VITE_API_BASE_URL=https://test-api.yourapp.com/api/v1
-          VITE_APP_NAME=Property Research (Test)
+          VITE_APP_NAME="Property Research (Test)"
 
           # Ports
           BACKEND_PORT=8000

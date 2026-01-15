@@ -66,12 +66,11 @@ jobs:
 
                   # Application
                   LOG_LEVEL=WARNING
-                  APP_NAME=Property Research
+                  APP_NAME="Property Research"
 
                   # Frontend
                   VITE_API_BASE_URL=https://api.yourapp.com/api/v1
-                  VITE_APP_NAME=Property Research
-
+                  VITE_APP_NAME="Property Research"
                   # Email
                   EMAIL_SMTP_SERVER=${{ vars.EMAIL_SMTP_SERVER }}
                   EMAIL_SMTP_PORT=587
