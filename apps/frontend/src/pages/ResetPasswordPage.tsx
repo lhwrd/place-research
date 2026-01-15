@@ -13,6 +13,7 @@ import {
   InputAdornment,
 } from "@mui/material";
 import apiClient from "@/lib/axios";
+import axios from "axios";
 
 export const ResetPasswordPage = () => {
   const [searchParams] = useSearchParams();
@@ -76,11 +77,16 @@ export const ResetPasswordPage = () => {
       setTimeout(() => {
         navigate("/login");
       }, 3000);
-    } catch (err) {
-      setError(
-        err.response?.data?.detail ||
-          "Failed to reset password. The link may have expired."
-      );
+    } catch (err: unknown) {
+      console.error("Error resetting password:", err);
+      if (axios.isAxiosError(err)) {
+        setError(
+          err.response?.data?.detail ||
+            "Failed to reset password. The link may have expired."
+        );
+      } else {
+        setError("Failed to reset password. The link may have expired.");
+      }
     } finally {
       setIsLoading(false);
     }

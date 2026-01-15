@@ -17,7 +17,10 @@ import { PreferenceFieldInput } from "./PreferenceFieldInput";
 interface PreferenceSectionCardProps {
   section: PreferenceSection;
   values: Record<string, string | number | boolean | string[] | undefined>;
-  onChange: (key: string, value: string | number | boolean | string[] | undefined) => void;
+  onChange: (
+    key: string,
+    value: string | number | boolean | string[] | undefined
+  ) => void;
   disabled?: boolean;
 }
 
@@ -60,9 +63,10 @@ export const PreferenceSectionCard: React.FC<PreferenceSectionCardProps> = ({
         <Grid container spacing={3}>
           {section.fields.map((field) => (
             <Grid
-              item
-              xs={12}
-              sm={field.type === "toggle" ? 12 : 6}
+              size={{
+                xs: 12,
+                sm: field.type === "toggle" ? 12 : 6,
+              }}
               key={field.key}
             >
               <Box>

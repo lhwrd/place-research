@@ -25,6 +25,16 @@ const PropertyEnrichment = ({
   enrichment,
   isLoading,
 }: PropertyEnrichmentProps) => {
+  // Map nested enrichment data to flat structure
+  const walkScores = enrichment.enrichment_data.walkscore_provider?.data;
+  const isCached = enrichment.enrichment_data.walkscore_provider?.cached;
+  const enrichedAt = enrichment.enrichment_data.walkscore_provider?.enriched_at;
+  const nearbyPlaces =
+    enrichment.enrichment_data.places_nearby_provider?.data?.places_nearby ||
+    [];
+  const customLocationDistances =
+    enrichment.enrichment_data.distance_provider?.data?.distances || [];
+
   const getScoreColor = (
     score: number | null
   ):
@@ -76,88 +86,89 @@ const PropertyEnrichment = ({
 
           <div className="space-y-6">
             {/* Walk Score */}
-            {enrichment.walk_scores.walk_score !== null && (
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <Footprints className="w-5 h-5 text-neutral-700" />
-                    <span className="font-medium text-neutral-900">
-                      Walk Score
-                    </span>
+            {walkScores?.walk_score !== null &&
+              walkScores?.walk_score !== undefined && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Footprints className="w-5 h-5 text-neutral-700" />
+                      <span className="font-medium text-neutral-900">
+                        Walk Score
+                      </span>
+                    </div>
+                    <Chip
+                      label={walkScores.walk_score}
+                      color={getScoreColor(walkScores.walk_score)}
+                      size="small"
+                    />
                   </div>
-                  <Chip
-                    label={enrichment.walk_scores.walk_score}
-                    color={getScoreColor(enrichment.walk_scores.walk_score)}
-                    size="small"
-                  />
+                  <div className="w-full bg-neutral-200 rounded-full h-3 overflow-hidden">
+                    <div
+                      className="bg-neutral-900 h-full rounded-full transition-all"
+                      style={{ width: `${walkScores.walk_score}%` }}
+                    />
+                  </div>
+                  <p className="text-sm text-neutral-600 mt-2">
+                    {getScoreLabel(walkScores.walk_score)}
+                  </p>
                 </div>
-                <div className="w-full bg-neutral-200 rounded-full h-3 overflow-hidden">
-                  <div
-                    className="bg-neutral-900 h-full rounded-full transition-all"
-                    style={{ width: `${enrichment.walk_scores.walk_score}%` }}
-                  />
-                </div>
-                <p className="text-sm text-neutral-600 mt-2">
-                  {getScoreLabel(enrichment.walk_scores.walk_score)}
-                </p>
-              </div>
-            )}
+              )}
 
             {/* Bike Score */}
-            {enrichment.walk_scores.bike_score !== null && (
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <Bike className="w-5 h-5 text-neutral-700" />
-                    <span className="font-medium text-neutral-900">
-                      Bike Score
-                    </span>
+            {walkScores?.bike_score !== null &&
+              walkScores?.bike_score !== undefined && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Bike className="w-5 h-5 text-neutral-700" />
+                      <span className="font-medium text-neutral-900">
+                        Bike Score
+                      </span>
+                    </div>
+                    <Chip
+                      label={walkScores.bike_score}
+                      color={getScoreColor(walkScores.bike_score)}
+                      size="small"
+                    />
                   </div>
-                  <Chip
-                    label={enrichment.walk_scores.bike_score}
-                    color={getScoreColor(enrichment.walk_scores.bike_score)}
-                    size="small"
-                  />
+                  <div className="w-full bg-neutral-200 rounded-full h-3 overflow-hidden">
+                    <div
+                      className="bg-neutral-900 h-full rounded-full transition-all"
+                      style={{ width: `${walkScores.bike_score}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="w-full bg-neutral-200 rounded-full h-3 overflow-hidden">
-                  <div
-                    className="bg-neutral-900 h-full rounded-full transition-all"
-                    style={{ width: `${enrichment.walk_scores.bike_score}%` }}
-                  />
-                </div>
-              </div>
-            )}
+              )}
 
             {/* Transit Score */}
-            {enrichment.walk_scores.transit_score !== null && (
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <Bus className="w-5 h-5 text-neutral-700" />
-                    <span className="font-medium text-neutral-900">
-                      Transit Score
-                    </span>
+            {walkScores?.transit_score !== null &&
+              walkScores?.transit_score !== undefined && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Bus className="w-5 h-5 text-neutral-700" />
+                      <span className="font-medium text-neutral-900">
+                        Transit Score
+                      </span>
+                    </div>
+                    <Chip
+                      label={walkScores.transit_score}
+                      color={getScoreColor(walkScores.transit_score)}
+                      size="small"
+                    />
                   </div>
-                  <Chip
-                    label={enrichment.walk_scores.transit_score}
-                    color={getScoreColor(enrichment.walk_scores.transit_score)}
-                    size="small"
-                  />
+                  <div className="w-full bg-neutral-200 rounded-full h-3 overflow-hidden">
+                    <div
+                      className="bg-neutral-900 h-full rounded-full transition-all"
+                      style={{ width: `${walkScores.transit_score}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="w-full bg-neutral-200 rounded-full h-3 overflow-hidden">
-                  <div
-                    className="bg-neutral-900 h-full rounded-full transition-all"
-                    style={{
-                      width: `${enrichment.walk_scores.transit_score}%`,
-                    }}
-                  />
-                </div>
-              </div>
-            )}
+              )}
 
-            {enrichment.walk_scores.description && (
+            {walkScores?.description && (
               <p className="text-sm text-neutral-600 italic">
-                {enrichment.walk_scores.description}
+                {walkScores.description}
               </p>
             )}
           </div>
@@ -165,7 +176,7 @@ const PropertyEnrichment = ({
       </Card>
 
       {/* Nearby Places */}
-      {enrichment.nearby_places.length > 0 && (
+      {nearbyPlaces.length > 0 && (
         <Card>
           <CardContent className="pt-6">
             <h2 className="text-xl font-semibold text-neutral-900 mb-6">
@@ -173,52 +184,58 @@ const PropertyEnrichment = ({
             </h2>
 
             <div className="space-y-4">
-              {enrichment.nearby_places.map((place, index) => (
-                <div key={index}>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-neutral-400" />
-                        <h3 className="font-medium text-neutral-900">
-                          {place.name}
-                        </h3>
-                      </div>
-                      <p className="text-sm text-neutral-500 ml-6">
-                        {place.address}
-                      </p>
-                      <div className="flex items-center gap-4 ml-6 mt-1 text-sm text-neutral-600">
-                        <span className="flex items-center gap-1">
-                          <Navigation className="w-3 h-3" />
-                          {place.distance_miles.toFixed(1)} mi
-                        </span>
-                        {place.walking_time_minutes && (
+              {nearbyPlaces.map(
+                (place: import("@/types").NearbyPlace, index: number) => (
+                  <div key={index}>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-neutral-400" />
+                          <h3 className="font-medium text-neutral-900">
+                            {place.name}
+                          </h3>
+                        </div>
+                        <p className="text-sm text-neutral-500 ml-6">
+                          {place.address}
+                        </p>
+                        <div className="flex items-center gap-4 ml-6 mt-1 text-sm text-neutral-600">
                           <span className="flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {place.walking_time_minutes} min walk
+                            <Navigation className="w-3 h-3" />
+                            {place.distance_miles.toFixed(1)} mi
                           </span>
-                        )}
-                        {place.rating && (
-                          <span className="flex items-center gap-1">
-                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                            {place.rating.toFixed(1)}
-                          </span>
-                        )}
+                          {place.walking_time_minutes && (
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {place.walking_time_minutes} min walk
+                            </span>
+                          )}
+                          {place.rating !== null &&
+                            place.rating !== undefined && (
+                              <span className="flex items-center gap-1">
+                                <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                                {place.rating.toFixed(1)}
+                              </span>
+                            )}
+                        </div>
                       </div>
+                      <Chip
+                        label={place.type.replace(/_/g, " ")}
+                        size="small"
+                      />
                     </div>
-                    <Chip label={place.type.replace(/_/g, " ")} size="small" />
+                    {index < nearbyPlaces.length - 1 && (
+                      <Divider sx={{ my: 2 }} />
+                    )}
                   </div>
-                  {index < enrichment.nearby_places.length - 1 && (
-                    <Divider sx={{ my: 2 }} />
-                  )}
-                </div>
-              ))}
+                )
+              )}
             </div>
           </CardContent>
         </Card>
       )}
 
       {/* Custom Location Distances */}
-      {enrichment.custom_location_distances.length > 0 && (
+      {customLocationDistances.length > 0 && (
         <Card>
           <CardContent className="pt-6">
             <h2 className="text-xl font-semibold text-neutral-900 mb-6">
@@ -226,53 +243,62 @@ const PropertyEnrichment = ({
             </h2>
 
             <div className="space-y-4">
-              {enrichment.custom_location_distances.map((location, index) => (
-                <div key={location.location_id}>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-5 h-5 text-neutral-700" />
-                        <h3 className="font-medium text-neutral-900">
-                          {location.location_name}
-                        </h3>
-                      </div>
-                      <div className="flex items-center gap-4 ml-7 mt-2">
-                        <div className="flex items-center gap-1 text-sm text-neutral-600">
-                          <Navigation className="w-4 h-4" />
-                          <span>
-                            {location.distance_miles.toFixed(1)} miles
-                          </span>
+              {customLocationDistances.map(
+                (
+                  location: import("@/types").CustomLocationDistance,
+                  index: number
+                ) => (
+                  <div key={location.location_id}>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-5 h-5 text-neutral-700" />
+                          <h3 className="font-medium text-neutral-900">
+                            {location.location_name}
+                          </h3>
                         </div>
-                        <div className="flex items-center gap-1 text-sm text-neutral-600">
-                          <Car className="w-4 h-4" />
-                          <span>{location.driving_time_minutes} min drive</span>
-                        </div>
-                        {location.traffic_time_minutes && (
-                          <div className="flex items-center gap-1 text-sm text-neutral-500">
-                            <Clock className="w-4 h-4" />
+                        <div className="flex items-center gap-4 ml-7 mt-2">
+                          <div className="flex items-center gap-1 text-sm text-neutral-600">
+                            <Navigation className="w-4 h-4" />
                             <span>
-                              ({location.traffic_time_minutes} min w/ traffic)
+                              {location.distance_miles.toFixed(1)} miles
                             </span>
                           </div>
-                        )}
+                          <div className="flex items-center gap-1 text-sm text-neutral-600">
+                            <Car className="w-4 h-4" />
+                            <span>
+                              {location.driving_time_minutes} min drive
+                            </span>
+                          </div>
+                          {location.traffic_time_minutes !== null &&
+                            location.traffic_time_minutes !== undefined && (
+                              <div className="flex items-center gap-1 text-sm text-neutral-500">
+                                <Clock className="w-4 h-4" />
+                                <span>
+                                  ({location.traffic_time_minutes} min w/
+                                  traffic)
+                                </span>
+                              </div>
+                            )}
+                        </div>
                       </div>
                     </div>
+                    {index < customLocationDistances.length - 1 && (
+                      <Divider sx={{ my: 2 }} />
+                    )}
                   </div>
-                  {index < enrichment.custom_location_distances.length - 1 && (
-                    <Divider sx={{ my: 2 }} />
-                  )}
-                </div>
-              ))}
+                )
+              )}
             </div>
           </CardContent>
         </Card>
       )}
 
       {/* Cache Info */}
-      {enrichment.is_cached && (
+      {isCached && (
         <p className="text-xs text-neutral-500 text-center">
           Data cached from{" "}
-          {new Date(enrichment.enriched_at).toLocaleDateString()}
+          {enrichedAt ? new Date(enrichedAt).toLocaleDateString() : ""}
         </p>
       )}
     </div>

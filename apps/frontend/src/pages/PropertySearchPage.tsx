@@ -17,6 +17,7 @@ import { savedPropertiesApi } from "@/api/savedProperties";
 import { Property } from "@/types";
 import { PropertyCard } from "@/components/property/PropertyCard";
 import { LoadingSpinner } from "@/components/layout";
+import axios from "axios";
 
 export const PropertySearchPage = () => {
   const navigate = useNavigate();
@@ -49,12 +50,18 @@ export const PropertySearchPage = () => {
       } else {
         setError(response.message || "Property not found");
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Search error:", err);
-      setError(
-        err.response?.data?.detail ||
+      if (axios.isAxiosError(err)) {
+        setError(
+          err.response?.data?.detail ||
+            "Failed to search property. Please check the address and try again."
+        );
+      } else {
+        setError(
           "Failed to search property. Please check the address and try again."
-      );
+        );
+      }
     } finally {
       setIsLoading(false);
     }
@@ -67,9 +74,15 @@ export const PropertySearchPage = () => {
         is_favorite: false,
       });
       setIsSaved(true);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Save error:", err);
-      setError(err.response?.data?.detail || "Failed to save property");
+      if (axios.isAxiosError(err)) {
+        setError(
+          err.response?.data?.detail || "Failed to save property"
+        );
+      } else {
+        setError("Failed to save property");
+      }
     }
   };
 

@@ -40,6 +40,7 @@ import { PREFERENCE_SECTIONS } from "@/config/preferences";
 import { PreferenceSectionCard } from "@/components/preferences/PreferenceSectionCard";
 import { locationsApi, CustomLocationCreate } from "@/api/locations";
 import type { LocationType } from "@/types";
+import axios from "axios";
 
 const MAX_CUSTOM_LOCATIONS = 5;
 
@@ -98,8 +99,14 @@ export const PreferencesPage = () => {
       setHasChanges(false);
       toast.success("Preferences saved successfully!");
     },
-    onError: (error) => {
-      toast.error(error.response?.data?.detail || "Failed to save preferences");
+    onError: (error: unknown) => {
+      if (axios.isAxiosError(error)) {
+        toast.error(
+          error.response?.data?.detail || "Failed to save preferences"
+        );
+      } else {
+        toast.error("Failed to save preferences");
+      }
     },
   });
 
@@ -118,8 +125,12 @@ export const PreferencesPage = () => {
       });
       toast.success("Location added successfully!");
     },
-    onError: (error) => {
-      toast.error(error.response?.data?.detail || "Failed to add location");
+    onError: (error: unknown) => {
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.detail || "Failed to add location");
+      } else {
+        toast.error("Failed to add location");
+      }
     },
   });
 
@@ -130,13 +141,22 @@ export const PreferencesPage = () => {
       queryClient.invalidateQueries({ queryKey: ["customLocations"] });
       toast.success("Location deleted successfully!");
     },
-    onError: (error) => {
-      toast.error(error.response?.data?.detail || "Failed to delete location");
+    onError: (error: unknown) => {
+      if (axios.isAxiosError(error)) {
+        toast.error(
+          error.response?.data?.detail || "Failed to delete location"
+        );
+      } else {
+        toast.error("Failed to delete location");
+      }
     },
   });
 
   // Handle field change
-  const handleFieldChange = (key: string, value: string | number | boolean | null) => {
+  const handleFieldChange = (
+    key: string,
+    value: string | number | boolean | string[] | undefined
+  ) => {
     setFormValues((prev) => ({
       ...prev,
       [key]: value,
@@ -545,7 +565,12 @@ export const PreferencesPage = () => {
           <PreferenceSectionCard
             key={section.id}
             section={section}
-            values={formValues}
+            values={
+              formValues as Record<
+                string,
+                string | number | boolean | string[] | undefined
+              >
+            }
             onChange={handleFieldChange}
             disabled={updateMutation.isPending}
           />

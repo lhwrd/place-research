@@ -17,6 +17,7 @@ import { savedPropertiesApi } from "@/api/savedProperties";
 import { SavedProperty } from "@/types";
 import { PropertyList } from "@/components/property/PropertyList";
 import { LoadingSpinner } from "@/components/layout";
+import axios from "axios";
 
 type TabType = "all" | "favorites" | "archived";
 
@@ -71,7 +72,13 @@ export const SavedPropertiesPage = () => {
       });
     } catch (err) {
       console.error("Error fetching saved properties:", err);
-      setError(err.response?.data?.detail || "Failed to load saved properties");
+      if (axios.isAxiosError(err)) {
+        setError(
+          err.response?.data?.detail || "Failed to load saved properties"
+        );
+      } else {
+        setError("Failed to load saved properties");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -93,9 +100,13 @@ export const SavedPropertiesPage = () => {
 
       // Refresh the list
       await fetchSavedProperties();
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Error removing saved property:", err);
-      setError(err.response?.data?.detail || "Failed to remove property");
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.detail || "Failed to remove property");
+      } else {
+        setError("Failed to remove property");
+      }
     }
   };
 

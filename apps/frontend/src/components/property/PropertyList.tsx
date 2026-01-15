@@ -91,7 +91,7 @@ const PropertyList = ({
       {viewMode === "grid" ? (
         <Grid container spacing={3}>
           {properties.map((property) => (
-            <Grid item xs={12} sm={6} md={4} key={property.id}>
+            <Grid  size={{ xs: 12, sm: 6, md: 4 }} key={property.id}>
               <PropertyCard
                 property={property}
                 onSave={onSaveProperty}

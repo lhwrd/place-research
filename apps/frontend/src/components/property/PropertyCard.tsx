@@ -255,7 +255,7 @@ const PropertyCard = ({
             }}
           >
             {property.bedrooms && (
-              <Grid item xs={4}>
+              <Grid size={{ xs: 4 }}>
                 <Box
                   sx={{
                     textAlign: "center",
@@ -274,7 +274,7 @@ const PropertyCard = ({
               </Grid>
             )}
             {property.bathrooms && (
-              <Grid item xs={4}>
+              <Grid size={{ xs: 4 }}>
                 <Box
                   sx={{
                     textAlign: "center",
@@ -293,7 +293,7 @@ const PropertyCard = ({
               </Grid>
             )}
             {property.square_feet && (
-              <Grid item xs={4}>
+              <Grid size={{ xs: 4 }}>
                 <Box
                   sx={{
                     textAlign: "center",
