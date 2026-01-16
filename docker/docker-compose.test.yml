@@ -55,6 +55,13 @@ services:
       RAILLINES_PATH: ${RAILLINES_PATH}
       ANNUAL_CLIMATE_PATH: ${ANNUAL_CLIMATE_PATH}
 
+      # Email Settings
+      EMAIL_SMTP_SERVER: ${EMAIL_SMTP_SERVER}
+      EMAIL_SMTP_PORT: ${EMAIL_SMTP_PORT}
+      EMAIL_USERNAME: ${EMAIL_USERNAME}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+      EMAIL_FROM_ADDRESS: ${EMAIL_FROM_ADDRESS}
+
     volumes:
       - ./logs/backend:/app/logs
       - ./data:/app/data
