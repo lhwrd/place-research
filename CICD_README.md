@@ -81,6 +81,8 @@ This project uses [1Password Service Accounts](https://developer.1password.com/d
 
 #### 1Password Setup
 
+The repository includes environment file templates (`env/test.env` and `env/prod.env`) with 1Password secret references. During deployment, the CI/CD workflow uses `op inject` to replace these references with actual values.
+
 1. **Create a 1Password vault** named `ci-cd` (or use an existing vault)
 
 2. **Create items in your vault** with the following structure:

@@ -17,10 +17,21 @@ The deployment workflows have been updated to use [1Password Service Accounts](h
 
 ## Migration Steps
 
-### Step 1: Set Up 1Password Vault
+### Step 1: Understand the Architecture
+
+The new setup uses:
+- **Environment file templates** (`env/test.env` and `env/prod.env`) stored in the repository with 1Password secret references
+- **1Password CLI** (`op inject`) to replace secret references with actual values during deployment
+- **Service account token** as the only GitHub Secret needed
+
+These template files contain references like `op://ci-cd/database/password` instead of actual secrets, making them safe to commit to version control.
+
+### Step 2: Set Up 1Password Vault
 
 1. **Create or use existing vault** named `ci-cd`
 2. **Create items** with the following structure:
+
+**Note:** The repository includes template env files (`env/test.env` and `env/prod.env`) that reference these 1Password items. The CI/CD workflow uses `op inject` to replace the references with actual secret values during deployment.
 
 #### Tailscale
 - **Item name**: `tailscale`
@@ -76,7 +87,7 @@ The deployment workflows have been updated to use [1Password Service Accounts](h
   - `password`: Email password
   - `from-address`: From email address
 
-### Step 2: Create Service Account
+### Step 3: Create Service Account
 
 1. Go to your 1Password account settings
 2. Navigate to **Service Accounts**
@@ -86,7 +97,7 @@ The deployment workflows have been updated to use [1Password Service Accounts](h
    - **Vaults**: Grant read access to `ci-cd` vault only
 5. **Save the token** (you'll only see it once!)
 
-### Step 3: Add Service Account Token to GitHub
+### Step 4: Add Service Account Token to GitHub
 
 1. Go to your GitHub repository
 2. Navigate to **Settings > Secrets and variables > Actions**
@@ -95,7 +106,7 @@ The deployment workflows have been updated to use [1Password Service Accounts](h
    - **Name**: `OP_SERVICE_ACCOUNT_TOKEN`
    - **Value**: Paste your 1Password service account token
 
-### Step 4: Verify Migration
+### Step 5: Verify Migration
 
 Once the service account token is added to GitHub:
 
@@ -103,7 +114,7 @@ Once the service account token is added to GitHub:
 2. Monitor the workflow run to ensure secrets are loaded correctly
 3. Check the "Load secrets from 1Password" step in GitHub Actions
 
-### Step 5: Clean Up Old GitHub Secrets (Optional)
+### Step 6: Clean Up Old GitHub Secrets (Optional)
 
 After verifying everything works, you can optionally remove the old GitHub Secrets:
 
@@ -160,6 +171,20 @@ op://vault-name/item-name/field-name
 - `op://ci-cd/test-database/password` - Test database password
 - `op://ci-cd/api-keys/google-maps-api-key` - Google Maps API key
 - `op://ci-cd/prod-server/ssh-private-key` - Production SSH key
+
+## Environment File Templates
+
+The repository includes environment file templates with 1Password secret references:
+- `env/test.env` - Test environment configuration
+- `env/prod.env` - Production environment configuration
+
+These files contain references like `POSTGRES_PASSWORD="op://ci-cd/test-database/password"` instead of actual secrets. During deployment, the workflow runs `op inject -i env/test.env -o .env.test` to replace all references with actual values from 1Password.
+
+**Benefits:**
+- Version controlled configuration templates
+- No secrets in repository
+- Easy to see what secrets are needed
+- Can be updated without touching workflows
 
 ## Troubleshooting
 
