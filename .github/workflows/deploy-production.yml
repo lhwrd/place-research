@@ -75,7 +75,7 @@ jobs:
 
       - name: Copy files to server
         run: |
-          scp -r docker scripts env .env.prod ${{ env.PROD_SERVER_USER }}@${{ env.PROD_SERVER_HOST }}:/opt/place-research-prod/
+          scp -r docker scripts .env.prod ${{ env.PROD_SERVER_USER }}@${{ env.PROD_SERVER_HOST }}:/opt/place-research-prod/
 
       - name: Create backup before deployment
         run: |

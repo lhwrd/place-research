@@ -72,7 +72,7 @@ jobs:
 
       - name: Copy files to server
         run: |
-          scp -r docker scripts env .env.test ${{ env.TEST_SERVER_USER }}@${{ env.TEST_SERVER_HOST }}:/opt/place-research-test/
+          scp -r docker scripts .env.test ${{ env.TEST_SERVER_USER }}@${{ env.TEST_SERVER_HOST }}:/opt/place-research-test/
 
       - name: Set short SHA
         id: vars
