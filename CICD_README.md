@@ -6,9 +6,10 @@ Complete CI/CD pipeline for deploying frontend and backend to test and productio
 
 - 📘 [Full CI/CD Documentation](./docs/CICD.md) - Complete reference guide
 - 🚀 [Quick Start Guide](./docs/CICD_QUICKSTART.md) - Get started in minutes
-- � [Tailscale Setup Guide](./docs/TAILSCALE_SETUP.md) - Secure private network configuration
+- 🔒 [1Password Migration Guide](./docs/1PASSWORD_MIGRATION.md) - Migrate from GitHub Secrets to 1Password
+- 🌐 [Tailscale Setup Guide](./docs/TAILSCALE_SETUP.md) - Secure private network configuration
 - 📝 [Tailscale CI/CD Summary](./docs/TAILSCALE_CICD_SUMMARY.md) - Quick overview of Tailscale integration
-- �🐳 [Docker Deployment](./docker/README.md) - Docker setup and usage
+- 🐳 [Docker Deployment](./docker/README.md) - Docker setup and usage
 
 ## Overview
 
