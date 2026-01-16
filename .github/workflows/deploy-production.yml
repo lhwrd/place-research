@@ -64,52 +64,18 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ env.PROD_SERVER_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Create .env file
+      - name: Install 1Password CLI
+        uses: 1password/install-cli-action@v1
+
+      - name: Inject secrets into env file
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
         run: |
-          cat << EOF > .env.prod
-          # Database
-          DATABASE_URL="postgresql://${{ env.PROD_POSTGRES_USER }}:${{ env.PROD_POSTGRES_PASSWORD }}@place-research-prod-db:${{ env.PROD_POSTGRES_PORT }}/${{ env.PROD_POSTGRES_DB }}"
-          POSTGRES_PASSWORD="${{ env.PROD_POSTGRES_PASSWORD }}"
-          POSTGRES_USER="${{ env.PROD_POSTGRES_USER }}"
-          POSTGRES_DB="${{ env.PROD_POSTGRES_DB }}"
-
-          # JWT
-          JWT_SECRET_KEY="${{ env.PROD_JWT_SECRET_KEY }}"
-
-          # Auth
-          REQUIRE_AUTHENTICATION=true
-          ALLOW_API_KEY_CREATION=false
-
-          # API Keys
-          GOOGLE_MAPS_API_KEY="${{ env.GOOGLE_MAPS_API_KEY }}"
-          GOOGLE_MAPS_MAP_ID="${{ env.GOOGLE_MAPS_MAP_ID }}"
-          NATIONAL_FLOOD_DATA_API_KEY="${{ env.NATIONAL_FLOOD_DATA_API_KEY }}"
-          NATIONAL_FLOOD_DATA_CLIENT_ID="${{ env.NATIONAL_FLOOD_DATA_CLIENT_ID }}"
-          WALKSCORE_API_KEY="${{ env.WALKSCORE_API_KEY }}"
-          AIRNOW_API_KEY="${{ env.AIRNOW_API_KEY }}"
-
-          # Paths
-          RAILLINES_PATH=/opt/place-research-prod/data/raillines.geojson
-          ANNUAL_CLIMATE_PATH=/opt/place-research-prod/data/annual_climate.csv
-
-          # Application
-          LOG_LEVEL=WARNING
-          APP_NAME="Property Research"
-
-          # Frontend
-          VITE_API_BASE_URL=https://api.yourapp.com/api/v1
-          VITE_APP_NAME="Property Research"
-          # Email
-          EMAIL_SMTP_SERVER="${{ env.EMAIL_SMTP_SERVER }}"
-          EMAIL_SMTP_PORT=587
-          EMAIL_USERNAME="${{ env.EMAIL_USERNAME }}"
-          EMAIL_PASSWORD="${{ env.EMAIL_PASSWORD }}"
-          EMAIL_FROM_ADDRESS="${{ env.EMAIL_FROM_ADDRESS }}"
-          EOF
+          op inject -i env/prod.env -o .env.prod
 
       - name: Copy files to server
         run: |
-          scp -r docker scripts .env.prod ${{ env.PROD_SERVER_USER }}@${{ env.PROD_SERVER_HOST }}:/opt/place-research-prod/
+          scp -r docker scripts env .env.prod ${{ env.PROD_SERVER_USER }}@${{ env.PROD_SERVER_HOST }}:/opt/place-research-prod/
 
       - name: Create backup before deployment
         run: |
