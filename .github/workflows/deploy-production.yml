@@ -44,6 +44,9 @@ jobs:
           cat << EOF > .env.prod
           # Database
           DATABASE_URL=postgresql://${{ vars.PROD_POSTGRES_USER }}:${{ secrets.PROD_POSTGRES_PASSWORD }}@localhost:${{ vars.PROD_POSTGRES_PORT }}/${{ vars.PROD_POSTGRES_DB }}
+          POSTGRES_PASSWORD=${{ secrets.PROD_POSTGRES_PASSWORD }}
+          POSTGRES_USER=${{ vars.PROD_POSTGRES_USER }}
+          POSTGRES_DB=${{ vars.PROD_POSTGRES_DB }}
 
           # JWT
           JWT_SECRET_KEY=${{ secrets.PROD_JWT_SECRET_KEY }}
