@@ -74,41 +74,78 @@ docs/
 
 ## Setup Steps
 
-### 1. Configure GitHub Secrets
+### 1. Configure 1Password for Secret Management
 
-Add these secrets in Settings > Secrets and variables > Actions:
+This project uses [1Password Service Accounts](https://developer.1password.com/docs/service-accounts/) to securely manage secrets in CI/CD pipelines.
+
+#### 1Password Setup
+
+1. **Create a 1Password vault** named `ci-cd` (or use an existing vault)
+
+2. **Create items in your vault** with the following structure:
 
 **Tailscale Network:**
-
-- `TS_OAUTH_CLIENT_ID` - From https://login.tailscale.com/admin/settings/oauth
-- `TS_OAUTH_SECRET` - OAuth secret (create with "Devices: Write" scope)
+- Item name: `tailscale`
+  - Field: `oauth-client-id` - From https://login.tailscale.com/admin/settings/oauth
+  - Field: `oauth-secret` - OAuth secret (create with "Devices: Write" scope)
 
 **Test Environment:**
+- Item name: `test-server`
+  - Field: `ssh-private-key` - SSH private key for test server
+  - Field: `hostname` - Tailscale hostname (e.g., test-server)
+  - Field: `username` - SSH username
 
-- `TEST_SERVER_SSH_KEY`
-- `TEST_SERVER_HOST` - Tailscale hostname (e.g., test-server)
-- `TEST_SERVER_USER`
-- `TEST_POSTGRES_USER`
-- `TEST_POSTGRES_PASSWORD`
-- `TEST_POSTGRES_DB`
-- `TEST_JWT_SECRET_KEY`
+- Item name: `test-database`
+  - Field: `username` - PostgreSQL username
+  - Field: `password` - PostgreSQL password
+  - Field: `database-name` - Database name
+
+- Item name: `test-secrets`
+  - Field: `jwt-secret-key` - JWT secret for authentication
 
 **Production Environment:**
+- Item name: `prod-server`
+  - Field: `ssh-private-key` - SSH private key for production server
+  - Field: `hostname` - Tailscale hostname (e.g., prod-server)
+  - Field: `username` - SSH username
 
-- `PROD_SERVER_SSH_KEY`
-- `PROD_SERVER_HOST` - Tailscale hostname (e.g., prod-server)
-- `PROD_SERVER_USER`
-- `PROD_POSTGRES_USER`
-- `PROD_POSTGRES_PASSWORD`
-- `PROD_POSTGRES_DB`
-- `PROD_JWT_SECRET_KEY`
+- Item name: `prod-database`
+  - Field: `username` - PostgreSQL username
+  - Field: `password` - PostgreSQL password
+  - Field: `database-name` - Database name
+  - Field: `port` - PostgreSQL port
+
+- Item name: `prod-secrets`
+  - Field: `jwt-secret-key` - JWT secret for authentication
 
 **API Keys (shared):**
+- Item name: `api-keys`
+  - Field: `google-maps-api-key`
+  - Field: `google-maps-map-id`
+  - Field: `national-flood-data-api-key`
+  - Field: `national-flood-data-client-id`
+  - Field: `walkscore-api-key`
+  - Field: `airnow-api-key`
 
-- `GOOGLE_MAPS_API_KEY`
-- `NATIONAL_FLOOD_DATA_API_KEY`
-- `WALKSCORE_API_KEY`
-- etc.
+- Item name: `email`
+  - Field: `smtp-server`
+  - Field: `username`
+  - Field: `password`
+  - Field: `from-address`
+
+3. **Create a Service Account**
+   - Go to your 1Password account settings
+   - Navigate to Service Accounts
+   - Create a new service account with read access to the `ci-cd` vault
+   - Save the service account token securely
+
+4. **Add Service Account Token to GitHub**
+   - Go to your GitHub repository settings
+   - Navigate to Secrets and variables > Actions
+   - Create a new repository secret named `OP_SERVICE_ACCOUNT_TOKEN`
+   - Paste your 1Password service account token as the value
+
+That's it! Your workflows will now securely fetch all secrets from 1Password during deployment.
 
 ### 2. Setup Tailscale on Servers
 
@@ -228,7 +265,7 @@ cd /opt/place-research-{env}
 ## Security Features
 
 - ✅ Non-root container users
-- ✅ Secret management via GitHub Secrets
+- ✅ Secret management via 1Password Service Accounts
 - ✅ Automated backups (production)
 - ✅ Automatic rollback on failure
 - ✅ Firewall configuration
