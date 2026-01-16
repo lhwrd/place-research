@@ -47,18 +47,9 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ env.TEST_SERVER_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Install 1Password CLI
-        uses: 1password/install-cli-action@v1
-
-      - name: Inject secrets into env file
-        env:
-          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-        run: |
-          op inject -i env/test.env -o .env.test
-
       - name: Copy files to server
         run: |
-          scp -r docker scripts .env.test ${{ env.TEST_SERVER_USER }}@${{ env.TEST_SERVER_HOST }}:/opt/place-research-test/
+          scp -r docker scripts env ${{ env.TEST_SERVER_USER }}@${{ env.TEST_SERVER_HOST }}:/opt/place-research-test/
 
       - name: Set short SHA
         id: vars
