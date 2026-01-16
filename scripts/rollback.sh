@@ -19,11 +19,13 @@ if [ "$ENVIRONMENT" = "production" ]; then
     ENV_FILE=".env.prod"
     PROJECT_NAME="place-research-prod"
     CONTAINER_NAME="place-research-prod-db"
+    ENV_FILE="/opt/place-research-prod/.env.prod"
 elif [ "$ENVIRONMENT" = "test" ]; then
     COMPOSE_FILE="docker/docker-compose.test.yml"
     ENV_FILE=".env.test"
     PROJECT_NAME="place-research-test"
     CONTAINER_NAME="place-research-test-db"
+    ENV_FILE="/opt/place-research-test/.env.test"
 else
     echo "Error: Invalid environment. Use 'test' or 'production'"
     exit 1
@@ -54,7 +56,7 @@ echo "Step 1: Stopping current containers..."
 docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME down
 
 echo "Step 2: Restoring database from backup..."
-docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME up -d postgres
+docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME --env-file $ENV_FILE up -d postgres
 
 # Wait for PostgreSQL to be ready
 echo "Waiting for PostgreSQL to be ready..."
@@ -75,7 +77,7 @@ if [ -n "$LATEST_DATA_BACKUP" ]; then
 fi
 
 echo "Step 4: Starting all services..."
-docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME up -d
+docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME --env-file $ENV_FILE up -d
 
 echo "Step 5: Waiting for services to be healthy..."
 sleep 15
@@ -84,4 +86,4 @@ echo "=========================================="
 echo "Rollback completed!"
 echo "=========================================="
 echo "Services status:"
-docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME ps
+docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME --env-file $ENV_FILE ps
