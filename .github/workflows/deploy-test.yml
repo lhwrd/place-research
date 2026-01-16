@@ -59,30 +59,30 @@ jobs:
       - name: Add server to known hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H $TEST_SERVER_HOST >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ env.TEST_SERVER_HOST }} >> ~/.ssh/known_hosts
 
       - name: Create .env file
         run: |
           cat << EOF > .env.test
           # Database
-          POSTGRES_USER=$TEST_POSTGRES_USER
-          POSTGRES_PASSWORD=$TEST_POSTGRES_PASSWORD
-          POSTGRES_DB=$TEST_POSTGRES_DB
+          POSTGRES_USER="${{ env.TEST_POSTGRES_USER }}"
+          POSTGRES_PASSWORD="${{ env.TEST_POSTGRES_PASSWORD }}"
+          POSTGRES_DB="${{ env.TEST_POSTGRES_DB }}"
 
           # JWT
-          JWT_SECRET_KEY=$TEST_JWT_SECRET_KEY
+          JWT_SECRET_KEY="${{ env.TEST_JWT_SECRET_KEY }}"
 
           # Auth
           REQUIRE_AUTHENTICATION=true
           ALLOW_API_KEY_CREATION=true
 
           # API Keys
-          GOOGLE_MAPS_API_KEY=$GOOGLE_MAPS_API_KEY
-          GOOGLE_MAPS_MAP_ID=$GOOGLE_MAPS_MAP_ID
-          NATIONAL_FLOOD_DATA_API_KEY=$NATIONAL_FLOOD_DATA_API_KEY
-          NATIONAL_FLOOD_DATA_CLIENT_ID=$NATIONAL_FLOOD_DATA_CLIENT_ID
-          WALKSCORE_API_KEY=$WALKSCORE_API_KEY
-          AIRNOW_API_KEY=$AIRNOW_API_KEY
+          GOOGLE_MAPS_API_KEY="${{ env.GOOGLE_MAPS_API_KEY }}"
+          GOOGLE_MAPS_MAP_ID="${{ env.GOOGLE_MAPS_MAP_ID }}"
+          NATIONAL_FLOOD_DATA_API_KEY="${{ env.NATIONAL_FLOOD_DATA_API_KEY }}"
+          NATIONAL_FLOOD_DATA_CLIENT_ID="${{ env.NATIONAL_FLOOD_DATA_CLIENT_ID }}"
+          WALKSCORE_API_KEY="${{ env.WALKSCORE_API_KEY }}"
+          AIRNOW_API_KEY="${{ env.AIRNOW_API_KEY }}"
 
           # Application
           LOG_LEVEL=DEBUG
@@ -98,16 +98,16 @@ jobs:
           POSTGRES_PORT=5432
 
           # Email
-          EMAIL_SMTP_SERVER=$EMAIL_SMTP_SERVER
+          EMAIL_SMTP_SERVER="${{ env.EMAIL_SMTP_SERVER }}"
           EMAIL_SMTP_PORT=587
-          EMAIL_USERNAME=$EMAIL_USERNAME
-          EMAIL_PASSWORD="$EMAIL_PASSWORD"
-          EMAIL_FROM_ADDRESS=$EMAIL_FROM_ADDRESS
+          EMAIL_USERNAME="${{ env.EMAIL_USERNAME }}"
+          EMAIL_PASSWORD="${{ env.EMAIL_PASSWORD }}"
+          EMAIL_FROM_ADDRESS="${{ env.EMAIL_FROM_ADDRESS }}"
           EOF
 
       - name: Copy files to server
         run: |
-          scp -r docker scripts .env.test $TEST_SERVER_USER@$TEST_SERVER_HOST:/opt/place-research-test/
+          scp -r docker scripts .env.test ${{ env.TEST_SERVER_USER }}@${{ env.TEST_SERVER_HOST }}:/opt/place-research-test/
 
       - name: Set short SHA
         id: vars
@@ -117,7 +117,7 @@ jobs:
         env:
           IMAGE_TAG: main-${{ env.SHORT_SHA }}
         run: |
-          ssh $TEST_SERVER_USER@$TEST_SERVER_HOST << 'ENDSSH'
+          ssh ${{ env.TEST_SERVER_USER }}@${{ env.TEST_SERVER_HOST }} << 'ENDSSH'
             cd /opt/place-research-test
 
             # Pull latest images
@@ -130,7 +130,7 @@ jobs:
 
       - name: Health check
         run: |
-          ssh $TEST_SERVER_USER@$TEST_SERVER_HOST << 'ENDSSH'
+          ssh ${{ env.TEST_SERVER_USER }}@${{ env.TEST_SERVER_HOST }} << 'ENDSSH'
             cd /opt/place-research-test
             bash scripts/health-check.sh
           ENDSSH
