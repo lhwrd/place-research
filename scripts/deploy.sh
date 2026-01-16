@@ -19,11 +19,11 @@ echo "=========================================="
 # Set environment-specific variables
 if [ "$ENVIRONMENT" = "production" ]; then
     COMPOSE_FILE="/opt/place-research-prod/docker/docker-compose.prod.yml"
-    ENV_FILE=".env.prod"
+    ENV_FILE="/opt/place-research-prod/.env.prod"
     PROJECT_NAME="place-research-prod"
 elif [ "$ENVIRONMENT" = "test" ]; then
     COMPOSE_FILE="/opt/place-research-test/docker/docker-compose.test.yml"
-    ENV_FILE=".env.test"
+    ENV_FILE="/opt/place-research-test/.env.test"
     PROJECT_NAME="place-research-test"
 else
     echo "Error: Invalid environment. Use 'test' or 'production'"
@@ -58,21 +58,21 @@ if [ "$ENVIRONMENT" = "production" ]; then
 fi
 
 echo "Step 4: Running database migrations..."
-docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME run --rm backend alembic upgrade head || echo "Migration failed or not needed"
+docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME --env-file $ENV_FILE run --rm backend alembic upgrade head || echo "Migration failed or not needed"
 
 echo "Step 5: Stopping old containers..."
 docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME down --remove-orphans
 
 echo "Step 6: Starting new containers..."
-docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME up -d
+docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME --env-file $ENV_FILE up -d
 
 echo "Step 7: Waiting for services to be healthy..."
 sleep 10
 
 # Check if services are running
-if ! docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME ps | grep -q "Up"; then
+if ! docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME --env-file $ENV_FILE ps | grep -q "Up"; then
     echo "Error: Services failed to start"
-    docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME logs
+    docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME --env-file $ENV_FILE logs
     exit 1
 fi
 
@@ -93,7 +93,7 @@ else
 fi
 echo ""
 echo "To view logs:"
-echo "  docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME logs -f"
+echo "  docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME --env-file $ENV_FILE logs -f"
 echo ""
 echo "To check status:"
-echo "  docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME ps"
+echo "  docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME --env-file $ENV_FILE ps"
