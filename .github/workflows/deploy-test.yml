@@ -29,20 +29,6 @@ jobs:
           TEST_SERVER_SSH_KEY: op://ci-cd/test-server/ssh-private-key
           TEST_SERVER_HOST: op://ci-cd/test-server/hostname
           TEST_SERVER_USER: op://ci-cd/test-server/username
-          TEST_POSTGRES_USER: op://ci-cd/test-database/username
-          TEST_POSTGRES_PASSWORD: op://ci-cd/test-database/password
-          TEST_POSTGRES_DB: op://ci-cd/test-database/database-name
-          TEST_JWT_SECRET_KEY: op://ci-cd/test-secrets/jwt-secret-key
-          GOOGLE_MAPS_API_KEY: op://ci-cd/api-keys/google-maps-api-key
-          GOOGLE_MAPS_MAP_ID: op://ci-cd/api-keys/google-maps-map-id
-          NATIONAL_FLOOD_DATA_API_KEY: op://ci-cd/api-keys/national-flood-data-api-key
-          NATIONAL_FLOOD_DATA_CLIENT_ID: op://ci-cd/api-keys/national-flood-data-client-id
-          WALKSCORE_API_KEY: op://ci-cd/api-keys/walkscore-api-key
-          AIRNOW_API_KEY: op://ci-cd/api-keys/airnow-api-key
-          EMAIL_SMTP_SERVER: op://ci-cd/email/smtp-server
-          EMAIL_USERNAME: op://ci-cd/email/username
-          EMAIL_PASSWORD: op://ci-cd/email/password
-          EMAIL_FROM_ADDRESS: op://ci-cd/email/from-address
 
       - name: Connect to Tailscale
         uses: tailscale/github-action@v2

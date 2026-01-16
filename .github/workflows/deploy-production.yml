@@ -31,21 +31,6 @@ jobs:
           PROD_SERVER_SSH_KEY: op://ci-cd/prod-server/ssh-private-key
           PROD_SERVER_HOST: op://ci-cd/prod-server/hostname
           PROD_SERVER_USER: op://ci-cd/prod-server/username
-          PROD_POSTGRES_USER: op://ci-cd/prod-database/username
-          PROD_POSTGRES_PASSWORD: op://ci-cd/prod-database/password
-          PROD_POSTGRES_DB: op://ci-cd/prod-database/database-name
-          PROD_POSTGRES_PORT: op://ci-cd/prod-database/port
-          PROD_JWT_SECRET_KEY: op://ci-cd/prod-secrets/jwt-secret-key
-          GOOGLE_MAPS_API_KEY: op://ci-cd/api-keys/google-maps-api-key
-          GOOGLE_MAPS_MAP_ID: op://ci-cd/api-keys/google-maps-map-id
-          NATIONAL_FLOOD_DATA_API_KEY: op://ci-cd/api-keys/national-flood-data-api-key
-          NATIONAL_FLOOD_DATA_CLIENT_ID: op://ci-cd/api-keys/national-flood-data-client-id
-          WALKSCORE_API_KEY: op://ci-cd/api-keys/walkscore-api-key
-          AIRNOW_API_KEY: op://ci-cd/api-keys/airnow-api-key
-          EMAIL_SMTP_SERVER: op://ci-cd/email/smtp-server
-          EMAIL_USERNAME: op://ci-cd/email/username
-          EMAIL_PASSWORD: op://ci-cd/email/password
-          EMAIL_FROM_ADDRESS: op://ci-cd/email/from-address
 
       - name: Connect to Tailscale
         uses: tailscale/github-action@v2
