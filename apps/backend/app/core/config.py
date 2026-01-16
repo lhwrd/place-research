@@ -37,7 +37,6 @@ class Settings(BaseSettings):
     # File paths for data sources
     raillines_path: Optional[Path] = Field(None, alias="RAILLINES_PATH")
     annual_climate_path: Optional[Path] = Field(None, alias="ANNUAL_CLIMATE_PATH")
-    distance_config_path: Optional[Path] = Field(None, alias="DISTANCE_CONFIG_PATH")
 
     # Authentication settings
     require_authentication: bool = Field(
@@ -247,8 +246,6 @@ class Settings(BaseSettings):
         elif provider_name == "DistanceProvider":
             if not self.google_maps_api_key:
                 missing.append("GOOGLE_MAPS_API_KEY")
-            if not self.distance_config_path:
-                missing.append("DISTANCE_CONFIG_PATH")
         elif provider_name == "RailroadProvider":
             if not self.raillines_path:
                 missing.append("RAILLINES_PATH")

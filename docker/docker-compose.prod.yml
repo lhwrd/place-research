@@ -62,7 +62,6 @@ services:
       # File Paths
       RAILLINES_PATH: ${RAILLINES_PATH}
       ANNUAL_CLIMATE_PATH: ${ANNUAL_CLIMATE_PATH}
-      DISTANCE_CONFIG_PATH: ${DISTANCE_CONFIG_PATH}
 
     volumes:
       - ./logs/backend:/app/logs

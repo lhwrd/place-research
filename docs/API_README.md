@@ -236,7 +236,6 @@ NATIONAL_FLOOD_DATA_API_KEY=your_key_here
 # Data Files
 RAILLINES_PATH=/path/to/railroads.geojson
 ANNUAL_CLIMATE_PATH=/path/to/climate.csv
-DISTANCE_CONFIG_PATH=/path/to/distance_config.json
 
 # NocoDB (for CLI)
 NOCODB_URL=https://your-nocodb-instance.com
@@ -259,7 +258,7 @@ LOG_LEVEL=INFO
 | Highway              | OpenStreetMap       | None                                        |
 | Railroad             | Local GeoJSON       | `RAILLINES_PATH`                            |
 | Walmart              | Google Maps         | `GOOGLE_MAPS_API_KEY`                       |
-| Distance    | Google Maps         | `GOOGLE_MAPS_API_KEY`, `DISTANCE_CONFIG_PATH` |
+| Distance    | Google Maps         | `GOOGLE_MAPS_API_KEY`                       |
 | AnnualAverageClimate | Local CSV           | `ANNUAL_CLIMATE_PATH`                       |
 
 ## 🔄 Migration Guide
