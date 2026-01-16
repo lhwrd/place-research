@@ -59,7 +59,6 @@ jobs:
           NATIONAL_FLOOD_DATA_CLIENT_ID=${{ secrets.NATIONAL_FLOOD_DATA_CLIENT_ID }}
           WALKSCORE_API_KEY=${{ secrets.WALKSCORE_API_KEY }}
           AIRNOW_API_KEY=${{ secrets.AIRNOW_API_KEY }}
-          FBI_API_KEY=${{ secrets.FBI_API_KEY }}
 
           # Application
           LOG_LEVEL=DEBUG

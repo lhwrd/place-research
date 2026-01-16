@@ -243,7 +243,6 @@ sudo -u placeapp-test nano /opt/place-research-test/.env.test
 - `NATIONAL_FLOOD_DATA_CLIENT_ID`
 - `WALKSCORE_API_KEY`
 - `AIRNOW_API_KEY`
-- `FBI_API_KEY`
 
 #### Optional
 

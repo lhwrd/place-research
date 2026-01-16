@@ -196,7 +196,7 @@ echo "Then restart SSH: systemctl restart sshd"
 echo "Step 14: Creating helper scripts..."
 cat > $APP_DIR/start.sh << EOF
 #!/bin/bash
-docker compose -f $APP_DIR/docker/docker-compose.${ENVIRONMENT}.yml up -d
+docker compose -f $APP_DIR/docker/docker-compose.${ENVIRONMENT}.yml --env-file $APP_DIR/.env.${ENVIRONMENT} up -d
 EOF
 
 cat > $APP_DIR/stop.sh << EOF
