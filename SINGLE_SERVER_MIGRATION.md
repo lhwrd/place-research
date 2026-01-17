@@ -252,8 +252,8 @@ If you need to rollback to two-server deployment:
 If you encounter issues:
 
 1. Check [GitHub Actions logs](../../actions) for detailed error messages
-2. Review [CICD_README.md](./CICD_README.md) for general setup
-3. See [1PASSWORD_MIGRATION.md](./docs/1PASSWORD_MIGRATION.md) for 1Password troubleshooting
+2. Review [CICD_README.md](CICD_README.md) for general setup
+3. See [1PASSWORD_MIGRATION.md](docs/1PASSWORD_MIGRATION.md) for 1Password troubleshooting
 4. Open an issue with error details
 
 ## Summary
