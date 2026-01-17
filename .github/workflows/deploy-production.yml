@@ -28,7 +28,7 @@ jobs:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
           TS_OAUTH_CLIENT_ID: op://Place Research - Prod/tailscale/oauth-client-id
           TS_OAUTH_SECRET: op://Place Research - Prod/tailscale/oauth-secret
-          PROD_SERVER_SSH_KEY: op://Place Research - Prod/prod-server/ssh-private-key
+          PROD_SERVER_SSH_KEY: op://Place Research - Prod/prod-server/private key?ssh-format=openssh
           PROD_SERVER_HOST: op://Place Research - Prod/prod-server/hostname
           PROD_SERVER_USER: op://Place Research - Prod/prod-server/username
 
