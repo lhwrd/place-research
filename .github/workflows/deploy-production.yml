@@ -28,9 +28,9 @@ jobs:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
           TS_OAUTH_CLIENT_ID: op://Place Research - Prod/tailscale/oauth-client-id
           TS_OAUTH_SECRET: op://Place Research - Prod/tailscale/oauth-secret
-          PROD_SERVER_SSH_KEY: op://Place Research - Prod/prod-server/private key?ssh-format=openssh
-          PROD_SERVER_HOST: op://Place Research - Prod/prod-server/hostname
-          PROD_SERVER_USER: op://Place Research - Prod/prod-server/username
+          SERVER_SSH_KEY: op://Place Research - Prod/server/private key?ssh-format=openssh
+          SERVER_HOST: op://Place Research - Prod/server/hostname
+          SERVER_USER: op://Place Research - Prod/server/username
 
       - name: Connect to Tailscale
         uses: tailscale/github-action@v2
@@ -42,20 +42,20 @@ jobs:
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
-          ssh-private-key: ${{ env.PROD_SERVER_SSH_KEY }}
+          ssh-private-key: ${{ env.SERVER_SSH_KEY }}
 
       - name: Add server to known hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ env.PROD_SERVER_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ env.SERVER_HOST }} >> ~/.ssh/known_hosts
 
       - name: Copy files to server
         run: |
-          scp -r docker scripts env ${{ env.PROD_SERVER_USER }}@${{ env.PROD_SERVER_HOST }}:/opt/place-research-prod/
+          scp -r docker scripts env ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:/opt/place-research-prod/
 
       - name: Create backup before deployment
         run: |
-          ssh ${{ env.PROD_SERVER_USER }}@${{ env.PROD_SERVER_HOST }} << 'ENDSSH'
+          ssh ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} << 'ENDSSH'
             cd /opt/place-research-prod
             bash scripts/backup.sh
           ENDSSH
@@ -68,7 +68,7 @@ jobs:
         env:
           IMAGE_TAG: main-${{ env.SHORT_SHA }}
         run: |
-          ssh ${{ env.PROD_SERVER_USER }}@${{ env.PROD_SERVER_HOST }} << 'ENDSSH'
+          ssh ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} << 'ENDSSH'
             cd /opt/place-research-prod
 
             # Pull latest images
@@ -81,7 +81,7 @@ jobs:
 
       - name: Health check
         run: |
-          ssh ${{ env.PROD_SERVER_USER }}@${{ env.PROD_SERVER_HOST }} << 'ENDSSH'
+          ssh ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} << 'ENDSSH'
             cd /opt/place-research-prod
             bash scripts/health-check.sh
           ENDSSH
@@ -89,7 +89,7 @@ jobs:
       - name: Rollback on failure
         if: failure()
         run: |
-          ssh ${{ env.PROD_SERVER_USER }}@${{ env.PROD_SERVER_HOST }} << 'ENDSSH'
+          ssh ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} << 'ENDSSH'
             cd /opt/place-research-prod
             bash scripts/rollback.sh
           ENDSSH

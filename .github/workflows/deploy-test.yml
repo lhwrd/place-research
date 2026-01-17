@@ -26,9 +26,9 @@ jobs:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
           TS_OAUTH_CLIENT_ID: op://Place Research - Test/tailscale/oauth-client-id
           TS_OAUTH_SECRET: op://Place Research - Test/tailscale/oauth-secret
-          TEST_SERVER_SSH_KEY: op://Place Research - Test/test-server/private key?ssh-format=openssh
-          TEST_SERVER_HOST: op://Place Research - Test/test-server/hostname
-          TEST_SERVER_USER: op://Place Research - Test/test-server/username
+          SERVER_SSH_KEY: op://Place Research - Test/server/private key?ssh-format=openssh
+          SERVER_HOST: op://Place Research - Test/server/hostname
+          SERVER_USER: op://Place Research - Test/server/username
 
       - name: Connect to Tailscale
         uses: tailscale/github-action@v2
@@ -40,16 +40,16 @@ jobs:
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
-          ssh-private-key: ${{ env.TEST_SERVER_SSH_KEY }}
+          ssh-private-key: ${{ env.SERVER_SSH_KEY }}
 
       - name: Add server to known hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ env.TEST_SERVER_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ env.SERVER_HOST }} >> ~/.ssh/known_hosts
 
       - name: Copy files to server
         run: |
-          scp -r docker scripts env ${{ env.TEST_SERVER_USER }}@${{ env.TEST_SERVER_HOST }}:/opt/place-research-test/
+          scp -r docker scripts env ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:/opt/place-research-test/
 
       - name: Set short SHA
         id: vars
@@ -59,7 +59,7 @@ jobs:
         env:
           IMAGE_TAG: main-${{ env.SHORT_SHA }}
         run: |
-          ssh ${{ env.TEST_SERVER_USER }}@${{ env.TEST_SERVER_HOST }} << 'ENDSSH'
+          ssh ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} << 'ENDSSH'
             cd /opt/place-research-test
 
             # Pull latest images
@@ -72,7 +72,7 @@ jobs:
 
       - name: Health check
         run: |
-          ssh ${{ env.TEST_SERVER_USER }}@${{ env.TEST_SERVER_HOST }} << 'ENDSSH'
+          ssh ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} << 'ENDSSH'
             cd /opt/place-research-test
             bash scripts/health-check.sh
           ENDSSH
