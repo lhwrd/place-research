@@ -30,12 +30,22 @@ This repository uses GitHub Actions to automatically:
 - No public IP exposure or port forwarding required
 - Automatic disconnect after deployment
 
+**Single Server Deployment**:
+- Both test and production environments deploy to the **same server**
+- Isolation maintained through:
+  - Separate directories: `/opt/place-research-test` and `/opt/place-research-prod`
+  - Separate Docker networks: `test-network` and `prod-network`
+  - Different ports: Test (8000, 3000) and Production (8001, 3001)
+  - Separate 1Password vaults for environment-specific secrets
+
 ## Environments
 
-| Environment    | Branch                | URL                      | Auto-Deploy | Network   |
-| -------------- | --------------------- | ------------------------ | ----------- | --------- |
-| **Test**       | `frontend`, `develop` | https://test.yourapp.com | ✅ Yes      | Tailscale |
-| **Production** | `main`                | https://yourapp.com      | ✅ Yes      | Tailscale |
+| Environment    | Branch                | Ports      | Auto-Deploy | Network   | Directory                  |
+| -------------- | --------------------- | ---------- | ----------- | --------- | -------------------------- |
+| **Test**       | `frontend`, `develop` | 8000, 3000 | ✅ Yes      | Tailscale | /opt/place-research-test   |
+| **Production** | `main`                | 8001, 3001 | ✅ Yes      | Tailscale | /opt/place-research-prod   |
+
+Both environments are deployed to the same server but maintain complete isolation.
 
 ## Project Structure
 
@@ -67,9 +77,9 @@ docs/
 ## Prerequisites
 
 - GitHub repository with Actions enabled
-- Two Ubuntu 20.04+ servers on your **Tailscale network**
+- Single Ubuntu 20.04+ server on your **Tailscale network** (hosts both test and production)
 - Tailscale account with OAuth credentials
-- Docker installed on servers
+- Docker installed on server
 - Domain names (optional but recommended)
 - API keys for external services
 
@@ -93,9 +103,9 @@ The repository includes environment file templates (`env/test.env` and `env/prod
   - Field: `oauth-secret` - OAuth secret (create with "Devices: Write" scope)
 
 **Test Environment:**
-- Item name: `test-server`
-  - Field: `ssh-private-key` - SSH private key for test server
-  - Field: `hostname` - Tailscale hostname (e.g., test-server)
+- Item name: `server`
+  - Field: `ssh-private-key` - SSH private key for server (same key used for prod)
+  - Field: `hostname` - Tailscale hostname (e.g., place-research-server)
   - Field: `username` - SSH username
 
 - Item name: `test-database`
@@ -107,9 +117,9 @@ The repository includes environment file templates (`env/test.env` and `env/prod
   - Field: `jwt-secret-key` - JWT secret for authentication
 
 **Production Environment:**
-- Item name: `prod-server`
-  - Field: `ssh-private-key` - SSH private key for production server
-  - Field: `hostname` - Tailscale hostname (e.g., prod-server)
+- Item name: `server`
+  - Field: `ssh-private-key` - SSH private key for server (same key used for test)
+  - Field: `hostname` - Tailscale hostname (e.g., place-research-server)
   - Field: `username` - SSH username
 
 - Item name: `prod-database`
@@ -150,9 +160,9 @@ The repository includes environment file templates (`env/test.env` and `env/prod
 
 That's it! Your workflows will now securely fetch all secrets from 1Password during deployment.
 
-### 2. Setup Tailscale on Servers
+### 2. Setup Tailscale on Server
 
-On each server:
+On the server:
 
 ```bash
 # Install Tailscale
@@ -165,21 +175,23 @@ sudo tailscale up
 tailscale status
 ```
 
-### 3. Setup Servers
+### 3. Setup Server
 
-Run on each server:
+Run on the server to setup both environments:
 
 ```bash
-# Test server
+# Setup test environment
 sudo bash scripts/setup-server.sh test
 
-# Production server
+# Setup production environment
 sudo bash scripts/setup-server.sh production
 ```
 
+This creates both `/opt/place-research-test` and `/opt/place-research-prod` directories on the same server.
+
 ### 3. Create Environment Files
 
-On each server, create `.env.{environment}` file with required variables.
+On the server, create `.env.{environment}` files in each deployment directory with required variables.
 
 ### 4. Deploy
 
