@@ -20,6 +20,8 @@ mkdir -p $BACKUP_DIR
 
 
 # Load environment variables (inject secrets from 1Password if available)
+export OP_SERVICE_ACCOUNT_TOKEN_FILE=/etc/place-research/op-token
+
 if command -v op &> /dev/null && [ -f "env/prod.env" ]; then
     op inject -i env/prod.env -o .env.prod
 fi

@@ -40,6 +40,8 @@ fi
 
 # Inject secrets from 1Password into env file
 echo "Step 0: Injecting secrets from 1Password..."
+export OP_SERVICE_ACCOUNT_TOKEN_FILE=/etc/place-research/op-token
+
 if ! command -v op &> /dev/null; then
     echo "Error: 1Password CLI (op) is not installed"
     echo "Install it with: https://developer.1password.com/docs/cli/get-started/"

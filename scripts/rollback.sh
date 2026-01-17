@@ -49,6 +49,8 @@ fi
 
 
 # Load environment variables (inject secrets from 1Password if available)
+export OP_SERVICE_ACCOUNT_TOKEN_FILE=/etc/place-research/op-token
+
 if command -v op &> /dev/null && [ -f "env/${ENVIRONMENT}.env" ]; then
     op inject -i "env/${ENVIRONMENT}.env" -o "$ENV_FILE"
 fi

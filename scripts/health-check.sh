@@ -35,6 +35,7 @@ else
 fi
 
 # Inject secrets from 1Password if available
+export OP_SERVICE_ACCOUNT_TOKEN_FILE=/etc/place-research/op-token
 if command -v op &> /dev/null && [ -f "$ENV_TEMPLATE" ]; then
     op inject -i "$ENV_TEMPLATE" -o "$ENV_FILE"
 fi
