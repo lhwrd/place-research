@@ -24,11 +24,11 @@ jobs:
           export-env: true
         env:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          TS_OAUTH_CLIENT_ID: op://Place Research - Test/vpn/tailscale/oauth-client-id
-          TS_OAUTH_SECRET: op://Place Research - Test/vpn/tailscale/oauth-secret
-          TEST_SERVER_SSH_KEY: op://Place Research - Test/ssh/test-server/private key?ssh-format=openssh
-          TEST_SERVER_HOST: op://Place Research - Test/ssh/test-server/hostname
-          TEST_SERVER_USER: op://Place Research - Test/ssh/test-server/username
+          TS_OAUTH_CLIENT_ID: op://Place Research - Test/tailscale/oauth-client-id
+          TS_OAUTH_SECRET: op://Place Research - Test/tailscale/oauth-secret
+          TEST_SERVER_SSH_KEY: op://Place Research - Test/test-server/private key?ssh-format=openssh
+          TEST_SERVER_HOST: op://Place Research - Test/test-server/hostname
+          TEST_SERVER_USER: op://Place Research - Test/test-server/username
 
       - name: Connect to Tailscale
         uses: tailscale/github-action@v2
