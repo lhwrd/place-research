@@ -172,7 +172,10 @@ op://vault-name/item-name/field-name
 **Examples:**
 - `op://Place Research - Test/postgres/password` - Test database password
 - `op://Place Research - Test/google-maps/credential` - Google Maps API key
-- `op://Place Research - Prod/server/private key?ssh-format=openssh` - Server SSH key (used by both environments)
+- `op://Place Research - Test/server/private key?ssh-format=openssh` - Server SSH key (Test vault)
+- `op://Place Research - Prod/server/private key?ssh-format=openssh` - Server SSH key (Prod vault, same value as Test)
+
+> **Note**: Both Test and Prod vaults have a `server` item with identical SSH key, hostname, and username values since they deploy to the same physical server.
 
 ## Environment File Templates
 
