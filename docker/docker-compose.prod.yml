@@ -74,8 +74,9 @@ services:
       - ./logs/backend:/app/logs
       - ./data:/app/data
 
-    ports:
-      - "8001:8000"
+    # No external port exposure - accessed only via nginx reverse proxy
+    # ports:
+    #   - "8001:8000"
 
     depends_on:
       postgres:

@@ -16,8 +16,8 @@ echo "=========================================="
 
 # Set environment-specific variables
 if [ "$ENVIRONMENT" = "production" ]; then
-    BACKEND_URL="http://localhost:8000"
-    FRONTEND_URL="http://localhost:3000"
+    BACKEND_URL="http://localhost:8001"
+    FRONTEND_URL="http://localhost:3001"
     PROJECT_NAME="place-research-prod"
     COMPOSE_FILE="docker/docker-compose.prod.yml"
     ENV_FILE="/opt/place-research-prod/.env.prod"
@@ -84,7 +84,7 @@ else
     echo "❌ Some health checks failed!"
     echo ""
     echo "Checking logs for errors..."
-    docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME --env-file $ENV_FILE logs --tail=50
+    docker compose -f $COMPOSE_FILE -p $PROJECT_NAME --env-file $ENV_FILE logs --tail=50
 fi
 echo "=========================================="
 

@@ -3,7 +3,8 @@
  */
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+// Use relative URL in production (proxied through nginx), or explicit URL in development
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
 // Create axios instance
 export const apiClient = axios.create({
