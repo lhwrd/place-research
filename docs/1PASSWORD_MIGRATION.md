@@ -39,9 +39,9 @@ These template files contain references like `op://ci-cd/database/password` inst
   - `oauth-secret`: Your Tailscale OAuth secret
 
 #### Test Server
-- **Item name**: `test-server`
-  - `ssh-private-key`: SSH private key content
-  - `hostname`: Tailscale hostname (e.g., test-server)
+- **Item name**: `server`
+  - `ssh-private-key`: SSH private key content (same key for both test and prod)
+  - `hostname`: Tailscale hostname (e.g., place-research-server)
   - `username`: SSH username
 
 #### Test Database
@@ -55,10 +55,12 @@ These template files contain references like `op://ci-cd/database/password` inst
   - `jwt-secret-key`: JWT secret for authentication
 
 #### Production Server
-- **Item name**: `prod-server`
-  - `ssh-private-key`: SSH private key content
-  - `hostname`: Tailscale hostname (e.g., prod-server)
+- **Item name**: `server`
+  - `ssh-private-key`: SSH private key content (same key for both test and prod)
+  - `hostname`: Tailscale hostname (e.g., place-research-server)
   - `username`: SSH username
+
+**Note**: Both test and production environments use the same server configuration in 1Password, as they deploy to the same physical server but in different directories with different ports.
 
 #### Production Database
 - **Item name**: `prod-database`
@@ -119,22 +121,22 @@ Once the service account token is added to GitHub:
 After verifying everything works, you can optionally remove the old GitHub Secrets:
 
 **Test Environment:**
-- `TEST_SERVER_SSH_KEY`
-- `TEST_SERVER_HOST` (also in Variables)
-- `TEST_SERVER_USER` (also in Variables)
-- `TEST_POSTGRES_USER` (also in Variables)
+- `TEST_SERVER_SSH_KEY` (now uses `SERVER_SSH_KEY` from 1Password)
+- `TEST_SERVER_HOST` (now uses `SERVER_HOST` from 1Password)
+- `TEST_SERVER_USER` (now uses `SERVER_USER` from 1Password)
+- `TEST_POSTGRES_USER`
 - `TEST_POSTGRES_PASSWORD`
-- `TEST_POSTGRES_DB` (also in Variables)
+- `TEST_POSTGRES_DB`
 - `TEST_JWT_SECRET_KEY`
 
 **Production Environment:**
-- `PROD_SERVER_SSH_KEY`
-- `PROD_SERVER_HOST` (also in Variables)
-- `PROD_SERVER_USER` (also in Variables)
-- `PROD_POSTGRES_USER` (also in Variables)
+- `PROD_SERVER_SSH_KEY` (now uses `SERVER_SSH_KEY` from 1Password)
+- `PROD_SERVER_HOST` (now uses `SERVER_HOST` from 1Password)
+- `PROD_SERVER_USER` (now uses `SERVER_USER` from 1Password)
+- `PROD_POSTGRES_USER`
 - `PROD_POSTGRES_PASSWORD`
-- `PROD_POSTGRES_DB` (also in Variables)
-- `PROD_POSTGRES_PORT` (also in Variables)
+- `PROD_POSTGRES_DB`
+- `PROD_POSTGRES_PORT`
 - `PROD_JWT_SECRET_KEY`
 
 **Tailscale:**
@@ -168,9 +170,9 @@ op://vault-name/item-name/field-name
 ```
 
 **Examples:**
-- `op://ci-cd/test-database/password` - Test database password
-- `op://ci-cd/api-keys/google-maps-api-key` - Google Maps API key
-- `op://ci-cd/prod-server/ssh-private-key` - Production SSH key
+- `op://Place Research - Test/postgres/password` - Test database password
+- `op://Place Research - Test/google-maps/credential` - Google Maps API key
+- `op://Place Research - Prod/server/private key?ssh-format=openssh` - Server SSH key (used by both environments)
 
 ## Environment File Templates
 

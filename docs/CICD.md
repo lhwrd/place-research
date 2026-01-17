@@ -181,15 +181,13 @@ This script will:
 
 ```bash
 # On your local machine, generate a deploy key
-ssh-keygen -t ed25519 -C "deploy-key-test" -f ~/.ssh/place-research-test
+ssh-keygen -t ed25519 -C "deploy-key" -f ~/.ssh/place-research
 
 # Copy public key to server
-ssh-copy-id -i ~/.ssh/place-research-test.pub user@test-server
+ssh-copy-id -i ~/.ssh/place-research.pub user@server
 
-# Add private key to GitHub secrets
-# Settings > Secrets > Actions > New repository secret
-# Name: TEST_SERVER_SSH_KEY
-# Value: <contents of ~/.ssh/place-research-test>
+# Add private key to 1Password
+# The same SSH key is used for both test and production environments
 ```
 
 3. **Configure environment variables on server**:
@@ -230,10 +228,10 @@ Create a vault named `ci-cd` with the following items:
 > Create OAuth credentials at https://login.tailscale.com/admin/settings/oauth with "Devices: Write" scope and `tag:ci` tag.
 
 **Test Environment:**
-- Item: `test-server`
-  - Field: `ssh-private-key` - SSH private key for test server
-  - Field: `hostname` - Test server Tailscale hostname (e.g., test-server)
-  - Field: `username` - SSH username for test server
+- Item: `server`
+  - Field: `ssh-private-key` - SSH private key for server (shared with prod)
+  - Field: `hostname` - Server Tailscale hostname (e.g., place-research-server)
+  - Field: `username` - SSH username
 
 - Item: `test-database`
   - Field: `username` - PostgreSQL username
@@ -244,10 +242,12 @@ Create a vault named `ci-cd` with the following items:
   - Field: `jwt-secret-key` - JWT secret key
 
 **Production Environment:**
-- Item: `prod-server`
-  - Field: `ssh-private-key` - SSH private key for production server
-  - Field: `hostname` - Production server Tailscale hostname (e.g., prod-server)
-  - Field: `username` - SSH username for production server
+- Item: `server`
+  - Field: `ssh-private-key` - SSH private key for server (shared with test)
+  - Field: `hostname` - Server Tailscale hostname (e.g., place-research-server)
+  - Field: `username` - SSH username
+
+> **Note**: Both test and production environments deploy to the same server but in different directories (`/opt/place-research-test` and `/opt/place-research-prod`) with different ports (test: 8000, 3000; prod: 8001, 3001).
 
 - Item: `prod-database`
   - Field: `username` - PostgreSQL username
