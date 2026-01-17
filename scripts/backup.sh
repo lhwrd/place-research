@@ -18,7 +18,11 @@ echo "=========================================="
 # Create backup directory if it doesn't exist
 mkdir -p $BACKUP_DIR
 
-# Load environment variables
+
+# Load environment variables (inject secrets from 1Password if available)
+if command -v op &> /dev/null && [ -f "env/prod.env" ]; then
+    op inject -i env/prod.env -o .env.prod
+fi
 if [ -f ".env.prod" ]; then
     set -a
     source .env.prod

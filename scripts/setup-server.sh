@@ -40,6 +40,7 @@ echo "Step 1: Updating system packages..."
 apt-get update
 apt-get upgrade -y
 
+
 # Install required packages
 echo "Step 2: Installing required packages..."
 apt-get install -y \
@@ -52,6 +53,20 @@ apt-get install -y \
     ufw \
     fail2ban \
     unattended-upgrades
+
+# Install 1Password CLI
+if ! command -v op &> /dev/null; then
+    echo "Step 2b: Installing 1Password CLI..."
+    curl -sS https://downloads.1password.com/linux/keys/1password.asc | gpg --dearmor > /usr/share/keyrings/1password-archive-keyring.gpg
+    echo 'deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/1password-archive-keyring.gpg] https://downloads.1password.com/linux/debian/amd64 stable main' > /etc/apt/sources.list.d/1password.list
+    mkdir -p /etc/debsig/policies/AC2D62742012EA22/
+    curl -sS https://downloads.1password.com/linux/debian/debsig/1password.pol | tee /etc/debsig/policies/AC2D62742012EA22/1password.pol
+    mkdir -p /usr/share/debsig/keyrings/AC2D62742012EA22
+    curl -sS https://downloads.1password.com/linux/keys/1password.asc | gpg --dearmor > /usr/share/debsig/keyrings/AC2D62742012EA22/debsig.gpg
+    apt-get update && apt-get install -y 1password-cli
+else
+    echo "1Password CLI already installed."
+fi
 
 # Install Docker if not already installed
 if ! command -v docker &> /dev/null; then
@@ -194,22 +209,37 @@ echo "Then restart SSH: systemctl restart sshd"
 
 # Create helper scripts
 echo "Step 14: Creating helper scripts..."
-cat > $APP_DIR/start.sh << EOF
+
+# Helper script: start.sh (inject secrets with op if available)
+cat > $APP_DIR/start.sh << 'EOF'
 #!/bin/bash
-docker compose -f $APP_DIR/docker/docker-compose.${ENVIRONMENT}.yml --env-file $APP_DIR/.env.${ENVIRONMENT} up -d
+set -e
+ENV_FILE="$APP_DIR/.env.${ENVIRONMENT}"
+TEMPLATE_FILE="$APP_DIR/env/${ENVIRONMENT}.env"
+if command -v op &> /dev/null && [ -f "$TEMPLATE_FILE" ]; then
+    echo "Injecting secrets from 1Password..."
+    op inject -i "$TEMPLATE_FILE" -o "$ENV_FILE"
+fi
+docker compose -f $APP_DIR/docker/docker-compose.${ENVIRONMENT}.yml --env-file "$ENV_FILE" up -d
 EOF
 
-cat > $APP_DIR/stop.sh << EOF
+
+# Helper script: stop.sh
+cat > $APP_DIR/stop.sh << 'EOF'
 #!/bin/bash
 docker compose -f $APP_DIR/docker/docker-compose.${ENVIRONMENT}.yml down
 EOF
 
-cat > $APP_DIR/logs.sh << EOF
+
+# Helper script: logs.sh
+cat > $APP_DIR/logs.sh << 'EOF'
 #!/bin/bash
-docker compose -f $APP_DIR/docker/docker-compose.${ENVIRONMENT}.yml logs -f \$@
+docker compose -f $APP_DIR/docker/docker-compose.${ENVIRONMENT}.yml logs -f "$@"
 EOF
 
-cat > $APP_DIR/status.sh << EOF
+
+# Helper script: status.sh
+cat > $APP_DIR/status.sh << 'EOF'
 #!/bin/bash
 docker compose -f $APP_DIR/docker/docker-compose.${ENVIRONMENT}.yml ps
 EOF

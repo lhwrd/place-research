@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: https://yourapp.com
+      url: https://actual.snake-snares.ts.net
 
     steps:
       - name: Checkout code
@@ -26,11 +26,11 @@ jobs:
           export-env: true
         env:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          TS_OAUTH_CLIENT_ID: op://ci-cd/tailscale/oauth-client-id
-          TS_OAUTH_SECRET: op://ci-cd/tailscale/oauth-secret
-          PROD_SERVER_SSH_KEY: op://ci-cd/prod-server/ssh-private-key
-          PROD_SERVER_HOST: op://ci-cd/prod-server/hostname
-          PROD_SERVER_USER: op://ci-cd/prod-server/username
+          TS_OAUTH_CLIENT_ID: op://Place Research - Prod/tailscale/oauth-client-id
+          TS_OAUTH_SECRET: op://Place Research - Prod/tailscale/oauth-secret
+          PROD_SERVER_SSH_KEY: op://Place Research - Prod/ssh/prod-server/ssh-private-key
+          PROD_SERVER_HOST: op://Place Research - Prod/ssh/prod-server/hostname
+          PROD_SERVER_USER: op://Place Research - Prod/ssh/prod-server/username
 
       - name: Connect to Tailscale
         uses: tailscale/github-action@v2
