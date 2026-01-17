@@ -1,6 +1,14 @@
 # Multi-stage build for React frontend
 FROM node:20-alpine as builder
 
+# Build arguments for Vite environment variables
+ARG VITE_API_BASE_URL=/api/v1
+ARG VITE_APP_NAME="Property Research"
+
+# Set as environment variables for the build
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+ENV VITE_APP_NAME=${VITE_APP_NAME}
+
 # Set working directory
 WORKDIR /app
 
