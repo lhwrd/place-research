@@ -21,23 +21,15 @@ if [ "$ENVIRONMENT" = "production" ]; then
     PROJECT_NAME="place-research-prod"
     COMPOSE_FILE="docker/docker-compose.prod.yml"
     ENV_FILE="/opt/place-research-prod/.env.prod"
-    ENV_TEMPLATE="/opt/place-research-prod/env/prod.env"
 elif [ "$ENVIRONMENT" = "test" ]; then
     BACKEND_URL="http://localhost:8000"
     FRONTEND_URL="http://localhost:3000"
     PROJECT_NAME="place-research-test"
     COMPOSE_FILE="docker/docker-compose.test.yml"
     ENV_FILE="/opt/place-research-test/.env.test"
-    ENV_TEMPLATE="/opt/place-research-test/env/test.env"
 else
     echo "Error: Invalid environment. Use 'test' or 'production'"
     exit 1
-fi
-
-# Inject secrets from 1Password if available
-export OP_SERVICE_ACCOUNT_TOKEN_FILE=/etc/place-research/op-token
-if command -v op &> /dev/null && [ -f "$ENV_TEMPLATE" ]; then
-    op inject -i "$ENV_TEMPLATE" -o "$ENV_FILE"
 fi
 
 echo "Checking container status..."

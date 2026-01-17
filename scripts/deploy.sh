@@ -19,40 +19,14 @@ echo "=========================================="
 # Set environment-specific variables
 if [ "$ENVIRONMENT" = "production" ]; then
     COMPOSE_FILE="/opt/place-research-prod/docker/docker-compose.prod.yml"
-    ENV_TEMPLATE="/opt/place-research-prod/env/prod.env"
     ENV_FILE="/opt/place-research-prod/.env.prod"
     PROJECT_NAME="place-research-prod"
 elif [ "$ENVIRONMENT" = "test" ]; then
     COMPOSE_FILE="/opt/place-research-test/docker/docker-compose.test.yml"
-    ENV_TEMPLATE="/opt/place-research-test/env/test.env"
     ENV_FILE="/opt/place-research-test/.env.test"
     PROJECT_NAME="place-research-test"
 else
     echo "Error: Invalid environment. Use 'test' or 'production'"
-    exit 1
-fi
-
-# Check if env template file exists
-if [ ! -f "$ENV_TEMPLATE" ]; then
-    echo "Error: Environment template file $ENV_TEMPLATE not found"
-    exit 1
-fi
-
-# Inject secrets from 1Password into env file
-echo "Step 0: Injecting secrets from 1Password..."
-export OP_SERVICE_ACCOUNT_TOKEN_FILE=/etc/place-research/op-token
-
-if ! command -v op &> /dev/null; then
-    echo "Error: 1Password CLI (op) is not installed"
-    echo "Install it with: https://developer.1password.com/docs/cli/get-started/"
-    exit 1
-fi
-
-op inject -i "$ENV_TEMPLATE" -o "$ENV_FILE"
-
-# Check if env file was created successfully
-if [ ! -f "$ENV_FILE" ]; then
-    echo "Error: Failed to create environment file $ENV_FILE"
     exit 1
 fi
 

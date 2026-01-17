@@ -16,13 +16,11 @@ echo "=========================================="
 # Set environment-specific variables
 if [ "$ENVIRONMENT" = "production" ]; then
     COMPOSE_FILE="docker/docker-compose.prod.yml"
-    ENV_FILE=".env.prod"
     PROJECT_NAME="place-research-prod"
     CONTAINER_NAME="place-research-prod-db"
     ENV_FILE="/opt/place-research-prod/.env.prod"
 elif [ "$ENVIRONMENT" = "test" ]; then
     COMPOSE_FILE="docker/docker-compose.test.yml"
-    ENV_FILE=".env.test"
     PROJECT_NAME="place-research-test"
     CONTAINER_NAME="place-research-test-db"
     ENV_FILE="/opt/place-research-test/.env.test"
@@ -47,13 +45,7 @@ if [ "$CONFIRM" != "yes" ]; then
     exit 0
 fi
 
-
-# Load environment variables (inject secrets from 1Password if available)
-export OP_SERVICE_ACCOUNT_TOKEN_FILE=/etc/place-research/op-token
-
-if command -v op &> /dev/null && [ -f "env/${ENVIRONMENT}.env" ]; then
-    op inject -i "env/${ENVIRONMENT}.env" -o "$ENV_FILE"
-fi
+# Load environment variables
 set -a
 source "$ENV_FILE"
 set +a

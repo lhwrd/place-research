@@ -186,7 +186,6 @@ Group=$APP_USER
 ExecStart=/usr/local/bin/docker-compose -f docker/docker-compose.${ENVIRONMENT}.yml up -d
 ExecStop=/usr/local/bin/docker-compose -f docker/docker-compose.${ENVIRONMENT}.yml down
 TimeoutStartSec=0
-Environment=OP_SERVICE_ACCOUNT_TOKEN_FILE=/etc/place-research/op-token
 
 [Install]
 WantedBy=multi-user.target
@@ -214,15 +213,6 @@ echo "Step 14: Creating helper scripts..."
 # Helper script: start.sh (inject secrets with op if available)
 cat > $APP_DIR/start.sh << 'EOF'
 #!/bin/bash
-set -e
-
-export OP_SERVICE_ACCOUNT_TOKEN_FILE=/etc/place-research/op-token
-ENV_FILE="$APP_DIR/.env.${ENVIRONMENT}"
-TEMPLATE_FILE="$APP_DIR/env/${ENVIRONMENT}.env"
-if command -v op &> /dev/null && [ -f "$TEMPLATE_FILE" ]; then
-    echo "Injecting secrets from 1Password..."
-    op inject -i "$TEMPLATE_FILE" -o "$ENV_FILE"
-fi
 docker compose -f $APP_DIR/docker/docker-compose.${ENVIRONMENT}.yml --env-file "$ENV_FILE" up -d
 EOF
 
