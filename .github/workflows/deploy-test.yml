@@ -12,81 +12,44 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: test
-      url: https://test.yourapp.com
+      url: http://homecloudpi35.snake-snares.ts.net
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Load secrets from 1Password
+        uses: 1password/load-secrets-action@v2
+        with:
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          TS_OAUTH_CLIENT_ID: op://Place Research - Test/vpn/tailscale/oauth-client-id
+          TS_OAUTH_SECRET: op://Place Research - Test/vpn/tailscale/oauth-secret
+          TEST_SERVER_SSH_KEY: op://Place Research - Test/ssh/test-server/private key?ssh-format=openssh
+          TEST_SERVER_HOST: op://Place Research - Test/ssh/test-server/hostname
+          TEST_SERVER_USER: op://Place Research - Test/ssh/test-server/username
+
       - name: Connect to Tailscale
         uses: tailscale/github-action@v2
         with:
-          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
-          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          oauth-client-id: ${{ env.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ env.TS_OAUTH_SECRET }}
           tags: tag:ci
 
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
-          ssh-private-key: ${{ secrets.TEST_SERVER_SSH_KEY }}
+          ssh-private-key: ${{ env.TEST_SERVER_SSH_KEY }}
 
       - name: Add server to known hosts
-        env:
-          TEST_SERVER_HOST: ${{ vars.TEST_SERVER_HOST }}
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H $TEST_SERVER_HOST >> ~/.ssh/known_hosts
-
-      - name: Create .env file
-        run: |
-          cat << EOF > .env.test
-          # Database
-          POSTGRES_USER=${{ vars.TEST_POSTGRES_USER }}
-          POSTGRES_PASSWORD=${{ secrets.TEST_POSTGRES_PASSWORD }}
-          POSTGRES_DB=${{ vars.TEST_POSTGRES_DB }}
-
-          # JWT
-          JWT_SECRET_KEY=${{ secrets.TEST_JWT_SECRET_KEY }}
-
-          # Auth
-          REQUIRE_AUTHENTICATION=true
-          ALLOW_API_KEY_CREATION=true
-
-          # API Keys
-          GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_API_KEY }}
-          GOOGLE_MAPS_MAP_ID=${{ secrets.GOOGLE_MAPS_MAP_ID }}
-          NATIONAL_FLOOD_DATA_API_KEY=${{ secrets.NATIONAL_FLOOD_DATA_API_KEY }}
-          NATIONAL_FLOOD_DATA_CLIENT_ID=${{ secrets.NATIONAL_FLOOD_DATA_CLIENT_ID }}
-          WALKSCORE_API_KEY=${{ secrets.WALKSCORE_API_KEY }}
-          AIRNOW_API_KEY=${{ secrets.AIRNOW_API_KEY }}
-
-          # Application
-          LOG_LEVEL=DEBUG
-          APP_NAME="Property Research (Test)"
-
-          # Frontend
-          VITE_API_BASE_URL=https://test-api.yourapp.com/api/v1
-          VITE_APP_NAME="Property Research (Test)"
-
-          # Ports
-          BACKEND_PORT=8000
-          FRONTEND_PORT=3000
-          POSTGRES_PORT=5432
-
-          # Email
-          EMAIL_SMTP_SERVER=${{ vars.EMAIL_SMTP_SERVER }}
-          EMAIL_SMTP_PORT=587
-          EMAIL_USERNAME=${{ vars.EMAIL_USERNAME }}
-          EMAIL_PASSWORD="${{ secrets.EMAIL_PASSWORD }}"
-          EMAIL_FROM_ADDRESS=${{ vars.EMAIL_FROM_ADDRESS }}
-          EOF
+          ssh-keyscan -H ${{ env.TEST_SERVER_HOST }} >> ~/.ssh/known_hosts
 
       - name: Copy files to server
-        env:
-          SERVER_USER: ${{ vars.TEST_SERVER_USER }}
-          SERVER_HOST: ${{ vars.TEST_SERVER_HOST }}
         run: |
-          scp -r docker scripts .env.test $SERVER_USER@$SERVER_HOST:/opt/place-research-test/
+          scp -r docker scripts env ${{ env.TEST_SERVER_USER }}@${{ env.TEST_SERVER_HOST }}:/opt/place-research-test/
 
       - name: Set short SHA
         id: vars
@@ -94,11 +57,9 @@ jobs:
 
       - name: Deploy on server
         env:
-          SERVER_USER: ${{ vars.TEST_SERVER_USER }}
-          SERVER_HOST: ${{ vars.TEST_SERVER_HOST }}
           IMAGE_TAG: main-${{ env.SHORT_SHA }}
         run: |
-          ssh $SERVER_USER@$SERVER_HOST << 'ENDSSH'
+          ssh ${{ env.TEST_SERVER_USER }}@${{ env.TEST_SERVER_HOST }} << 'ENDSSH'
             cd /opt/place-research-test
 
             # Pull latest images
@@ -110,11 +71,8 @@ jobs:
           ENDSSH
 
       - name: Health check
-        env:
-          SERVER_USER: ${{ vars.TEST_SERVER_USER }}
-          SERVER_HOST: ${{ vars.TEST_SERVER_HOST }}
         run: |
-          ssh $SERVER_USER@$SERVER_HOST << 'ENDSSH'
+          ssh ${{ env.TEST_SERVER_USER }}@${{ env.TEST_SERVER_HOST }} << 'ENDSSH'
             cd /opt/place-research-test
             bash scripts/health-check.sh
           ENDSSH

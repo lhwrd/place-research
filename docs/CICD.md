@@ -204,56 +204,114 @@ sudo -u placeapp-test nano /opt/place-research-test/.env.test
 # Add all required variables (see .env.example)
 ```
 
-## GitHub Secrets Configuration
+## Secret Management with 1Password
 
-### Repository Secrets Required
+This project uses [1Password Service Accounts](https://developer.1password.com/docs/service-accounts/) to securely manage secrets in CI/CD pipelines.
 
-#### Tailscale Network Access
+### Why 1Password?
 
-- `TS_OAUTH_CLIENT_ID` - Tailscale OAuth client ID
-- `TS_OAUTH_SECRET` - Tailscale OAuth secret
+- **Centralized secret management**: All secrets in one secure vault
+- **Easy rotation**: Update secrets in 1Password, not GitHub
+- **Audit trail**: Track when secrets are accessed
+- **Better organization**: Structure secrets logically with items and fields
+- **Service account isolation**: CI/CD uses dedicated service accounts with limited permissions
+
+### 1Password Setup
+
+#### 1. Create Vault Structure
+
+Create a vault named `ci-cd` with the following items:
+
+**Tailscale Network Access:**
+- Item: `tailscale`
+  - Field: `oauth-client-id` - Tailscale OAuth client ID
+  - Field: `oauth-secret` - Tailscale OAuth secret
 
 > Create OAuth credentials at https://login.tailscale.com/admin/settings/oauth with "Devices: Write" scope and `tag:ci` tag.
 
-#### Test Environment
+**Test Environment:**
+- Item: `test-server`
+  - Field: `ssh-private-key` - SSH private key for test server
+  - Field: `hostname` - Test server Tailscale hostname (e.g., test-server)
+  - Field: `username` - SSH username for test server
 
-- `TEST_SERVER_SSH_KEY` - SSH private key for test server
-- `TEST_SERVER_HOST` - Test server Tailscale hostname (e.g., test-server or test-server.tail1234.ts.net)
-- `TEST_SERVER_USER` - SSH username for test server
-- `TEST_POSTGRES_USER` - PostgreSQL username
-- `TEST_POSTGRES_PASSWORD` - PostgreSQL password
-- `TEST_POSTGRES_DB` - PostgreSQL database name
-- `TEST_JWT_SECRET_KEY` - JWT secret key
+- Item: `test-database`
+  - Field: `username` - PostgreSQL username
+  - Field: `password` - PostgreSQL password
+  - Field: `database-name` - PostgreSQL database name
 
-#### Production Environment
+- Item: `test-secrets`
+  - Field: `jwt-secret-key` - JWT secret key
 
-- `PROD_SERVER_SSH_KEY` - SSH private key for production server
-- `PROD_SERVER_HOST` - Production server Tailscale hostname (e.g., prod-server or prod-server.tail1234.ts.net)
-- `PROD_SERVER_USER` - SSH username for production server
-- `PROD_POSTGRES_USER` - PostgreSQL username
-- `PROD_POSTGRES_PASSWORD` - PostgreSQL password
-- `PROD_POSTGRES_DB` - PostgreSQL database name
-- `PROD_JWT_SECRET_KEY` - JWT secret key
+**Production Environment:**
+- Item: `prod-server`
+  - Field: `ssh-private-key` - SSH private key for production server
+  - Field: `hostname` - Production server Tailscale hostname (e.g., prod-server)
+  - Field: `username` - SSH username for production server
 
-#### Shared Secrets (Both Environments)
+- Item: `prod-database`
+  - Field: `username` - PostgreSQL username
+  - Field: `password` - PostgreSQL password
+  - Field: `database-name` - PostgreSQL database name
+  - Field: `port` - PostgreSQL port
 
-- `GOOGLE_MAPS_API_KEY`
-- `GOOGLE_MAPS_MAP_ID`
-- `NATIONAL_FLOOD_DATA_API_KEY`
-- `NATIONAL_FLOOD_DATA_CLIENT_ID`
-- `WALKSCORE_API_KEY`
-- `AIRNOW_API_KEY`
+- Item: `prod-secrets`
+  - Field: `jwt-secret-key` - JWT secret key
 
-#### Optional
+**Shared API Keys:**
+- Item: `api-keys`
+  - Field: `google-maps-api-key`
+  - Field: `google-maps-map-id`
+  - Field: `national-flood-data-api-key`
+  - Field: `national-flood-data-client-id`
+  - Field: `walkscore-api-key`
+  - Field: `airnow-api-key`
 
-- `SLACK_WEBHOOK` - For deployment notifications
-- `GITHUB_TOKEN` - Automatically provided by GitHub Actions
+**Email Configuration:**
+- Item: `email`
+  - Field: `smtp-server`
+  - Field: `username`
+  - Field: `password`
+  - Field: `from-address`
 
-### Adding Secrets
+#### 2. Create Service Account
 
-1. Go to repository Settings > Secrets and variables > Actions
-2. Click "New repository secret"
-3. Add each secret with exact name and value
+1. Go to your 1Password account settings
+2. Navigate to **Service Accounts**
+3. Create a new service account with:
+   - **Name**: `github-actions-place-research`
+   - **Vaults**: Read access to `ci-cd` vault
+4. Save the service account token securely (you'll only see it once)
+
+#### 3. Add Service Account Token to GitHub
+
+1. Go to your GitHub repository settings
+2. Navigate to **Secrets and variables > Actions**
+3. Create a new repository secret:
+   - **Name**: `OP_SERVICE_ACCOUNT_TOKEN`
+   - **Value**: Your 1Password service account token
+
+That's it! Your workflows will now fetch secrets from 1Password automatically.
+
+### Secret References in Workflows
+
+Secrets are referenced using the `op://` URL format:
+
+```
+op://vault-name/item-name/field-name
+```
+
+Example:
+```yaml
+- name: Load secrets from 1Password
+  uses: 1password/load-secrets-action@v2
+  with:
+    export-env: true
+  env:
+    OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+    POSTGRES_PASSWORD: op://ci-cd/test-database/password
+    JWT_SECRET_KEY: op://ci-cd/test-secrets/jwt-secret-key
+```
 
 ### Tailscale ACL Configuration
 
@@ -548,7 +606,7 @@ docker-compose -f docker/docker-compose.prod.yml restart
 ## Security Best Practices
 
 1. **SSH Keys**: Use SSH key authentication, disable password auth
-2. **Secrets**: Never commit secrets to repository
+2. **Secrets**: Use 1Password for centralized secret management, never commit secrets to repository
 3. **Firewall**: Only open required ports
 4. **Updates**: Keep system and packages updated
 5. **Backups**: Encrypt backups for production
@@ -557,6 +615,7 @@ docker-compose -f docker/docker-compose.prod.yml restart
 8. **Monitoring**: Set up intrusion detection
 9. **Access Control**: Limit SSH access to specific IPs
 10. **Database**: Use strong passwords, separate credentials per environment
+11. **Service Accounts**: Use dedicated 1Password service accounts with minimal required permissions
 
 ## Adding New Environments
 
@@ -564,7 +623,7 @@ To add a new environment (e.g., staging):
 
 1. Create `docker-compose.staging.yml`
 2. Create `.github/workflows/deploy-staging.yml`
-3. Add staging secrets to GitHub
+3. Add staging secrets to 1Password vault (create new items or fields as needed)
 4. Run `setup-server.sh staging` on staging server
 5. Update DNS/domains
 6. Configure reverse proxy
@@ -651,6 +710,10 @@ When traffic grows:
 
 Track significant changes to CI/CD infrastructure:
 
+- **2026-01-16**: Migrated to 1Password for secret management
+  - Replaced GitHub Secrets with 1Password Service Accounts
+  - Updated deployment workflows to use 1Password CLI
+  - Enhanced security with centralized secret management
 - **2026-01-12**: Initial CI/CD pipeline setup
   - GitHub Actions workflows
   - Test and production environments

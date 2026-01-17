@@ -14,87 +14,48 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: https://yourapp.com
+      url: https://actual.snake-snares.ts.net
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Load secrets from 1Password
+        uses: 1password/load-secrets-action@v2
+        with:
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          TS_OAUTH_CLIENT_ID: op://Place Research - Prod/tailscale/oauth-client-id
+          TS_OAUTH_SECRET: op://Place Research - Prod/tailscale/oauth-secret
+          PROD_SERVER_SSH_KEY: op://Place Research - Prod/ssh/prod-server/ssh-private-key
+          PROD_SERVER_HOST: op://Place Research - Prod/ssh/prod-server/hostname
+          PROD_SERVER_USER: op://Place Research - Prod/ssh/prod-server/username
+
       - name: Connect to Tailscale
         uses: tailscale/github-action@v2
         with:
-          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
-          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          oauth-client-id: ${{ env.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ env.TS_OAUTH_SECRET }}
           tags: tag:ci
 
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
-          ssh-private-key: ${{ secrets.PROD_SERVER_SSH_KEY }}
+          ssh-private-key: ${{ env.PROD_SERVER_SSH_KEY }}
 
       - name: Add server to known hosts
-        env:
-          PROD_SERVER_HOST: ${{ vars.PROD_SERVER_HOST }}
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H $PROD_SERVER_HOST >> ~/.ssh/known_hosts
-
-      - name: Create .env file
-        run: |
-          cat << EOF > .env.prod
-          # Database
-          DATABASE_URL=postgresql://${{ vars.PROD_POSTGRES_USER }}:${{ secrets.PROD_POSTGRES_PASSWORD }}@place-research-prod-db:${{ vars.PROD_POSTGRES_PORT }}/${{ vars.PROD_POSTGRES_DB }}
-          POSTGRES_PASSWORD=${{ secrets.PROD_POSTGRES_PASSWORD }}
-          POSTGRES_USER=${{ vars.PROD_POSTGRES_USER }}
-          POSTGRES_DB=${{ vars.PROD_POSTGRES_DB }}
-
-          # JWT
-          JWT_SECRET_KEY=${{ secrets.PROD_JWT_SECRET_KEY }}
-
-          # Auth
-          REQUIRE_AUTHENTICATION=true
-          ALLOW_API_KEY_CREATION=false
-
-          # API Keys
-          GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_API_KEY }}
-          GOOGLE_MAPS_MAP_ID=${{ secrets.GOOGLE_MAPS_MAP_ID }}
-          NATIONAL_FLOOD_DATA_API_KEY=${{ secrets.NATIONAL_FLOOD_DATA_API_KEY }}
-          NATIONAL_FLOOD_DATA_CLIENT_ID=${{ secrets.NATIONAL_FLOOD_DATA_CLIENT_ID }}
-          WALKSCORE_API_KEY=${{ secrets.WALKSCORE_API_KEY }}
-          AIRNOW_API_KEY=${{ secrets.AIRNOW_API_KEY }}
-
-          # Paths
-          RAILLINES_PATH=/opt/place-research-prod/data/raillines.geojson
-          ANNUAL_CLIMATE_PATH=/opt/place-research-prod/data/annual_climate.csv
-
-          # Application
-          LOG_LEVEL=WARNING
-          APP_NAME="Property Research"
-
-          # Frontend
-          VITE_API_BASE_URL=https://api.yourapp.com/api/v1
-          VITE_APP_NAME="Property Research"
-          # Email
-          EMAIL_SMTP_SERVER=${{ vars.EMAIL_SMTP_SERVER }}
-          EMAIL_SMTP_PORT=587
-          EMAIL_USERNAME=${{ vars.EMAIL_USERNAME }}
-          EMAIL_PASSWORD="${{ secrets.EMAIL_PASSWORD }}"
-          EMAIL_FROM_ADDRESS=${{ vars.EMAIL_FROM_ADDRESS }}
-          EOF
+          ssh-keyscan -H ${{ env.PROD_SERVER_HOST }} >> ~/.ssh/known_hosts
 
       - name: Copy files to server
-        env:
-          SERVER_USER: ${{ vars.PROD_SERVER_USER }}
-          SERVER_HOST: ${{ vars.PROD_SERVER_HOST }}
         run: |
-          scp -r docker scripts .env.prod $SERVER_USER@$SERVER_HOST:/opt/place-research-prod/
+          scp -r docker scripts env ${{ env.PROD_SERVER_USER }}@${{ env.PROD_SERVER_HOST }}:/opt/place-research-prod/
 
       - name: Create backup before deployment
-        env:
-          SERVER_USER: ${{ vars.PROD_SERVER_USER }}
-          SERVER_HOST: ${{ vars.PROD_SERVER_HOST }}
         run: |
-          ssh $SERVER_USER@$SERVER_HOST << 'ENDSSH'
+          ssh ${{ env.PROD_SERVER_USER }}@${{ env.PROD_SERVER_HOST }} << 'ENDSSH'
             cd /opt/place-research-prod
             bash scripts/backup.sh
           ENDSSH
@@ -105,11 +66,9 @@ jobs:
 
       - name: Deploy on server
         env:
-          SERVER_USER: ${{ vars.PROD_SERVER_USER }}
-          SERVER_HOST: ${{ vars.PROD_SERVER_HOST }}
           IMAGE_TAG: main-${{ env.SHORT_SHA }}
         run: |
-          ssh $SERVER_USER@$SERVER_HOST << 'ENDSSH'
+          ssh ${{ env.PROD_SERVER_USER }}@${{ env.PROD_SERVER_HOST }} << 'ENDSSH'
             cd /opt/place-research-prod
 
             # Pull latest images
@@ -121,22 +80,16 @@ jobs:
           ENDSSH
 
       - name: Health check
-        env:
-          SERVER_USER: ${{ vars.PROD_SERVER_USER }}
-          SERVER_HOST: ${{ vars.PROD_SERVER_HOST }}
         run: |
-          ssh $SERVER_USER@$SERVER_HOST << 'ENDSSH'
+          ssh ${{ env.PROD_SERVER_USER }}@${{ env.PROD_SERVER_HOST }} << 'ENDSSH'
             cd /opt/place-research-prod
             bash scripts/health-check.sh
           ENDSSH
 
       - name: Rollback on failure
         if: failure()
-        env:
-          SERVER_USER: ${{ vars.PROD_SERVER_USER }}
-          SERVER_HOST: ${{ vars.PROD_SERVER_HOST }}
         run: |
-          ssh $SERVER_USER@$SERVER_HOST << 'ENDSSH'
+          ssh ${{ env.PROD_SERVER_USER }}@${{ env.PROD_SERVER_HOST }} << 'ENDSSH'
             cd /opt/place-research-prod
             bash scripts/rollback.sh
           ENDSSH
