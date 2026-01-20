@@ -51,16 +51,13 @@ if [ "$ENVIRONMENT" = "production" ]; then
     ./scripts/backup.sh
 fi
 
-echo "Step 4: Running database migrations..."
-docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME --env-file $ENV_FILE run --rm backend alembic upgrade head || echo "Migration failed or not needed"
-
-echo "Step 5: Stopping old containers..."
+echo "Step 4: Stopping old containers..."
 docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME down --remove-orphans
 
-echo "Step 6: Starting new containers..."
+echo "Step 5: Starting new containers (migrations run automatically on startup)..."
 docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME --env-file $ENV_FILE up -d
 
-echo "Step 7: Waiting for services to be healthy..."
+echo "Step 6: Waiting for services to be healthy..."
 sleep 10
 
 # Check if services are running
@@ -70,7 +67,7 @@ if ! docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME --env-file $ENV_FILE ps | 
     exit 1
 fi
 
-echo "Step 8: Cleaning up old images..."
+echo "Step 7: Cleaning up old images..."
 docker image prune -f
 
 echo "=========================================="
