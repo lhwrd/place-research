@@ -66,13 +66,9 @@ jobs:
             bash scripts/backup.sh
           ENDSSH
 
-      - name: Set short SHA
-        id: vars
-        run: echo "SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_ENV
-
       - name: Deploy on server
         env:
-          IMAGE_TAG: main-${{ env.SHORT_SHA }}
+          IMAGE_TAG: latest
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_REPOSITORY: ${{ github.repository }}

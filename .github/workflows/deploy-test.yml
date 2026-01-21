@@ -57,13 +57,9 @@ jobs:
         run: |
           scp -r docker scripts env ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:/opt/place-research-test/
 
-      - name: Set short SHA
-        id: vars
-        run: echo "SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_ENV
-
       - name: Deploy on server
         env:
-          IMAGE_TAG: develop-${{ env.SHORT_SHA }}
+          IMAGE_TAG: develop
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_REPOSITORY: ${{ github.repository }}
