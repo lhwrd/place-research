@@ -43,8 +43,7 @@ echo "Step 1: Logging in to GitHub Container Registry..."
 echo $GITHUB_TOKEN | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin 2>/dev/null || true
 
 echo "Step 2: Pulling latest images..."
-docker pull ghcr.io/${GITHUB_REPOSITORY}/backend:${IMAGE_TAG}
-docker pull ghcr.io/${GITHUB_REPOSITORY}/frontend:${IMAGE_TAG}
+docker compose -f $COMPOSE_FILE -p $PROJECT_NAME pull
 
 echo "Step 3: Creating backup of current state..."
 if [ "$ENVIRONMENT" = "production" ]; then
@@ -52,18 +51,18 @@ if [ "$ENVIRONMENT" = "production" ]; then
 fi
 
 echo "Step 4: Stopping old containers..."
-docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME down --remove-orphans
+docker compose -f $COMPOSE_FILE -p $PROJECT_NAME down --remove-orphans
 
 echo "Step 5: Starting new containers (migrations run automatically on startup)..."
-docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME --env-file $ENV_FILE up -d
+docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME up -d
 
 echo "Step 6: Waiting for services to be healthy..."
 sleep 10
 
 # Check if services are running
-if ! docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME --env-file $ENV_FILE ps | grep -q "Up"; then
+if ! docker compose -f $COMPOSE_FILE -p $PROJECT_NAME ps | grep -q "Up"; then
     echo "Error: Services failed to start"
-    docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME --env-file $ENV_FILE logs
+    docker compose -f $COMPOSE_FILE -p $PROJECT_NAME logs
     exit 1
 fi
 
@@ -84,7 +83,7 @@ else
 fi
 echo ""
 echo "To view logs:"
-echo "  docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME --env-file $ENV_FILE logs -f"
+echo "  docker compose -f $COMPOSE_FILE -p $PROJECT_NAME logs -f"
 echo ""
 echo "To check status:"
-echo "  docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME --env-file $ENV_FILE ps"
+echo "  docker compose -f $COMPOSE_FILE -p $PROJECT_NAME ps"
