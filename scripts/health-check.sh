@@ -16,13 +16,13 @@ echo "=========================================="
 
 # Set environment-specific variables
 if [ "$ENVIRONMENT" = "production" ]; then
-    BACKEND_URL="http://localhost:8001/api/v1"
+    BACKEND_URL="http://localhost:8001"
     FRONTEND_URL="http://localhost:3001"
     PROJECT_NAME="place-research-prod"
     COMPOSE_FILE="docker/docker-compose.prod.yml"
     ENV_FILE="/opt/place-research-prod/.env.prod"
 elif [ "$ENVIRONMENT" = "test" ]; then
-    BACKEND_URL="http://localhost:8000/api/v1"
+    BACKEND_URL="http://localhost:8000"
     FRONTEND_URL="http://localhost:3000"
     PROJECT_NAME="place-research-test"
     COMPOSE_FILE="docker/docker-compose.test.yml"
@@ -33,9 +33,9 @@ else
 fi
 
 echo "Checking container status..."
-if ! docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME --env-file $ENV_FILE ps | grep -q "Up"; then
+if ! docker compose -f $COMPOSE_FILE -p $PROJECT_NAME ps | grep -q "Up"; then
     echo "❌ ERROR: Some containers are not running"
-    docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME --env-file $ENV_FILE ps
+    docker compose -f $COMPOSE_FILE -p $PROJECT_NAME ps
     EXIT_CODE=1
 else
     echo "✅ All containers are running"
@@ -61,19 +61,11 @@ fi
 
 echo ""
 echo "Checking database connectivity..."
-if docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME --env-file $ENV_FILE exec -T postgres pg_isready > /dev/null 2>&1; then
+if docker compose -f $COMPOSE_FILE -p $PROJECT_NAME exec -T postgres pg_isready > /dev/null 2>&1; then
     echo "✅ Database is ready"
 else
     echo "❌ ERROR: Database is not ready"
     EXIT_CODE=1
-fi
-
-echo ""
-echo "Checking API endpoints..."
-if curl -f -s "$BACKEND_URL/api/v1/health" > /dev/null 2>&1; then
-    echo "✅ API endpoints are responding"
-else
-    echo "⚠️  WARNING: API endpoints check failed (might be expected if not configured)"
 fi
 
 echo ""
@@ -84,7 +76,7 @@ else
     echo "❌ Some health checks failed!"
     echo ""
     echo "Checking logs for errors..."
-    docker compose -f $COMPOSE_FILE -p $PROJECT_NAME --env-file $ENV_FILE logs --tail=50
+    docker compose -f $COMPOSE_FILE -p $PROJECT_NAME logs --tail=50
 fi
 echo "=========================================="
 

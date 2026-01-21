@@ -81,5 +81,5 @@ jobs:
         run: |
           ssh ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} << 'ENDSSH'
             cd /opt/place-research-test
-            bash scripts/health-check.sh
+            bash scripts/health-check.sh test
           ENDSSH

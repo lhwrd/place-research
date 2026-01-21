@@ -90,7 +90,7 @@ jobs:
         run: |
           ssh ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} << 'ENDSSH'
             cd /opt/place-research-prod
-            bash scripts/health-check.sh
+            bash scripts/health-check.sh production
           ENDSSH
 
       - name: Rollback on failure
