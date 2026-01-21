@@ -67,13 +67,20 @@ jobs:
       - name: Deploy on server
         env:
           IMAGE_TAG: main-${{ env.SHORT_SHA }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           ssh ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} << 'ENDSSH'
             cd /opt/place-research-prod
 
-            # Pull latest images
-            docker pull ghcr.io/${{ github.repository }}/backend:${IMAGE_TAG}
-            docker pull ghcr.io/${{ github.repository }}/frontend:${IMAGE_TAG}
+            # Login to GitHub Container Registry
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            # Set environment variables for deploy script
+            export GITHUB_TOKEN="${{ secrets.GITHUB_TOKEN }}"
+            export GITHUB_ACTOR="${{ github.actor }}"
+            export GITHUB_REPOSITORY="${{ github.repository }}"
 
             # Run deployment script
             bash scripts/deploy.sh production ${IMAGE_TAG}
