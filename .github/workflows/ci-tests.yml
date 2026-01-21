@@ -5,7 +5,10 @@ on:
     branches: [main, develop]
   push:
     branches: [main, develop]
-
+    paths:
+      - "apps/**"
+      - "docker/**"
+      - ".github/workflows/ci-tests.yml"
 jobs:
   # Backend tests
   backend-tests:

@@ -71,7 +71,7 @@ jobs:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
-          ssh ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} << 'ENDSSH'
+          ssh ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} << ENDSSH
             cd /opt/place-research-prod
 
             # Login to GitHub Container Registry
@@ -83,7 +83,7 @@ jobs:
             export GITHUB_REPOSITORY="${{ github.repository }}"
 
             # Run deployment script
-            bash scripts/deploy.sh production ${IMAGE_TAG}
+            bash scripts/deploy.sh production ${{ env.IMAGE_TAG }}
           ENDSSH
 
       - name: Health check

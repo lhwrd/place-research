@@ -5,6 +5,10 @@ on:
     branches:
       - main
       - develop
+    paths:
+      - "apps/**"
+      - "docker/**"
+      - ".github/workflows/build-images.yml"
     tags:
       - "v*"
 
