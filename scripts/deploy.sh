@@ -53,6 +53,11 @@ fi
 echo "Step 4: Stopping old containers..."
 docker compose -f $COMPOSE_FILE -p $PROJECT_NAME down --remove-orphans
 
+# Force remove any leftover containers with conflicting names
+echo "Removing any leftover containers..."
+docker rm -f place-research-test-db place-research-test-backend place-research-test-frontend 2>/dev/null || true
+docker rm -f place-research-prod-db place-research-prod-backend place-research-prod-frontend 2>/dev/null || true
+
 echo "Step 5: Starting new containers (migrations run automatically on startup)..."
 docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME up -d
 
