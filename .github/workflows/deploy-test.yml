@@ -57,7 +57,7 @@ jobs:
 
       - name: Deploy on server
         env:
-          IMAGE_TAG: main-${{ env.SHORT_SHA }}
+          IMAGE_TAG: develop-${{ env.SHORT_SHA }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_REPOSITORY: ${{ github.repository }}
