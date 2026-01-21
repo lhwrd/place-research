@@ -8,10 +8,10 @@ application startup process.
 import logging
 from pathlib import Path
 
-from alembic import command
-from alembic.config import Config
 from sqlalchemy import text
 
+from alembic import command
+from alembic.config import Config
 from app.core.config import get_settings
 from app.db.database import engine
 
@@ -89,7 +89,7 @@ def check_migration_status() -> str:
         Current migration revision ID
     """
     try:
-        alembic_cfg = get_alembic_config()
+        _ = get_alembic_config()
 
         # This is a bit hacky but works to get current revision
         with engine.connect() as conn:
