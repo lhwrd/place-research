@@ -37,6 +37,10 @@ def get_alembic_config() -> Config:
     settings = get_settings()
     alembic_cfg.set_main_option("sqlalchemy.url", settings.database_url)
 
+    # Set script_location to absolute path to avoid path resolution issues
+    alembic_dir = backend_dir / "alembic"
+    alembic_cfg.set_main_option("script_location", str(alembic_dir))
+
     return alembic_cfg
 
 
@@ -104,16 +108,24 @@ def init_db() -> None:
 
     This function:
     1. Checks database connectivity
-    2. Runs Alembic migrations
+    2. Runs Alembic migrations (skipped in test mode)
     3. Logs the current migration status
 
     This should be called during application startup.
     """
     logger.info("Initializing database...")
 
+    # Get settings to check if we're in test mode
+    settings = get_settings()
+
     # Check database connection
     if not check_database_connection():
         raise RuntimeError("Cannot connect to database")
+
+    # Skip migrations in test mode (tests create tables directly)
+    if settings.testing:
+        logger.info("Test mode: skipping migrations")
+        return
 
     # Run migrations
     run_migrations()

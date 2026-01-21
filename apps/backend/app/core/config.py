@@ -85,6 +85,11 @@ class Settings(BaseSettings):
     nocodb_table_id: Optional[str] = Field(None, alias="NOCODB_TABLE_ID")
 
     # Application settings
+    testing: bool = Field(
+        False,
+        alias="TESTING",
+        description="Whether app is running in test mode (default: False)",
+    )
     log_level: str = Field("INFO", alias="LOG_LEVEL")
     api_host: str = Field("0.0.0.0", alias="API_HOST")
     api_port: int = Field(8000, alias="API_PORT")
