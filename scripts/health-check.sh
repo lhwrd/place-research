@@ -20,13 +20,11 @@ if [ "$ENVIRONMENT" = "production" ]; then
     FRONTEND_URL="http://localhost:3001"
     PROJECT_NAME="place-research-prod"
     COMPOSE_FILE="docker/docker-compose.prod.yml"
-    ENV_FILE="/opt/place-research-prod/.env.prod"
 elif [ "$ENVIRONMENT" = "test" ]; then
     BACKEND_URL="http://localhost:8000"
     FRONTEND_URL="http://localhost:3000"
     PROJECT_NAME="place-research-test"
     COMPOSE_FILE="docker/docker-compose.test.yml"
-    ENV_FILE="/opt/place-research-test/.env.test"
 else
     echo "Error: Invalid environment. Use 'test' or 'production'"
     exit 1
