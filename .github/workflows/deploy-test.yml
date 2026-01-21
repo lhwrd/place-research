@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: test
-      url: http://homecloudpi35.snake-snares.ts.net
+      url: http://actual.snake-snares.ts.net:3000
 
     steps:
       - name: Checkout code

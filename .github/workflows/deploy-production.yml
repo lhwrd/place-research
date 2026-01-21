@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: https://actual.snake-snares.ts.net
+      url: https://actual.snake-snares.ts.net:3001
 
     steps:
       - name: Checkout code

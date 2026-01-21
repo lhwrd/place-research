@@ -41,10 +41,25 @@ fi
 
 echo ""
 echo "Checking backend health endpoint..."
-if curl -f -s -o /dev/null -w "%{http_code}" "$BACKEND_URL/health" | grep -q "200"; then
-    echo "✅ Backend is healthy"
-else
-    echo "❌ ERROR: Backend health check failed"
+MAX_RETRIES=30
+RETRY_COUNT=0
+BACKEND_HEALTHY=false
+
+while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+    if curl -f -s -o /dev/null -w "%{http_code}" "$BACKEND_URL/health" | grep -q "200"; then
+        echo "✅ Backend is healthy"
+        BACKEND_HEALTHY=true
+        break
+    fi
+    RETRY_COUNT=$((RETRY_COUNT + 1))
+    if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+        echo "Backend not ready yet, retrying... ($RETRY_COUNT/$MAX_RETRIES)"
+        sleep 2
+    fi
+done
+
+if [ "$BACKEND_HEALTHY" = false ]; then
+    echo "❌ ERROR: Backend health check failed after $MAX_RETRIES attempts"
     EXIT_CODE=1
 fi
 
