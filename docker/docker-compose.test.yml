@@ -21,7 +21,7 @@ services:
 
   # Backend API - Test Environment
   backend:
-    image: ghcr.io/${GITHUB_REPOSITORY}/backend:${IMAGE_TAG:-latest}
+    image: ghcr.io/${GITHUB_REPOSITORY}/backend:${IMAGE_TAG:-develop}
     container_name: place-research-test-backend
     environment:
       # Database
@@ -99,7 +99,7 @@ services:
 
   # Frontend - Test Environment
   frontend:
-    image: ghcr.io/${GITHUB_REPOSITORY}/frontend:${IMAGE_TAG:-latest}
+    image: ghcr.io/${GITHUB_REPOSITORY}/frontend:${IMAGE_TAG:-develop}
     container_name: place-research-test-frontend
     ports:
       - "3000:8080"
