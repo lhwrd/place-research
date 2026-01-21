@@ -5,6 +5,12 @@ on:
     branches:
       - develop
   workflow_dispatch:
+  workflow_run:
+    workflows: ["Build and Push Docker Images"]
+    types:
+      - completed
+    branches:
+      - develop
 
 jobs:
   deploy-test:

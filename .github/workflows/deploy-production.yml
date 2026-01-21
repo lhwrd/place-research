@@ -7,6 +7,12 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+  workflow_run:
+    workflows: ["Build and Push Docker Images"]
+    types:
+      - completed
+    branches:
+      - main
 
 jobs:
   deploy-production:

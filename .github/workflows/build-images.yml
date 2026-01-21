@@ -11,6 +11,13 @@ on:
       - ".github/workflows/build-images.yml"
     tags:
       - "v*"
+  workflow_run:
+    workflows: ["CI - Tests"]
+    types:
+      - completed
+    branches:
+      - main
+      - develop
 
 env:
   REGISTRY: ghcr.io
