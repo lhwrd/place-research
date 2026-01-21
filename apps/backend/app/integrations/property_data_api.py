@@ -68,10 +68,14 @@ class PropertyDataAPI(BaseAPIClient):
 
     async def validate_api_key(self) -> bool:
         """Validate API key is configured and working."""
+        if not self.api_key:
+            logger.error("Property Data API key is not configured")
+            return False
         try:
             # Try a simple property lookup
             result = await self.get_property_by_address("123 Main St, New York, NY")
-            return result is not None or True  # Even a 404 means API key works
+            # Ensure 200 OK and some data returned
+            return result is not None
         except PropertyDataAPIError:
             return False
 
