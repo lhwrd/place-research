@@ -20,13 +20,13 @@ if is_sqlite:
             settings.database_url,
             connect_args={"check_same_thread": False},
             poolclass=StaticPool,
-            echo="DEBUG" in str(settings.log_level).upper(),
+            echo=False,
         )
     else:
         engine = create_engine(
             settings.database_url,
             connect_args={"check_same_thread": False},  # Allow SQLite to be used across threads
-            echo="DEBUG" in str(settings.log_level).upper(),  # Log SQL queries in debug mode
+            echo=False,  # Use Python logging config instead
         )
 else:
     engine = create_engine(
@@ -34,7 +34,7 @@ else:
         pool_pre_ping=True,  # Verify connections before using
         pool_size=10,
         max_overflow=20,
-        echo="DEBUG" in str(settings.log_level).upper(),  # Log SQL queries in debug mode
+        echo=False,  # Use Python logging config instead
     )
 
 # Create session factory

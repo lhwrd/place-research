@@ -7,6 +7,12 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+  workflow_run:
+    workflows: ["Build and Push Docker Images"]
+    types:
+      - completed
+    branches:
+      - main
 
 jobs:
   deploy-production:
@@ -14,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: https://actual.snake-snares.ts.net
+      url: https://actual.snake-snares.ts.net:3001
 
     steps:
       - name: Checkout code
@@ -60,30 +66,33 @@ jobs:
             bash scripts/backup.sh
           ENDSSH
 
-      - name: Set short SHA
-        id: vars
-        run: echo "SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_ENV
-
       - name: Deploy on server
         env:
-          IMAGE_TAG: main-${{ env.SHORT_SHA }}
+          IMAGE_TAG: latest
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
-          ssh ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} << 'ENDSSH'
+          ssh ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} << ENDSSH
             cd /opt/place-research-prod
 
-            # Pull latest images
-            docker pull ghcr.io/${{ github.repository }}/backend:${IMAGE_TAG}
-            docker pull ghcr.io/${{ github.repository }}/frontend:${IMAGE_TAG}
+            # Login to GitHub Container Registry
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            # Set environment variables for deploy script
+            export GITHUB_TOKEN="${{ secrets.GITHUB_TOKEN }}"
+            export GITHUB_ACTOR="${{ github.actor }}"
+            export GITHUB_REPOSITORY="${{ github.repository }}"
 
             # Run deployment script
-            bash scripts/deploy.sh production ${IMAGE_TAG}
+            bash scripts/deploy.sh production ${{ env.IMAGE_TAG }}
           ENDSSH
 
       - name: Health check
         run: |
           ssh ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} << 'ENDSSH'
             cd /opt/place-research-prod
-            bash scripts/health-check.sh
+            bash scripts/health-check.sh production
           ENDSSH
 
       - name: Rollback on failure

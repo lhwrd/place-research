@@ -20,22 +20,20 @@ if [ "$ENVIRONMENT" = "production" ]; then
     FRONTEND_URL="http://localhost:3001"
     PROJECT_NAME="place-research-prod"
     COMPOSE_FILE="docker/docker-compose.prod.yml"
-    ENV_FILE="/opt/place-research-prod/.env.prod"
 elif [ "$ENVIRONMENT" = "test" ]; then
     BACKEND_URL="http://localhost:8000"
     FRONTEND_URL="http://localhost:3000"
     PROJECT_NAME="place-research-test"
     COMPOSE_FILE="docker/docker-compose.test.yml"
-    ENV_FILE="/opt/place-research-test/.env.test"
 else
     echo "Error: Invalid environment. Use 'test' or 'production'"
     exit 1
 fi
 
 echo "Checking container status..."
-if ! docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME --env-file $ENV_FILE ps | grep -q "Up"; then
+if ! docker compose -f $COMPOSE_FILE -p $PROJECT_NAME ps | grep -q "Up"; then
     echo "❌ ERROR: Some containers are not running"
-    docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME --env-file $ENV_FILE ps
+    docker compose -f $COMPOSE_FILE -p $PROJECT_NAME ps
     EXIT_CODE=1
 else
     echo "✅ All containers are running"
@@ -43,10 +41,25 @@ fi
 
 echo ""
 echo "Checking backend health endpoint..."
-if curl -f -s -o /dev/null -w "%{http_code}" "$BACKEND_URL/health" | grep -q "200"; then
-    echo "✅ Backend is healthy"
-else
-    echo "❌ ERROR: Backend health check failed"
+MAX_RETRIES=30
+RETRY_COUNT=0
+BACKEND_HEALTHY=false
+
+while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+    if curl -f -s -o /dev/null -w "%{http_code}" "$BACKEND_URL/health" | grep -q "200"; then
+        echo "✅ Backend is healthy"
+        BACKEND_HEALTHY=true
+        break
+    fi
+    RETRY_COUNT=$((RETRY_COUNT + 1))
+    if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+        echo "Backend not ready yet, retrying... ($RETRY_COUNT/$MAX_RETRIES)"
+        sleep 2
+    fi
+done
+
+if [ "$BACKEND_HEALTHY" = false ]; then
+    echo "❌ ERROR: Backend health check failed after $MAX_RETRIES attempts"
     EXIT_CODE=1
 fi
 
@@ -61,19 +74,11 @@ fi
 
 echo ""
 echo "Checking database connectivity..."
-if docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME --env-file $ENV_FILE exec -T postgres pg_isready > /dev/null 2>&1; then
+if docker compose -f $COMPOSE_FILE -p $PROJECT_NAME exec -T postgres pg_isready > /dev/null 2>&1; then
     echo "✅ Database is ready"
 else
     echo "❌ ERROR: Database is not ready"
     EXIT_CODE=1
-fi
-
-echo ""
-echo "Checking API endpoints..."
-if curl -f -s "$BACKEND_URL/api/v1/health" > /dev/null 2>&1; then
-    echo "✅ API endpoints are responding"
-else
-    echo "⚠️  WARNING: API endpoints check failed (might be expected if not configured)"
 fi
 
 echo ""
@@ -84,7 +89,7 @@ else
     echo "❌ Some health checks failed!"
     echo ""
     echo "Checking logs for errors..."
-    docker compose -f $COMPOSE_FILE -p $PROJECT_NAME --env-file $ENV_FILE logs --tail=50
+    docker compose -f $COMPOSE_FILE -p $PROJECT_NAME logs --tail=50
 fi
 echo "=========================================="
 

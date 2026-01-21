@@ -1,5 +1,8 @@
 """Main FastAPI application."""
 
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,7 +11,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.api.v1.router import api_router
 from app.core.config import settings
 from app.core.logging_config import setup_logging
-from app.db.database import Base, engine
+from app.db.migrations import init_db
 from app.exceptions.base import AppError
 from app.exceptions.handlers import (
     app_exception_handler,
@@ -26,15 +29,39 @@ setup_logging(
     app_name=settings.app_name,
 )
 
-# Create database tables
-Base.metadata.create_all(bind=engine)
+logger = logging.getLogger(__name__)
 
-# Initialize FastAPI app
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan manager.
+
+    Handles startup and shutdown events:
+    - Startup: Run database migrations
+    - Shutdown: Cleanup (if needed)
+    """
+    # Startup
+    logger.info("Application startup: initializing database...")
+    try:
+        init_db()
+        logger.info("Database initialization complete")
+    except Exception as e:
+        logger.error(f"Failed to initialize database: {e}")
+        raise
+
+    yield
+
+    # Shutdown
+    logger.info("Application shutdown")
+
+
+# Initialize FastAPI app with lifespan
 app = FastAPI(
     title=settings.app_name,
     description="API for researching properties for primary residence",
     version="1.0.0",
     debug="DEBUG" in str(settings.log_level).upper(),
+    lifespan=lifespan,
 )
 
 # CORS middleware - must be added before other middleware

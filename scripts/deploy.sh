@@ -43,34 +43,35 @@ echo "Step 1: Logging in to GitHub Container Registry..."
 echo $GITHUB_TOKEN | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin 2>/dev/null || true
 
 echo "Step 2: Pulling latest images..."
-docker pull ghcr.io/${GITHUB_REPOSITORY}/backend:${IMAGE_TAG}
-docker pull ghcr.io/${GITHUB_REPOSITORY}/frontend:${IMAGE_TAG}
+docker compose -f $COMPOSE_FILE -p $PROJECT_NAME pull
 
 echo "Step 3: Creating backup of current state..."
 if [ "$ENVIRONMENT" = "production" ]; then
     ./scripts/backup.sh
 fi
 
-echo "Step 4: Running database migrations..."
-docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME --env-file $ENV_FILE run --rm backend alembic upgrade head || echo "Migration failed or not needed"
+echo "Step 4: Stopping old containers..."
+docker compose -f $COMPOSE_FILE -p $PROJECT_NAME down --remove-orphans
 
-echo "Step 5: Stopping old containers..."
-docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME down --remove-orphans
+# Force remove any leftover containers with conflicting names
+echo "Removing any leftover containers..."
+docker rm -f place-research-test-db place-research-test-backend place-research-test-frontend 2>/dev/null || true
+docker rm -f place-research-prod-db place-research-prod-backend place-research-prod-frontend 2>/dev/null || true
 
-echo "Step 6: Starting new containers..."
-docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME --env-file $ENV_FILE up -d
+echo "Step 5: Starting new containers (migrations run automatically on startup)..."
+docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME up -d
 
-echo "Step 7: Waiting for services to be healthy..."
+echo "Step 6: Waiting for services to be healthy..."
 sleep 10
 
 # Check if services are running
-if ! docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME --env-file $ENV_FILE ps | grep -q "Up"; then
+if ! docker compose -f $COMPOSE_FILE -p $PROJECT_NAME ps | grep -q "Up"; then
     echo "Error: Services failed to start"
-    docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME --env-file $ENV_FILE logs
+    docker compose -f $COMPOSE_FILE -p $PROJECT_NAME logs
     exit 1
 fi
 
-echo "Step 8: Cleaning up old images..."
+echo "Step 7: Cleaning up old images..."
 docker image prune -f
 
 echo "=========================================="
@@ -87,7 +88,7 @@ else
 fi
 echo ""
 echo "To view logs:"
-echo "  docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME --env-file $ENV_FILE logs -f"
+echo "  docker compose -f $COMPOSE_FILE -p $PROJECT_NAME logs -f"
 echo ""
 echo "To check status:"
-echo "  docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME --env-file $ENV_FILE ps"
+echo "  docker compose -f $COMPOSE_FILE -p $PROJECT_NAME ps"
