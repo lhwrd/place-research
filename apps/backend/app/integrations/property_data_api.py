@@ -44,6 +44,20 @@ class PropertyDataAPI(BaseAPIClient):
 
         self.provider = settings.property_data_provider  # "attom", "zillow", "realty_mole"
 
+        # Log initialization for debugging
+        logger.info(
+            "PropertyDataAPI initialized - provider: %s, base_url: %s, has_key: %s",
+            self.provider,
+            settings.property_data_api_base_url,
+            bool(self.api_key),
+            extra={
+                "provider": self.provider,
+                "base_url": settings.property_data_api_base_url,
+                "has_api_key": bool(self.api_key),
+                "api_key_length": len(self.api_key) if self.api_key else 0,
+            },
+        )
+
     def _get_service_name(self) -> str:
         """Return service name."""
         return f"property_data_{self.provider}"

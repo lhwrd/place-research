@@ -205,16 +205,28 @@ class BaseAPIClient(ABC):
                 "has_body": json_data is not None,
             },
         )
+        # Log headers (mask sensitive values)
+        masked_headers = {}
+        for k, v in request_headers.items():
+            if k.lower() in [
+                "authorization",
+                "x-goog-api-key",
+                "apikey",
+                "x-rapidapi-key",
+            ]:
+                # Show first/last 4 chars for debugging
+                masked_headers[k] = f"{v[:4]}...{v[-4:]}" if len(v) > 8 else "***"
+            else:
+                masked_headers[k] = v
+
         logger.debug(
             "%s request details - params: %s",
             self._get_service_name(),
             params,
             extra={
-                "headers": {
-                    k: v
-                    for k, v in request_headers.items()
-                    if k.lower() not in ["authorization", "x-goog-api-key"]
-                }
+                "headers": masked_headers,
+                "has_api_key": self.api_key is not None,
+                "api_key_length": len(self.api_key) if self.api_key else 0,
             },
         )
 
