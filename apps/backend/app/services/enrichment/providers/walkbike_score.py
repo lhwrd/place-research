@@ -79,15 +79,5 @@ class WalkScoreProvider(BaseEnrichmentProvider):
         if not super().should_run(user_preferences):
             return False
 
-        # Run if user has walkability preferences set
-        if user_preferences:
-            return any(
-                [
-                    user_preferences.get("min_walk_score"),
-                    user_preferences.get("min_bike_score"),
-                    user_preferences.get("min_transit_score"),
-                ]
-            )
-
-        # Default to running
+        # Always run by default - walkability scores are generally useful for all properties
         return True

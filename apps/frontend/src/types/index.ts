@@ -162,7 +162,7 @@ export interface EnrichmentMetadata {
 export interface EnrichmentData {
   success: boolean;
   enrichment_data: {
-    walkscore_provider?: EnrichmentProviderData<WalkScoreProviderData>;
+    walk_score_provider?: EnrichmentProviderData<WalkScoreProviderData>;
     air_quality_provider?: EnrichmentProviderData<AirQualityProviderData>;
     annual_average_climate_provider?: EnrichmentProviderData<AnnualAverageClimateProviderData>;
     flood_zone_provider?: EnrichmentProviderData<FloodZoneProviderData>;

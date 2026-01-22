@@ -8,6 +8,8 @@ export { PropertyEnrichment } from './PropertyEnrichment';
 export { PropertySearchBar } from './PropertySearchBar';
 export { PropertyComparison } from './PropertyComparison';
 export { PropertyStats } from './PropertyStats';
+export { PropertyOverview } from './PropertyOverview';
+export { PropertyDetailsCard } from './PropertyDetailsCard';
 
 export type { PropertyCardProps } from './PropertyCard';
 export type { PropertyListProps } from './PropertyList';
