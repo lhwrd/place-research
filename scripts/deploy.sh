@@ -19,11 +19,11 @@ echo "=========================================="
 # Set environment-specific variables
 if [ "$ENVIRONMENT" = "production" ]; then
     COMPOSE_FILE="/opt/place-research-prod/docker/docker-compose.prod.yml"
-    ENV_FILE="/opt/place-research-prod/.env.prod"
+    ENV_FILE="/opt/place-research-prod/docker/.env"
     PROJECT_NAME="place-research-prod"
 elif [ "$ENVIRONMENT" = "test" ]; then
     COMPOSE_FILE="/opt/place-research-test/docker/docker-compose.test.yml"
-    ENV_FILE="/opt/place-research-test/.env.test"
+    ENV_FILE="/opt/place-research-test/docker/.env"
     PROJECT_NAME="place-research-test"
 else
     echo "Error: Invalid environment. Use 'test' or 'production'"
@@ -55,8 +55,7 @@ docker compose -f $COMPOSE_FILE -p $PROJECT_NAME down --remove-orphans
 
 # Force remove any leftover containers with conflicting names
 echo "Removing any leftover containers..."
-docker rm -f place-research-test-db place-research-test-backend place-research-test-frontend 2>/dev/null || true
-docker rm -f place-research-prod-db place-research-prod-backend place-research-prod-frontend 2>/dev/null || true
+docker rm -f place-research-${ENVIRONMENT}-db place-research-${ENVIRONMENT}-backend place-research-${ENVIRONMENT}   -frontend 2>/dev/null || true
 
 echo "Step 5: Starting new containers (migrations run automatically on startup)..."
 docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME up -d

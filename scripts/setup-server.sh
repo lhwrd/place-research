@@ -220,7 +220,12 @@ EOF
 # Helper script: stop.sh
 cat > $APP_DIR/stop.sh << 'EOF'
 #!/bin/bash
-docker compose -f $APP_DIR/docker/docker-compose.${ENVIRONMENT}.yml down
+echo "Stopping old containers..."
+docker compose -f docker/docker-compose.${ENVIRONMENT}.yml down --remove-orphans
+
+# Force remove any leftover containers with conflicting names
+echo "Removing any leftover containers..."
+docker rm -f place-research-${ENVIRONMENT}-db place-research-${ENVIRONMENT}-backend place-research-${ENVIRONMENT}-frontend 2>/dev/null || true
 EOF
 
 
