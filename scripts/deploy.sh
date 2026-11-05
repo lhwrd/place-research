@@ -21,10 +21,12 @@ if [ "$ENVIRONMENT" = "production" ]; then
     COMPOSE_FILE="/opt/place-research-prod/docker/docker-compose.prod.yml"
     ENV_FILE="/opt/place-research-prod/docker/.env"
     PROJECT_NAME="place-research-prod"
+    BACKEND_PORT=8001
 elif [ "$ENVIRONMENT" = "test" ]; then
     COMPOSE_FILE="/opt/place-research-test/docker/docker-compose.test.yml"
     ENV_FILE="/opt/place-research-test/docker/.env"
     PROJECT_NAME="place-research-test"
+    BACKEND_PORT=8000
 else
     echo "Error: Invalid environment. Use 'test' or 'production'"
     exit 1
@@ -42,23 +44,27 @@ set +a
 echo "Step 1: Logging in to GitHub Container Registry..."
 echo $GITHUB_TOKEN | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin 2>/dev/null || true
 
-echo "Step 2: Pulling latest images..."
-docker compose -f $COMPOSE_FILE -p $PROJECT_NAME pull
-
-echo "Step 3: Creating backup of current state..."
-if [ "$ENVIRONMENT" = "production" ]; then
-    ./scripts/backup.sh
+echo "Step 2: Tagging the running image for rollback..."
+CURRENT_IMAGE=$(docker inspect --format '{{.Image}}' place-research-${ENVIRONMENT}-backend 2>/dev/null || true)
+if [ -n "$CURRENT_IMAGE" ]; then
+    docker tag "$CURRENT_IMAGE" "ghcr.io/${GITHUB_REPOSITORY}/backend:rollback"
+    echo "Tagged $CURRENT_IMAGE as backend:rollback"
+else
+    echo "No running backend; nothing to tag"
 fi
+
+echo "Step 3: Pulling latest images..."
+docker compose -f $COMPOSE_FILE -p $PROJECT_NAME pull
 
 echo "Step 4: Stopping old containers..."
 docker compose -f $COMPOSE_FILE -p $PROJECT_NAME down --remove-orphans
 
 # Force remove any leftover containers with conflicting names
 echo "Removing any leftover containers..."
-docker rm -f place-research-${ENVIRONMENT}-db place-research-${ENVIRONMENT}-backend place-research-${ENVIRONMENT}   -frontend 2>/dev/null || true
+docker rm -f place-research-${ENVIRONMENT}-backend 2>/dev/null || true
 
-echo "Step 5: Starting new containers (migrations run automatically on startup)..."
-docker-compose -f $COMPOSE_FILE -p $PROJECT_NAME up -d
+echo "Step 5: Starting new containers..."
+docker compose -f $COMPOSE_FILE -p $PROJECT_NAME up -d
 
 echo "Step 6: Waiting for services to be healthy..."
 sleep 10
@@ -77,14 +83,7 @@ echo "=========================================="
 echo "Deployment completed successfully!"
 echo "=========================================="
 echo ""
-echo "Service URLs:"
-if [ "$ENVIRONMENT" = "production" ]; then
-    echo "  Frontend: https://yourapp.com"
-    echo "  Backend:  https://api.yourapp.com"
-else
-    echo "  Frontend: https://test.yourapp.com"
-    echo "  Backend:  https://test-api.yourapp.com"
-fi
+echo "Backend: http://$(hostname):${BACKEND_PORT}/docs"
 echo ""
 echo "To view logs:"
 echo "  docker compose -f $COMPOSE_FILE -p $PROJECT_NAME logs -f"

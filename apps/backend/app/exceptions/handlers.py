@@ -5,7 +5,6 @@ import logging
 from fastapi import Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from sqlalchemy.exc import SQLAlchemyError
 
 from app.exceptions.base import AppError
 
@@ -56,25 +55,6 @@ async def validation_exception_handler(
                 "message": "Validation error",
                 "type": "ValidationError",
                 "details": exc.errors(),
-            },
-        },
-    )
-
-
-async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError) -> JSONResponse:
-    """
-    Handle database errors.
-    """
-    logger.error("Database error:  %s", str(exc), extra={"path": request.url.path}, exc_info=True)
-
-    return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={
-            "success": False,
-            "error": {
-                "message": "A database error occurred",
-                "type": "DatabaseError",
-                "details": {},
             },
         },
     )

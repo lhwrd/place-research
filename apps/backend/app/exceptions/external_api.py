@@ -41,17 +41,6 @@ class WalkScoreAPIError(ExternalAPIError):
         )
 
 
-class ZillowAPIError(ExternalAPIError):
-    """Raised when Zillow/property data API call fails."""
-
-    def __init__(self, message: str, api_status_code: Optional[int] = None):
-        super().__init__(
-            service="zillow",
-            message=f"Property data API error: {message}",
-            api_status_code=api_status_code,
-        )
-
-
 class OSRMAPIError(ExternalAPIError):
     """Raised when OSRM API call fails."""
 
@@ -59,17 +48,6 @@ class OSRMAPIError(ExternalAPIError):
         super().__init__(
             service="osrm",
             message=f"OSRM API error: {message}",
-            api_status_code=api_status_code,
-        )
-
-
-class PropertyDataAPIError(ExternalAPIError):
-    """Raised when Property Data API call fails."""
-
-    def __init__(self, message: str, api_status_code: Optional[int] = None):
-        super().__init__(
-            service="property_data",
-            message=f"Property Data API error: {message}",
             api_status_code=api_status_code,
         )
 

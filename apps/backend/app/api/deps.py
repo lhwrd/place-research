@@ -1,69 +1,61 @@
-from typing import Generator
+"""Request authentication dependencies.
 
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
-from sqlalchemy.orm import Session
+The API has two callers: the iOS Shortcut (static bearer token) and Baserow's
+webhook (shared secret header).
+"""
+
+import secrets
+from typing import Optional
+
+from fastapi import Depends, Header, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.core.config import settings
-from app.db.database import SessionLocal
-from app.models.user import User
-from app.services.user_service import UserService
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login")
+ingest_bearer = HTTPBearer(auto_error=False)
 
 
-def get_db() -> Generator:
+async def verify_ingest_token(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(ingest_bearer),
+) -> None:
     """
-    Database session dependency.
-    Yields a database session and ensures it's closed after use.
-    """
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-async def get_current_user(
-    db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)
-) -> User:
-    """
-    Validate JWT token and return the current authenticated user.
+    Check the static bearer token used by the iOS Shortcut.
 
     Raises:
-        HTTPException: If token is invalid or user not found.
+        HTTPException: 503 if ingest isn't configured, 401 if the token is missing or wrong.
     """
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-
-    try:
-        payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
-        user_id: str = payload.get("sub")
-        if user_id is None:
-            raise credentials_exception
-
-    except JWTError:
-        raise credentials_exception
-
-    user_service = UserService(db)
-    user = user_service.get_user_by_id(int(user_id))
-
-    if user is None:
-        raise credentials_exception
-
-    return user
+    if not settings.ingest_api_token or not settings.baserow_configured:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Listing ingest is not configured",
+        )
+    if credentials is None or not secrets.compare_digest(
+        credentials.credentials, settings.ingest_api_token
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid ingest token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 
-async def get_current_active_user(
-    current_user: User = Depends(get_current_user),
-) -> User:
+async def verify_baserow_webhook(
+    x_webhook_secret: Optional[str] = Header(None, alias="X-Webhook-Secret"),
+) -> None:
     """
-    Ensure the current user is active (not disabled/banned).
+    Check the shared secret header configured on the Baserow webhook.
+
+    Raises:
+        HTTPException: 503 if webhooks aren't configured, 401 if the secret is wrong.
     """
-    if not current_user.is_active:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
-    return current_user
+    if not settings.baserow_webhook_secret or not settings.baserow_configured:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Baserow webhooks are not configured",
+        )
+    if x_webhook_secret is None or not secrets.compare_digest(
+        x_webhook_secret, settings.baserow_webhook_secret
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid webhook secret"
+        )

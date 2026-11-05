@@ -103,7 +103,6 @@ echo "Step 6: Creating application directory..."
 mkdir -p $APP_DIR
 mkdir -p $APP_DIR/docker
 mkdir -p $APP_DIR/scripts
-mkdir -p $APP_DIR/backups
 mkdir -p $APP_DIR/logs
 mkdir -p $APP_DIR/data
 
@@ -118,10 +117,11 @@ ufw allow ssh
 ufw allow 80/tcp   # HTTP
 ufw allow 443/tcp  # HTTPS
 
-if [ "$ENVIRONMENT" = "test" ]; then
-    # Allow direct access to services in test environment
-    ufw allow 8000/tcp  # Backend
-    ufw allow 3000/tcp  # Frontend
+# Backend is reached by the iOS Shortcut and Baserow's webhook over Tailscale
+if [ "$ENVIRONMENT" = "prod" ]; then
+    ufw allow in on tailscale0 to any port 8001 proto tcp  # Backend
+else
+    ufw allow in on tailscale0 to any port 8000 proto tcp  # Backend
 fi
 
 echo "Firewall rules:"
@@ -145,15 +145,8 @@ Unattended-Upgrade::Remove-Unused-Dependencies "true";
 Unattended-Upgrade::Automatic-Reboot "false";
 EOF
 
-# Create backup cron job for production
-if [ "$ENVIRONMENT" = "production" ]; then
-    echo "Step 10: Setting up automated backups..."
-    (crontab -u $APP_USER -l 2>/dev/null; echo "0 2 * * * cd $APP_DIR && bash scripts/backup.sh >> logs/backup.log 2>&1") | crontab -u $APP_USER -
-    echo "Daily backups scheduled at 2 AM"
-fi
-
 # Setup log rotation
-echo "Step 11: Configuring log rotation..."
+echo "Step 10: Configuring log rotation..."
 cat > /etc/logrotate.d/place-research << EOF
 $APP_DIR/logs/*.log {
     daily
@@ -164,13 +157,13 @@ $APP_DIR/logs/*.log {
     create 0644 $APP_USER $APP_USER
     sharedscripts
     postrotate
-        docker-compose -f $APP_DIR/docker/docker-compose.${ENVIRONMENT}.yml restart backend frontend 2>/dev/null || true
+        docker-compose -f $APP_DIR/docker/docker-compose.${ENVIRONMENT}.yml restart backend 2>/dev/null || true
     endscript
 }
 EOF
 
 # Create systemd service for auto-start
-echo "Step 12: Creating systemd service..."
+echo "Step 11: Creating systemd service..."
 cat > /etc/systemd/system/place-research-${ENVIRONMENT}.service << EOF
 [Unit]
 Description=Place Research Application (${ENVIRONMENT})
@@ -195,7 +188,7 @@ systemctl daemon-reload
 systemctl enable place-research-${ENVIRONMENT}.service
 
 # Setup SSH key authentication (if not already done)
-echo "Step 13: SSH configuration recommendations..."
+echo "Step 12: SSH configuration recommendations..."
 echo "For security, ensure you:"
 echo "  1. Use SSH key authentication"
 echo "  2. Disable password authentication"
@@ -208,7 +201,7 @@ echo ""
 echo "Then restart SSH: systemctl restart sshd"
 
 # Create helper scripts
-echo "Step 14: Creating helper scripts..."
+echo "Step 13: Creating helper scripts..."
 
 # Helper script: start.sh (inject secrets with op if available)
 cat > $APP_DIR/start.sh << 'EOF'
@@ -225,7 +218,7 @@ docker compose -f docker/docker-compose.${ENVIRONMENT}.yml down --remove-orphans
 
 # Force remove any leftover containers with conflicting names
 echo "Removing any leftover containers..."
-docker rm -f place-research-${ENVIRONMENT}-db place-research-${ENVIRONMENT}-backend place-research-${ENVIRONMENT}-frontend 2>/dev/null || true
+docker rm -f place-research-${ENVIRONMENT}-backend 2>/dev/null || true
 EOF
 
 

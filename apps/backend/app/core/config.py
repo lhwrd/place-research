@@ -38,51 +38,29 @@ class Settings(BaseSettings):
     raillines_path: Optional[Path] = Field(None, alias="RAILLINES_PATH")
     annual_climate_path: Optional[Path] = Field(None, alias="ANNUAL_CLIMATE_PATH")
 
-    # Authentication settings
-    require_authentication: bool = Field(
-        False,
-        alias="REQUIRE_AUTHENTICATION",
-        description="Whether API authentication is required (default: False for dev)",
-    )
-    allow_api_key_creation: bool = Field(
-        True,
-        alias="ALLOW_API_KEY_CREATION",
-        description="Whether new API keys can be created via API (default: True)",
-    )
-
-    # Database settings
-    database_url: str = Field(
-        "sqlite:///./place_research.db",
-        alias="DATABASE_URL",
-        description="Database connection URL (default: sqlite:///./place_research.db)",
+    # Baserow configuration (source of truth for properties, locations and settings)
+    baserow_url: Optional[str] = Field(None, alias="BASEROW_URL")
+    baserow_api_token: Optional[str] = Field(None, alias="BASEROW_API_TOKEN")
+    baserow_database_id: Optional[int] = Field(None, alias="BASEROW_DATABASE_ID")
+    baserow_properties_table_id: Optional[int] = Field(None, alias="BASEROW_PROPERTIES_TABLE_ID")
+    baserow_locations_table_id: Optional[int] = Field(None, alias="BASEROW_LOCATIONS_TABLE_ID")
+    baserow_settings_table_id: Optional[int] = Field(None, alias="BASEROW_SETTINGS_TABLE_ID")
+    baserow_webhook_secret: Optional[str] = Field(None, alias="BASEROW_WEBHOOK_SECRET")
+    baserow_sweep_interval_seconds: int = Field(
+        900,
+        alias="BASEROW_SWEEP_INTERVAL_SECONDS",
+        description="How often to enrich rows a webhook may have missed (default: 900 = 15 min)",
     )
 
-    # JWT settings
-    jwt_secret_key: str = Field(
-        ...,
-        alias="JWT_SECRET_KEY",
-        description="Secret key for JWT token signing (REQUIRED - generate with: openssl rand -hex 32)",
-    )
-    jwt_algorithm: str = Field(
-        "HS256",
-        alias="JWT_ALGORITHM",
-        description="Algorithm for JWT token signing (default: HS256)",
-    )
-    jwt_access_token_expire_minutes: int = Field(
-        30,
-        alias="JWT_ACCESS_TOKEN_EXPIRE_MINUTES",
-        description="Access token expiration in minutes (default: 30)",
-    )
-    jwt_refresh_token_expire_days: int = Field(
-        7,
-        alias="JWT_REFRESH_TOKEN_EXPIRE_DAYS",
-        description="Refresh token expiration in days (default: 7)",
-    )
+    # Static bearer token for the iOS Shortcut ingest endpoints
+    ingest_api_token: Optional[str] = Field(None, alias="INGEST_API_TOKEN")
 
-    # NocoDB configuration
-    nocodb_url: Optional[str] = Field(None, alias="NOCODB_URL")
-    nocodb_token: Optional[str] = Field(None, alias="NOCODB_TOKEN")
-    nocodb_table_id: Optional[str] = Field(None, alias="NOCODB_TABLE_ID")
+    @property
+    def baserow_configured(self) -> bool:
+        """Whether enough Baserow config exists to sync properties."""
+        return bool(
+            self.baserow_url and self.baserow_api_token and self.baserow_properties_table_id
+        )
 
     # Application settings
     testing: bool = Field(
@@ -174,43 +152,6 @@ class Settings(BaseSettings):
         alias="CACHE_TTL_WALKABILITY",
         description="Cache TTL for walk/bike scores (default: 7200 = 2 hours)",
     )
-
-    property_data_provider: str = Field(
-        "attom", alias="PROPERTY_DATA_PROVIDER"
-    )  # "attom", "zillow", "realty_mole", "mock"
-    property_data_api_key: Optional[str] = Field(None, alias="PROPERTY_DATA_API_KEY")
-    property_data_api_base_url: str = Field(
-        "https://api.gateway.attomdata.com/propertyapi/v1.0.0",
-        alias="PROPERTY_DATA_API_BASE_URL",
-    )
-
-    # Provider-specific settings
-    attom_api_key: Optional[str] = Field(None, alias="ATTOM_API_KEY")
-    zillow_rapid_api_key: Optional[str] = Field(None, alias="ZILLOW_RAPID_API_KEY")
-    realty_mole_api_key: Optional[str] = Field(None, alias="REALTY_MOLE_API_KEY")
-
-    # Use mock data in development
-    use_mock_property_data: bool = Field(False, alias="USE_MOCK_PROPERTY_DATA")
-
-    # Email settings
-    email_smtp_server: str = Field("smtp.example.com", alias="EMAIL_SMTP_SERVER")
-    email_smtp_port: int = Field(587, alias="EMAIL_SMTP_PORT")
-    email_username: str = Field(..., alias="EMAIL_USERNAME")
-    email_password: str = Field(..., alias="EMAIL_PASSWORD")
-    email_from_address: str = Field(..., alias="EMAIL_FROM_ADDRESS")
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-        # Set provider-specific API key (only override if provider-specific key exists)
-        if self.property_data_provider == "attom" and self.attom_api_key:
-            self.property_data_api_key = self.attom_api_key
-        elif self.property_data_provider == "zillow" and self.zillow_rapid_api_key:
-            self.property_data_api_key = self.zillow_rapid_api_key
-            self.property_data_api_base_url = "https://zillow-com1.p.rapidapi.com"
-        elif self.property_data_provider == "realty_mole" and self.realty_mole_api_key:
-            self.property_data_api_key = self.realty_mole_api_key
-            self.property_data_api_base_url = "https://realty-mole-property-api.p.rapidapi.com"
 
     def get_provider_ttls(self) -> dict[str, int]:
         """Get mapping of provider names to cache TTLs."""

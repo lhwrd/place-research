@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: test
-      url: http://actual.snake-snares.ts.net:3000
+      url: http://actual.snake-snares.ts.net:8000/docs
 
     steps:
       - name: Checkout code

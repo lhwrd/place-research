@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: https://actual.snake-snares.ts.net:3001
+      url: http://actual.snake-snares.ts.net:8001/docs
 
     steps:
       - name: Checkout code
@@ -59,13 +59,6 @@ jobs:
         run: |
           scp -r docker scripts env ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:/opt/place-research-prod/
 
-      - name: Create backup before deployment
-        run: |
-          ssh ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} << 'ENDSSH'
-            cd /opt/place-research-prod
-            bash scripts/backup.sh
-          ENDSSH
-
       - name: Deploy on server
         env:
           IMAGE_TAG: latest
@@ -100,5 +93,5 @@ jobs:
         run: |
           ssh ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} << 'ENDSSH'
             cd /opt/place-research-prod
-            bash scripts/rollback.sh
+            bash scripts/rollback.sh production
           ENDSSH
