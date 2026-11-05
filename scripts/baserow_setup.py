@@ -3,7 +3,7 @@
 Database tokens can't change schema, so this signs in as you (JWT). It only adds what's
 missing, matched by name, and never deletes or retypes anything, so it's safe to re-run.
 
-Usage (from apps/backend):
+Usage (from the repo root):
     uv run python scripts/baserow_setup.py \\
         --webhook-url https://<backend>.snake-snares.ts.net/api/v1/webhooks/baserow
 

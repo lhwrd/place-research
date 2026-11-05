@@ -74,7 +74,11 @@ app = FastAPI(
 )
 
 # Logging middleware
-app.add_middleware(RequestLoggingMiddleware)
+app.add_middleware(
+    RequestLoggingMiddleware,
+    log_requests=settings.log_requests,
+    log_responses=settings.log_responses,
+)
 
 # Register exception handlers
 app.add_exception_handler(AppError, app_exception_handler)

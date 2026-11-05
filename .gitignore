@@ -1,17 +1,23 @@
-.pytest_cache/
-.env
+# Python
 __pycache__/
+*.egg-info
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Local config and data
+.env
 .vscode
-*.xlsx
+data/
+logs/
+cache/
+config.json
 *.csv
+*.xlsx
 *.ipynb
 
-cache/
-
 .DS_Store
-config.json
-*.egg-info
-
-
-*.coverage
-coverage.xml
