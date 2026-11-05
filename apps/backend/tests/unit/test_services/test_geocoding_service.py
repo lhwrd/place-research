@@ -31,7 +31,7 @@ def mock_google_maps_api():
 def geocoding_service(mock_cache_service, mock_google_maps_api):
     """Create geocoding service with mocked dependencies."""
     service = GeocodingService()
-    service._cache_service = mock_cache_service
+    service.cache_service = mock_cache_service
     service.maps_api = mock_google_maps_api
     return service
 

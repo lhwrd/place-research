@@ -203,7 +203,7 @@ tailscale status | grep test-server
 
 ### GitHub Actions Test
 
-1. Push to your `frontend` branch
+1. Push to the `develop` branch
 2. Go to Actions tab and watch the deployment workflow
 3. Open [Tailscale Admin Console > Machines](https://login.tailscale.com/admin/machines)
 4. During deployment, you should see an ephemeral machine:

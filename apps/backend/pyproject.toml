@@ -1,27 +1,18 @@
 [project]
 name = "property-research-backend"
 version = "0.1.0"
-description = "Property research API backend with FastAPI"
+description = "Enriches Zillow listings stored in Baserow"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.109.0",
     "uvicorn[standard]>=0.27.0",
-    "sqlalchemy>=2.0.25",
-    "alembic>=1.13.1",
-    "pydantic[email]>=2.5.3",
+    "pydantic>=2.5.3",
     "pydantic-settings>=2.1.0",
-    "python-jose[cryptography]>=3.3.0",
-    "passlib[bcrypt]>=1.7.4",
     "python-multipart>=0.0.6",
     "httpx>=0.26.0",
-    "psycopg2-binary>=2.9.9",           # PostgreSQL adapter
-    "python-dotenv>=1.0.0",
     "python-json-logger>=4.0.0",
-    "sqlmodel>=0.0.31",
-    "pwdlib[argon2]>=0.3.0",
     "googlemaps>=4.10.0",
-    "bcrypt==4.3.0",
     "pandas>=2.3.3",
     "geopandas>=1.1.2",
 ]
@@ -36,7 +27,6 @@ dev = [
     "ruff>=0.1.11",
     "mypy>=1.8.0",
     "ipython>=8.19.0",
-    "faker>=40.1.0",
 ]
 
 [build-system]
@@ -58,7 +48,6 @@ exclude = '''
   | \.mypy_cache
   | \.pytest_cache
   | __pycache__
-  | alembic/versions
 )/
 '''
 
@@ -68,7 +57,7 @@ line-length = 100
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W"]
 ignore = ["E501"]
-exclude = ["alembic/versions/*", ".venv/*"]
+exclude = [".venv/*"]
 
 [tool.mypy]
 python_version = "3.11"

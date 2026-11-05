@@ -1,65 +1,46 @@
-# PlaceResearch
+# Place Research backend
 
-A tool for researching places by gathering data from multiple providers including flood zones, walk/bike scores, and railroad proximity.
+A stateless FastAPI service that adds Zillow listings to Baserow and enriches them. See
+[../../docs/BASEROW.md](../../docs/BASEROW.md) for the data flow, the Baserow schema and
+the iOS Shortcut API.
 
-## Features
+## Endpoints
 
-- **Multi-provider data gathering**: Collect data from flood zone APIs, WalkScore, and railroad datasets
-- **Configurable providers**: Enable/disable specific data providers through configuration
-- **Command-line interface**: Easy-to-use CLI for research and cache management
-
-## Installation
-
-```bash
-uv sync
-```
-
-## Usage
-
-### Start the API
-
-```bash
-research serve --port 8000
-```
-
-## Environment Variables
-
-Create a `.env` file with the following variables:
-
-```env
-GOOGLE_MAPS_MAP_ID=
-GOOGLE_MAPS_API_KEY=
-NATIONAL_FLOOD_DATA_API_KEY=
-NATIONAL_FLOOD_DATA_CLIENT_ID=
-WALKSCORE_API_KEY=
-AIRNOW_API_KEY=
-RAILLINES_PATH=
-NOCODB_BASE_URL=
-NOCODB_API_KEY=
-NOCODB_TABLE_ID=
-ANNUAL_CLIMATE_PATH=
-```
-
-## Available Providers
-
-1. **Flood Zone Provider**: FEMA flood zone data
-2. **Walk/Bike Score Provider**: Walkability and bikeability scores
-3. **Railroad Provider**: Distance to nearest railroad lines
-4. **Air Quality Provider**: Air quality index data
-5. **Walmart Proximity Provider**: Distance to nearest Walmart stores
-6. **Distances Provider**: Distance to specified addresses
-7. **Annual Climate Provider**: Climate data from annual summaries
+| Endpoint                               | Caller       | Auth                                   |
+| -------------------------------------- | ------------ | -------------------------------------- |
+| `POST /api/v1/listings`                | iOS Shortcut | `Authorization: Bearer INGEST_API_TOKEN` |
+| `POST /api/v1/listings/{row_id}/images` | iOS Shortcut | `Authorization: Bearer INGEST_API_TOKEN` |
+| `POST /api/v1/webhooks/baserow`        | Baserow      | `X-Webhook-Secret: BASEROW_WEBHOOK_SECRET` |
+| `GET /health`                          | Deploy checks | none                                  |
 
 ## Development
 
-Install development dependencies:
-
 ```bash
-uv sync --dev
+cp .env.example .env   # Baserow token/ids, API keys, data file paths
+uv sync
+./run.sh               # or ./dev.sh for debug logging
 ```
 
-Run tests:
+Create the Baserow fields, tables and webhook once with `uv run python scripts/baserow_setup.py`.
+
+## Layout
+
+```
+app/api/              listings + webhook endpoints, auth dependencies
+app/integrations/     external API clients, including baserow_api.py and baserow_schema.py
+app/services/         baserow_enrichment.py (ingest + enrichment), zillow_listing.py
+                      (listing JSON parser), baserow_mapper.py, geocoding, in-memory cache
+app/services/enrichment/  orchestrator + auto-discovered providers
+scripts/              baserow_setup.py
+```
+
+Adding a provider: drop a `BaseEnrichmentProvider` subclass in
+`app/services/enrichment/providers/`, then map its output to Baserow fields in
+`app/services/baserow_mapper.py` and add the fields to `app/integrations/baserow_schema.py`.
+
+## Tests
 
 ```bash
 uv run pytest
+uv run ruff check . && uv run black --check .
 ```

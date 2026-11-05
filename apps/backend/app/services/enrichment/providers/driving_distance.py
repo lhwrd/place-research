@@ -1,11 +1,8 @@
 import logging
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy.orm import Session
-
-from app.db.database import SessionLocal
 from app.integrations.google_maps_api import GoogleMapsAPI
-from app.models.custom_location import CustomLocation
 
 from ..base_provider import (
     BaseEnrichmentProvider,
@@ -17,10 +14,25 @@ from ..base_provider import (
 logger = logging.getLogger(__name__)
 
 
+@dataclass
+class CustomLocation:
+    """A drive-time destination (a row in the Baserow Locations table)."""
+
+    id: int
+    name: str
+    location_type: Optional[str]
+    address: str
+    latitude: float
+    longitude: float
+    priority: int = 0
+    city: Optional[str] = None
+    state: Optional[str] = None
+
+
 class DistanceProvider(BaseEnrichmentProvider):
     """
     Provider to fetch driving distance and time using Google Maps API.
-    Calculates distances to all active custom locations for the user.
+    Calculates distances to every custom location passed in user_preferences.
     """
 
     def __init__(self):
@@ -47,37 +59,23 @@ class DistanceProvider(BaseEnrichmentProvider):
         user_preferences: Optional[Dict[str, Any]] = None,
     ) -> ProviderResult:
         """
-        Enrich property with driving distances to user's custom locations.
+        Enrich property with driving distances to the custom locations.
 
         Args:
             latitude: Property latitude
             longitude: Property longitude
             address: Property address
             property_data: Additional property information
-            user_preferences: User-specific preferences (must contain user_id)
+            user_preferences: Provider inputs; "custom_locations" is a list of CustomLocation
 
         Returns:
             ProviderResult with distance and duration data for each custom location
         """
-        # Extract user_id from preferences
-        if not user_preferences or "user_id" not in user_preferences:
-            logger.warning("No user_id found in preferences, skipping distance enrichment")
-            return ProviderResult(
-                provider_name=self.metadata.name,
-                data={},
-                success=False,
-                error_message="user_id not provided in user_preferences",
-                api_calls_made=0,
-            )
-
-        user_id = user_preferences["user_id"]
-
+        custom_locations: List[CustomLocation] = (user_preferences or {}).get(
+            "custom_locations", []
+        )
         try:
-            # Get active custom locations for the user
-            custom_locations = self._get_active_custom_locations(user_id)
-
             if not custom_locations:
-                logger.info("No active custom locations found for user %s", user_id)
                 return ProviderResult(
                     provider_name=self.metadata.name,
                     data={"distances": [], "total_locations": 0},
@@ -119,31 +117,6 @@ class DistanceProvider(BaseEnrichmentProvider):
                 error_message=str(e),
                 api_calls_made=0,
             )
-
-    def _get_active_custom_locations(self, user_id: int) -> List[CustomLocation]:
-        """
-        Retrieve all active custom locations for a user.
-
-        Args:
-            user_id: ID of the user
-
-        Returns:
-            List of active CustomLocation objects
-        """
-        db: Session = SessionLocal()
-        try:
-            locations = (
-                db.query(CustomLocation)
-                .filter(
-                    CustomLocation.user_id == user_id,
-                    CustomLocation.is_active.is_(True),
-                )
-                .order_by(CustomLocation.priority.desc(), CustomLocation.name)
-                .all()
-            )
-            return locations
-        finally:
-            db.close()
 
     async def _calculate_distances_batched(
         self,

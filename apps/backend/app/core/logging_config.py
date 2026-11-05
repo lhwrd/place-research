@@ -148,12 +148,6 @@ def setup_logging(
     logging.getLogger("httpcore").setLevel(logging.WARNING)
     logging.getLogger("urllib3").setLevel(logging.WARNING)
 
-    # Suppress SQLAlchemy logging noise
-    logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
-    logging.getLogger("sqlalchemy.pool").setLevel(logging.WARNING)
-    logging.getLogger("sqlalchemy.dialects").setLevel(logging.WARNING)
-    logging.getLogger("sqlalchemy.orm").setLevel(logging.WARNING)
-
     root_logger.info(
         "Logging configured: level=%s, format=%s, app=%s",
         log_level,

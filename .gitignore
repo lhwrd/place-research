@@ -12,9 +12,6 @@ cache/
 config.json
 *.egg-info
 
-*.db
 
 *.coverage
 coverage.xml
-
-node_modules/

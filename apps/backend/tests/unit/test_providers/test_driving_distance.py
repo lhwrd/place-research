@@ -1,10 +1,9 @@
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from app.models.custom_location import CustomLocation
 from app.services.enrichment.base_provider import ProviderCategory
-from app.services.enrichment.providers.driving_distance import DistanceProvider
+from app.services.enrichment.providers.driving_distance import CustomLocation, DistanceProvider
 
 
 @pytest.fixture
@@ -18,22 +17,20 @@ def distance_provider():
 @pytest.fixture
 def mock_custom_locations():
     """Create mock custom locations."""
-    locations = []
-    for i in range(3):
-        location = MagicMock(spec=CustomLocation)
-        location.id = i + 1
-        location.name = f"Location {i + 1}"
-        location.location_type = "work" if i == 0 else "personal"
-        location.address = f"{100 + i} Test St"
-        location.city = "Test City"
-        location.state = "TS"
-        location.latitude = 40.0 + i * 0.1
-        location.longitude = -74.0 + i * 0.1
-        location.priority = 10 - i
-        location.user_id = 1
-        location.is_active = True
-        locations.append(location)
-    return locations
+    return [
+        CustomLocation(
+            id=i + 1,
+            name=f"Location {i + 1}",
+            location_type="Work" if i == 0 else "Family",
+            address=f"{100 + i} Test St",
+            city="Test City",
+            state="TS",
+            latitude=40.0 + i * 0.1,
+            longitude=-74.0 + i * 0.1,
+            priority=10 - i,
+        )
+        for i in range(3)
+    ]
 
 
 class TestDistanceProviderMetadata:
@@ -51,8 +48,8 @@ class TestDistanceProviderMetadata:
 
 class TestDistanceProviderEnrich:
     @pytest.mark.asyncio
-    async def test_enrich_without_user_id(self, distance_provider):
-        """Test enrichment fails without user_id."""
+    async def test_enrich_without_locations(self, distance_provider):
+        """No custom_locations in preferences means nothing to calculate."""
         result = await distance_provider.enrich(
             latitude=40.7128,
             longitude=-74.0060,
@@ -60,25 +57,11 @@ class TestDistanceProviderEnrich:
             user_preferences={},
         )
 
-        assert result.success is False
-        assert result.error_message == "user_id not provided in user_preferences"
+        assert result.success is True
+        assert result.data["distances"] == []
+        assert result.data["total_locations"] == 0
         assert result.api_calls_made == 0
-
-    @pytest.mark.asyncio
-    async def test_enrich_no_custom_locations(self, distance_provider):
-        """Test enrichment with no custom locations."""
-        with patch.object(distance_provider, "_get_active_custom_locations", return_value=[]):
-            result = await distance_provider.enrich(
-                latitude=40.7128,
-                longitude=-74.0060,
-                address="123 Test St",
-                user_preferences={"user_id": 1},
-            )
-
-            assert result.success is True
-            assert result.data["distances"] == []
-            assert result.data["total_locations"] == 0
-            assert result.api_calls_made == 0
+        distance_provider.api_client.distance_matrix.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_enrich_with_custom_locations(self, distance_provider, mock_custom_locations):
@@ -112,68 +95,39 @@ class TestDistanceProviderEnrich:
             ]
         )
 
-        with patch.object(
-            distance_provider,
-            "_get_active_custom_locations",
-            return_value=mock_custom_locations,
-        ):
-            result = await distance_provider.enrich(
-                latitude=40.7128,
-                longitude=-74.0060,
-                address="123 Test St",
-                user_preferences={"user_id": 1},
-            )
+        result = await distance_provider.enrich(
+            latitude=40.7128,
+            longitude=-74.0060,
+            address="123 Test St",
+            user_preferences={"custom_locations": mock_custom_locations},
+        )
 
-            assert result.success is True
-            assert result.data["total_locations"] == 3
-            assert len(result.data["distances"]) == 3
-            assert result.data["property_location"]["latitude"] == 40.7128
-            assert result.data["property_location"]["longitude"] == -74.0060
-            assert result.api_calls_made == 1
+        assert result.success is True
+        assert result.data["total_locations"] == 3
+        assert len(result.data["distances"]) == 3
+        assert result.data["distances"][0]["location_name"] == "Location 1"
+        assert result.data["property_location"]["latitude"] == 40.7128
+        assert result.data["property_location"]["longitude"] == -74.0060
+        assert result.api_calls_made == 1
 
     @pytest.mark.asyncio
     async def test_enrich_with_api_error(self, distance_provider, mock_custom_locations):
         """Test enrichment handles API errors."""
         with patch.object(
             distance_provider,
-            "_get_active_custom_locations",
-            return_value=mock_custom_locations,
+            "_calculate_distances_batched",
+            side_effect=ValueError("API error"),
         ):
-            with patch.object(
-                distance_provider,
-                "_calculate_distances_batched",
-                side_effect=ValueError("API error"),
-            ):
-                result = await distance_provider.enrich(
-                    latitude=40.7128,
-                    longitude=-74.0060,
-                    address="123 Test St",
-                    user_preferences={"user_id": 1},
-                )
+            result = await distance_provider.enrich(
+                latitude=40.7128,
+                longitude=-74.0060,
+                address="123 Test St",
+                user_preferences={"custom_locations": mock_custom_locations},
+            )
 
-                assert result.success is False
-                assert "API error" in result.error_message
-                assert result.api_calls_made == 0
-
-
-class TestGetActiveCustomLocations:
-    @patch("app.services.enrichment.providers.driving_distance.SessionLocal")
-    def test_get_active_custom_locations(
-        self, mock_session_local, distance_provider, mock_custom_locations
-    ):
-        """Test retrieving active custom locations."""
-        mock_db = MagicMock()
-        mock_session_local.return_value = mock_db
-        mock_query = mock_db.query.return_value
-        mock_filter = mock_query.filter.return_value
-        mock_order = mock_filter.order_by.return_value
-        mock_order.all.return_value = mock_custom_locations
-
-        locations = distance_provider._get_active_custom_locations(user_id=1)
-
-        assert len(locations) == 3
-        assert locations[0].name == "Location 1"
-        mock_db.close.assert_called_once()
+        assert result.success is False
+        assert "API error" in result.error_message
+        assert result.api_calls_made == 0
 
 
 class TestCalculateDistancesBatched:
@@ -219,14 +173,18 @@ class TestCalculateDistancesBatched:
     @pytest.mark.asyncio
     async def test_calculate_distances_multiple_batches(self, distance_provider):
         """Test distance calculation with multiple batches."""
-        locations = [MagicMock(spec=CustomLocation) for _ in range(25)]
-        for i, loc in enumerate(locations):
-            loc.id = i + 1
-            loc.name = f"Location {i + 1}"
-            loc.location_type = "personal"
-            loc.latitude = 40.0 + i * 0.01
-            loc.longitude = -74.0 + i * 0.01
-            loc.priority = 1
+        locations = [
+            CustomLocation(
+                id=i + 1,
+                name=f"Location {i + 1}",
+                location_type="Family",
+                address=f"{i} Test St",
+                latitude=40.0 + i * 0.01,
+                longitude=-74.0 + i * 0.01,
+                priority=1,
+            )
+            for i in range(25)
+        ]
 
         distance_provider.api_client.distance_matrix = AsyncMock(
             return_value=[{"status": "OK", "distance_miles": i * 1.0} for i in range(10)]

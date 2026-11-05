@@ -3,7 +3,6 @@
 import logging
 from typing import Any, Dict, List, Optional
 
-from app.db.database import SessionLocal
 from app.exceptions import GeocodingFailedError, InvalidAddressError
 from app.integrations.google_maps_api import GoogleMapsAPI
 from app.services.cache_service import CacheService
@@ -30,15 +29,7 @@ class GeocodingService:
     def __init__(self):
         """Initialize geocoding service."""
         self.maps_api = GoogleMapsAPI()
-        self._cache_service: Optional[CacheService] = None
-
-    @property
-    def cache_service(self) -> CacheService:
-        """Get or create cache service instance."""
-        if self._cache_service is None:
-            db = SessionLocal()
-            self._cache_service = CacheService(db)
-        return self._cache_service
+        self.cache_service = CacheService()
 
     async def geocode_address(
         self,

@@ -1,26 +1,25 @@
 """Main FastAPI application."""
 
+import asyncio
+import contextlib
 import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
-from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.exc import SQLAlchemyError
 
 from app.api.v1.router import api_router
 from app.core.config import settings
 from app.core.logging_config import setup_logging
-from app.db.migrations import init_db
 from app.exceptions.base import AppError
 from app.exceptions.handlers import (
     app_exception_handler,
     general_exception_handler,
-    sqlalchemy_exception_handler,
     validation_exception_handler,
 )
 from app.middleware.logging import RequestLoggingMiddleware
 from app.middleware.metrics import MetricsMiddleware, MetricsRegistry
+from app.services.baserow_enrichment import get_baserow_service
 
 # Initialize logging
 setup_logging(
@@ -32,53 +31,47 @@ setup_logging(
 logger = logging.getLogger(__name__)
 
 
+async def _sweep_forever(interval_seconds: int) -> None:
+    """Periodically enrich rows whose webhook was missed (e.g. backend was down)."""
+    service = get_baserow_service()
+    while True:
+        try:
+            await service.sweep()
+        except Exception as e:  # pylint: disable=broad-except
+            logger.error("Baserow sweep failed: %s", e, exc_info=True)
+        await asyncio.sleep(interval_seconds)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager.
 
-    Handles startup and shutdown events:
-    - Startup: Run database migrations
-    - Shutdown: Cleanup (if needed)
+    - Startup: start the Baserow sweep loop (runs once immediately, then on an interval)
+    - Shutdown: stop it
     """
-    # Startup
-    logger.info("Application startup: initializing database...")
-    try:
-        init_db()
-        logger.info("Database initialization complete")
-    except Exception as e:
-        logger.error(f"Failed to initialize database: {e}")
-        raise
+    sweep_task = None
+    if settings.baserow_configured and not settings.testing:
+        sweep_task = asyncio.create_task(_sweep_forever(settings.baserow_sweep_interval_seconds))
+        logger.info("Baserow sweep started (every %ds)", settings.baserow_sweep_interval_seconds)
+    else:
+        logger.warning("Baserow is not configured; enrichment sweep disabled")
 
     yield
 
-    # Shutdown
+    if sweep_task:
+        sweep_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await sweep_task
     logger.info("Application shutdown")
 
 
 # Initialize FastAPI app with lifespan
 app = FastAPI(
     title=settings.app_name,
-    description="API for researching properties for primary residence",
-    version="1.0.0",
+    description="Enriches Zillow listings stored in Baserow",
+    version="2.0.0",
     debug="DEBUG" in str(settings.log_level).upper(),
     lifespan=lifespan,
-)
-
-# CORS middleware - must be added before other middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:3000",
-        "http://actual.snake-snares.ts.net:3000",
-    ],  # Vite & CRA defaults
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
-    expose_headers=["*"],
-    max_age=3600,
 )
 
 # Logging middleware
@@ -91,7 +84,6 @@ app.add_middleware(MetricsMiddleware, registry=metrics_registry)
 # Register exception handlers
 app.add_exception_handler(AppError, app_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
-app.add_exception_handler(SQLAlchemyError, sqlalchemy_exception_handler)
 app.add_exception_handler(Exception, general_exception_handler)
 
 # Include API routes
@@ -101,7 +93,7 @@ app.include_router(api_router, prefix="/api/v1")
 @app.get("/")
 async def root():
     """Health check endpoint."""
-    return {"status": "healthy", "app": settings.app_name, "version": "1.0.0"}
+    return {"status": "healthy", "app": settings.app_name, "version": "2.0.0"}
 
 
 @app.get("/health")
@@ -109,7 +101,7 @@ async def health_check():
     """Detailed health check."""
     return {
         "status": "healthy",
-        "database": "connected",  # Could add actual DB check
+        "baserow": "configured" if settings.baserow_configured else "not configured",
         "api": "ready",
     }
 
