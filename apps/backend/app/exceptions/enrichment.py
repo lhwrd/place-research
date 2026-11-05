@@ -13,13 +13,6 @@ class EnrichmentError(AppError):
         super().__init__(message, status_code=500, details=details)
 
 
-class WalkScoreUnavailableError(EnrichmentError):
-    """Raised when Walk Score data is unavailable for a location."""
-
-    def __init__(self, address: str):
-        super().__init__(f"Walk score data unavailable for {address}", service="walk_score")
-
-
 class GeocodingFailedError(EnrichmentError):
     """Raised when address geocoding fails."""
 

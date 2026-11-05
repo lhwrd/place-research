@@ -76,39 +76,6 @@ def mock_distance_matrix_response():
     }
 
 
-@pytest.fixture
-def mock_directions_response():
-    """Mock successful directions response."""
-    return {
-        "status": "OK",
-        "routes": [
-            {
-                "legs": [
-                    {
-                        "distance": {"value": 8369, "text": "5.2 mi"},
-                        "duration": {"value": 720, "text": "12 mins"},
-                        "start_address": "Origin Address",
-                        "end_address": "Destination Address",
-                        "steps": [
-                            {
-                                "html_instructions": "Head north on Main St",
-                                "distance": {"text": "0.5 mi"},
-                                "duration": {"text": "2 mins"},
-                            },
-                            {
-                                "html_instructions": "Turn right onto 1st Ave",
-                                "distance": {"text": "1.2 mi"},
-                                "duration": {"text": "3 mins"},
-                            },
-                        ],
-                    }
-                ],
-                "overview_polyline": {"points": "encoded_polyline_string"},
-            }
-        ],
-    }
-
-
 class TestGoogleMapsAPIInit:
     """Test GoogleMapsAPI initialization."""
 
@@ -212,35 +179,6 @@ class TestGeocode:
             await google_maps_api.geocode("Address")
 
 
-class TestReverseGeocode:
-    """Test reverse geocoding functionality."""
-
-    @pytest.mark.asyncio
-    async def test_reverse_geocode_success(self, google_maps_api, mock_geocode_response):
-        """Test successful reverse geocoding."""
-        google_maps_api._make_request = AsyncMock(return_value=mock_geocode_response)
-
-        result = await google_maps_api.reverse_geocode(37.4224764, -122.0842499)
-
-        assert result is not None
-        assert (
-            result["formatted_address"] == "1600 Amphitheatre Parkway, Mountain View, CA 94043, USA"
-        )
-        assert result["latitude"] == 37.4224764
-        assert result["longitude"] == -122.0842499
-
-    @pytest.mark.asyncio
-    async def test_reverse_geocode_no_results(self, google_maps_api):
-        """Test reverse geocoding with no results."""
-        google_maps_api._make_request = AsyncMock(
-            return_value={"status": "ZERO_RESULTS", "results": []}
-        )
-
-        result = await google_maps_api.reverse_geocode(0.0, 0.0)
-
-        assert result is None
-
-
 class TestDistanceMatrix:
     """Test distance matrix functionality."""
 
@@ -314,58 +252,3 @@ class TestDistanceMatrix:
 
         with pytest.raises(GoogleMapsAPIError, match="Distance matrix failed"):
             await google_maps_api.distance_matrix((0, 0), [(1, 1)])
-
-
-class TestGetDirections:
-    """Test directions functionality."""
-
-    @pytest.mark.asyncio
-    async def test_get_directions_success(self, google_maps_api, mock_directions_response):
-        """Test successful directions retrieval."""
-        google_maps_api._make_request = AsyncMock(return_value=mock_directions_response)
-
-        origin = (47.6062, -122.3321)
-        destination = (47.6097, -122.3331)
-
-        result = await google_maps_api.get_directions(origin, destination)
-
-        assert result["distance_miles"] == 5.2
-        assert result["duration_minutes"] == 12
-        assert result["start_address"] == "Origin Address"
-        assert result["end_address"] == "Destination Address"
-        assert len(result["steps"]) == 2
-        assert result["polyline"] == "encoded_polyline_string"
-
-    @pytest.mark.asyncio
-    async def test_get_directions_with_alternatives(
-        self, google_maps_api, mock_directions_response
-    ):
-        """Test directions with alternatives enabled."""
-        google_maps_api._make_request = AsyncMock(return_value=mock_directions_response)
-
-        origin = (47.6062, -122.3321)
-        destination = (47.6097, -122.3331)
-
-        await google_maps_api.get_directions(origin, destination, alternatives=True)
-
-        call_params = google_maps_api._make_request.call_args[1]["params"]
-        assert call_params["alternatives"] == "true"
-
-    @pytest.mark.asyncio
-    async def test_get_directions_no_routes(self, google_maps_api):
-        """Test directions with no routes found."""
-        google_maps_api._make_request = AsyncMock(return_value={"status": "OK", "routes": []})
-
-        result = await google_maps_api.get_directions((0, 0), (1, 1))
-
-        assert result == {}
-
-    @pytest.mark.asyncio
-    async def test_get_directions_api_error(self, google_maps_api):
-        """Test directions API error."""
-        google_maps_api._make_request = AsyncMock(
-            return_value={"status": "NOT_FOUND", "error_message": "Route not found"}
-        )
-
-        with pytest.raises(GoogleMapsAPIError, match="Directions failed"):
-            await google_maps_api.get_directions((0, 0), (1, 1))

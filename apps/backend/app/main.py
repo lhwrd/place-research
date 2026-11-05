@@ -18,7 +18,6 @@ from app.exceptions.handlers import (
     validation_exception_handler,
 )
 from app.middleware.logging import RequestLoggingMiddleware
-from app.middleware.metrics import MetricsMiddleware, MetricsRegistry
 from app.services.baserow_enrichment import get_baserow_service
 
 # Initialize logging
@@ -76,10 +75,6 @@ app = FastAPI(
 
 # Logging middleware
 app.add_middleware(RequestLoggingMiddleware)
-
-# Metrics middleware
-metrics_registry = MetricsRegistry()
-app.add_middleware(MetricsMiddleware, registry=metrics_registry)
 
 # Register exception handlers
 app.add_exception_handler(AppError, app_exception_handler)

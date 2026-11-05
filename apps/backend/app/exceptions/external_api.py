@@ -41,17 +41,6 @@ class WalkScoreAPIError(ExternalAPIError):
         )
 
 
-class OSRMAPIError(ExternalAPIError):
-    """Raised when OSRM API call fails."""
-
-    def __init__(self, message: str, api_status_code: Optional[int] = None):
-        super().__init__(
-            service="osrm",
-            message=f"OSRM API error: {message}",
-            api_status_code=api_status_code,
-        )
-
-
 class APIQuotaExceededError(ExternalAPIError):
     """Raised when external API quota is exceeded."""
 

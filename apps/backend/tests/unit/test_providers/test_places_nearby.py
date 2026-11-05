@@ -3,62 +3,13 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from app.services.enrichment.base_provider import ProviderCategory
-from app.services.enrichment.providers.places_nearby import (
-    PlacesNearbyProvider,
-    categorize_distance,
-    categorize_duration,
-)
-
-
-class TestCategorizeDistance:
-    def test_very_close(self):
-        assert categorize_distance(1.5) == "Very Close"
-        assert categorize_distance(0) == "Very Close"
-
-    def test_close(self):
-        assert categorize_distance(2) == "Close"
-        assert categorize_distance(4.9) == "Close"
-
-    def test_far(self):
-        assert categorize_distance(5) == "Far"
-        assert categorize_distance(9.9) == "Far"
-
-    def test_very_far(self):
-        assert categorize_distance(10) == "Very Far"
-        assert categorize_distance(50) == "Very Far"
-
-    def test_none(self):
-        assert categorize_distance(None) == "Unknown"
-
-
-class TestCategorizeDuration:
-    def test_very_quick(self):
-        assert categorize_duration(5) == "Very Quick"
-        assert categorize_duration(0) == "Very Quick"
-
-    def test_quick(self):
-        assert categorize_duration(7) == "Quick"
-        assert categorize_duration(14.9) == "Quick"
-
-    def test_slow(self):
-        assert categorize_duration(15) == "Slow"
-        assert categorize_duration(29.9) == "Slow"
-
-    def test_very_slow(self):
-        assert categorize_duration(30) == "Very Slow"
-        assert categorize_duration(100) == "Very Slow"
-
-    def test_none(self):
-        assert categorize_duration(None) == "Unknown"
+from app.services.enrichment.providers.places_nearby import PlacesNearbyProvider
 
 
 class TestPlacesNearbyProvider:
     @pytest.fixture
     def provider(self):
-        with (
-            patch("app.services.enrichment.providers.places_nearby.GooglePlacesAPI"),
-            patch("app.services.enrichment.providers.places_nearby.DistanceService"),
-        ):
+        with patch("app.services.enrichment.providers.places_nearby.GooglePlacesAPI"):
             return PlacesNearbyProvider()
 
     def test_metadata(self, provider):
@@ -72,7 +23,6 @@ class TestPlacesNearbyProvider:
     @pytest.mark.asyncio
     async def test_enrich_without_preferences(self, provider):
         provider.places_api.nearby_search = AsyncMock(return_value=[])
-        provider.distance_service.calculate_distances = AsyncMock(return_value=[])
 
         result = await provider.enrich(latitude=40.7128, longitude=-74.0060, address="123 Test St")
 
@@ -93,9 +43,6 @@ class TestPlacesNearbyProvider:
 
         provider.places_api.nearby_search = AsyncMock(return_value=[mock_place])
         provider.places_api.text_search = AsyncMock(return_value=[])
-        provider.distance_service.calculate_distances = AsyncMock(
-            return_value=[{"distance_miles": 1.5, "duration_minutes": 10}]
-        )
 
         user_preferences = {"preferred_amenities": ["cafe"], "preferred_places": []}
 
@@ -119,7 +66,6 @@ class TestPlacesNearbyProvider:
     async def test_enrich_with_text_queries(self, provider):
         provider.places_api.nearby_search = AsyncMock(return_value=[])
         provider.places_api.text_search = AsyncMock(return_value=[])
-        provider.distance_service.calculate_distances = AsyncMock(return_value=[])
 
         user_preferences = {
             "preferred_amenities": [],
