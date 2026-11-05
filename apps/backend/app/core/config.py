@@ -26,7 +26,6 @@ class Settings(BaseSettings):
     )
 
     app_name: str = Field("place-research", alias="APP_NAME")
-    base_url: str = Field("http://localhost:8000", alias="BASE_URL")
 
     # API Keys for external services
     walkscore_api_key: Optional[str] = Field(None, alias="WALKSCORE_API_KEY")
@@ -69,8 +68,6 @@ class Settings(BaseSettings):
         description="Whether app is running in test mode (default: False)",
     )
     log_level: str = Field("INFO", alias="LOG_LEVEL")
-    api_host: str = Field("0.0.0.0", alias="API_HOST")
-    api_port: int = Field(8000, alias="API_PORT")
 
     # Logging & Observability settings
     log_format: str = Field(
@@ -88,118 +85,14 @@ class Settings(BaseSettings):
         alias="LOG_RESPONSES",
         description="Log HTTP responses (default: True)",
     )
-    log_provider_metrics: bool = Field(
-        True,
-        alias="LOG_PROVIDER_METRICS",
-        description="Log provider execution metrics (default: True)",
-    )
-    log_cache_operations: bool = Field(
-        False,
-        alias="LOG_CACHE_OPERATIONS",
-        description="Log cache operations - useful for debugging (default: False)",
-    )
 
-    # Cache settings
+    # In-process cache for provider and geocoding results
+
     cache_enabled: bool = Field(
         True,
         alias="CACHE_ENABLED",
         description="Enable caching for provider results (default: True)",
     )
-    cache_backend: str = Field(
-        "memory",
-        alias="CACHE_BACKEND",
-        description="Cache backend: 'memory' or 'redis' (default: memory)",
-    )
-    cache_default_ttl: int = Field(
-        3600,
-        alias="CACHE_DEFAULT_TTL",
-        description="Default cache TTL in seconds (default: 3600 = 1 hour)",
-    )
-    redis_url: Optional[str] = Field(
-        None,
-        alias="REDIS_URL",
-        description="Redis connection URL (e.g., redis://localhost:6379/0)",
-    )
-
-    # Per-provider cache TTLs (in seconds)
-    # Air quality changes frequently
-    cache_ttl_air_quality: int = Field(
-        1800,
-        alias="CACHE_TTL_AIR_QUALITY",
-        description="Cache TTL for air quality data (default: 1800 = 30 min)",
-    )
-    # Climate data is annual averages, rarely changes
-    cache_ttl_climate: int = Field(
-        86400,
-        alias="CACHE_TTL_CLIMATE",
-        description="Cache TTL for climate data (default: 86400 = 24 hours)",
-    )
-    # Flood zones rarely change
-    cache_ttl_flood: int = Field(
-        86400,
-        alias="CACHE_TTL_FLOOD",
-        description="Cache TTL for flood zone data (default: 86400 = 24 hours)",
-    )
-    # Infrastructure (highways, railroads) rarely changes
-    cache_ttl_infrastructure: int = Field(
-        86400,
-        alias="CACHE_TTL_INFRASTRUCTURE",
-        description="Cache TTL for infrastructure data (default: 86400 = 24 hours)",
-    )
-    # Walk/bike scores change with development but not frequently
-    cache_ttl_walkability: int = Field(
-        7200,
-        alias="CACHE_TTL_WALKABILITY",
-        description="Cache TTL for walk/bike scores (default: 7200 = 2 hours)",
-    )
-
-    def get_provider_ttls(self) -> dict[str, int]:
-        """Get mapping of provider names to cache TTLs."""
-        return {
-            "air_quality": self.cache_ttl_air_quality,
-            "annual_average_climate": self.cache_ttl_climate,
-            "flood_zone": self.cache_ttl_flood,
-            "highways": self.cache_ttl_infrastructure,
-            "railroads": self.cache_ttl_infrastructure,
-            "proximity_to_family": self.cache_ttl_infrastructure,
-            "walkbike_score": self.cache_ttl_walkability,
-            "walmart": self.cache_ttl_infrastructure,
-        }
-
-    def validate_provider_config(self, provider_name: str) -> list[str]:
-        """Validate that required config for a provider exists.
-
-        Args:
-            provider_name: Name of the provider to validate
-
-        Returns:
-            List of missing configuration keys (empty if all present)
-        """
-        missing = []
-
-        if provider_name == "WalkBikeScoreProvider":
-            if not self.walkscore_api_key:
-                missing.append("WALKSCORE_API_KEY")
-        elif provider_name == "AirQualityProvider":
-            if not self.airnow_api_key:
-                missing.append("AIRNOW_API_KEY")
-        elif provider_name == "FloodZoneProvider":
-            if not self.national_flood_data_api_key:
-                missing.append("NATIONAL_FLOOD_DATA_API_KEY")
-        elif provider_name == "WalmartProvider":
-            if not self.google_maps_api_key:
-                missing.append("GOOGLE_MAPS_API_KEY")
-        elif provider_name == "DistanceProvider":
-            if not self.google_maps_api_key:
-                missing.append("GOOGLE_MAPS_API_KEY")
-        elif provider_name == "RailroadProvider":
-            if not self.raillines_path:
-                missing.append("RAILLINES_PATH")
-        elif provider_name == "AnnualAverageClimateProvider":
-            if not self.annual_climate_path:
-                missing.append("ANNUAL_CLIMATE_PATH")
-
-        return missing
 
 
 def get_settings() -> Settings:

@@ -51,6 +51,7 @@ class MockGoogleMapsAPI:
         """Mock API key validation."""
         return True
 
+
 def pytest_configure(config):
     """
     Pytest hook that runs before test collection.

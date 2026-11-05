@@ -128,7 +128,6 @@ async def test_log_context_management():
         patch("app.middleware.logging.set_log_context") as mock_set_context,
         patch("app.middleware.logging.clear_log_context") as mock_clear,
     ):
-
         app = FastAPI()
 
         @app.get("/test")
