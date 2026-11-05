@@ -83,3 +83,22 @@ class TestRailroadProviderTestability:
         assert result.success
         assert result.provider_name == "railroad_provider"
         assert result.api_calls_made == 0
+
+
+class TestRailroadFileFormats:
+    """The loader picks a reader by file extension."""
+
+    @pytest.mark.parametrize("suffix", [".geojson", ".parquet"])
+    def test_load_geodataframe_round_trip(self, tmp_path, mock_railroad_data, suffix):
+        path = tmp_path / f"rails{suffix}"
+        if suffix == ".parquet":
+            mock_railroad_data.to_parquet(path)
+        else:
+            mock_railroad_data.to_file(path, driver="GeoJSON")
+
+        provider = RailroadProvider(raillines_data=mock_railroad_data)
+        loaded = provider._load_geodataframe(path)
+
+        assert len(loaded) == 2
+        assert loaded.crs.to_epsg() == 4326
+        assert loaded.geometry.equals(mock_railroad_data.geometry)
