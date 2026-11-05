@@ -41,6 +41,10 @@ Or in Docker: `docker compose up --build`. Put provider data files in `./data`.
 Create the Baserow fields, tables and webhook once with
 `uv run python scripts/baserow_setup.py`.
 
+`RAILLINES_PATH` can point at GeoParquet (`.parquet`) or GeoJSON; the loader picks the
+reader by extension. Production gets GeoParquet: the howard-home Ansible role downloads
+the GeoJSON and converts it at deploy time.
+
 ## Layout
 
 ```
