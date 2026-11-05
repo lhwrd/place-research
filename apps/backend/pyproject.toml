@@ -15,6 +15,7 @@ dependencies = [
     "googlemaps>=4.10.0",
     "pandas>=2.3.3",
     "geopandas>=1.1.2",
+    "pyarrow>=26.0.1",
 ]
 
 [dependency-groups]

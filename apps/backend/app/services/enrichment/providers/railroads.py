@@ -52,7 +52,7 @@ class RailroadProvider(BaseEnrichmentProvider):
             name="railroad_provider",
             category=ProviderCategory.ENVIRONMENTAL,
             enabled=True,
-            description="Provides proximity to railroad lines using local GeoJSON data.",
+            description="Provides proximity to railroad lines using local GeoParquet/GeoJSON data.",
             version="1.0.0",
             requires_api_key=False,
             cost_per_call=0.0,  # No external API calls
@@ -96,11 +96,13 @@ class RailroadProvider(BaseEnrichmentProvider):
         """Load GeoDataFrame from file. Extracted for testability.
 
         Args:
-            path: Path to the GeoJSON file
+            path: Path to a GeoParquet (.parquet) or GeoJSON/other OGR-readable file
 
         Returns:
             Loaded GeoDataFrame
         """
+        if path.suffix.lower() in (".parquet", ".geoparquet"):
+            return gpd.read_parquet(path)
         return gpd.read_file(path)
 
     async def enrich(
