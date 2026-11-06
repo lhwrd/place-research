@@ -1,7 +1,9 @@
 import logging
 from typing import Any, Dict, Optional
 
-from app.integrations.flood_zone_api import FloodZoneAPIClient
+import httpx
+
+from app.integrations.fema_nfhl_api import FemaNfhlAPIClient
 
 from ..base_provider import (
     BaseEnrichmentProvider,
@@ -14,7 +16,7 @@ from ..base_provider import (
 class FloodZoneProvider(BaseEnrichmentProvider):
     def __init__(self):
         self.logger = logging.getLogger(__name__)
-        self.api_client = FloodZoneAPIClient()
+        self.api_client = FemaNfhlAPIClient()
 
     @property
     def metadata(self) -> ProviderMetadata:
@@ -22,10 +24,10 @@ class FloodZoneProvider(BaseEnrichmentProvider):
             name="flood_zone_provider",
             category=ProviderCategory.ENVIRONMENTAL,
             enabled=True,
-            description="Provides flood zone and risk information using National Flood Data API.",
-            version="1.0.0",
-            requires_api_key=True,
-            cost_per_call=0.002,  # Estimated cost per API call
+            description="Provides the FEMA flood hazard zone from the National Flood Hazard Layer.",
+            version="2.0.0",
+            requires_api_key=False,
+            cost_per_call=0.0,
         )
 
     async def enrich(
@@ -37,7 +39,7 @@ class FloodZoneProvider(BaseEnrichmentProvider):
         user_preferences: Optional[Dict[str, Any]] = None,
     ) -> ProviderResult:
         """
-        Enrich property with provider-specific data.
+        Enrich property with its FEMA flood hazard zone.
 
         Args:
             latitude: Property latitude
@@ -47,20 +49,17 @@ class FloodZoneProvider(BaseEnrichmentProvider):
             user_preferences: User-specific preferences
 
         Returns:
-            ProviderResult with enrichment data
+            ProviderResult with flood_zone, flood_risk, in_sfha and base_flood_elevation_ft
         """
-
         try:
-            data = await self.api_client.fetch_flood_zone_data(latitude, longitude, address)
-            return ProviderResult(
-                provider_name=self.metadata.name,
-                data=data,
-                success=True,
-                api_calls_made=1,
-            )
-        except (ValueError, ConnectionError, TimeoutError) as e:
+            data = await self.api_client.get_flood_zone(latitude, longitude)
+        except (httpx.HTTPError, ValueError) as e:
             self.logger.error(
-                f"Error fetching flood zone data for {address} ({latitude}, {longitude}): {e}"
+                "Error fetching FEMA flood zone for %s (%s, %s): %s",
+                address,
+                latitude,
+                longitude,
+                e,
             )
             return ProviderResult(
                 provider_name=self.metadata.name,
@@ -70,7 +69,13 @@ class FloodZoneProvider(BaseEnrichmentProvider):
                 api_calls_made=1,
             )
 
+        return ProviderResult(
+            provider_name=self.metadata.name,
+            data=data,
+            success=True,
+            api_calls_made=1,
+        )
+
     async def validate_config(self) -> bool:
-        """Validate that the API key is set and valid."""
-        is_valid = await self.api_client.validate_api_key()
-        return is_valid
+        """Validate that the FEMA service is reachable."""
+        return await self.api_client.validate_api_key()

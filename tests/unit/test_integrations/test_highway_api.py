@@ -115,7 +115,7 @@ async def test_fetch_nearby_highways_retries_when_busy(highway_client):
 
     with (
         patch.object(highway_client.client, "post", new_callable=AsyncMock) as mock_post,
-        patch("app.integrations.highway_api.asyncio.sleep", new_callable=AsyncMock) as sleep,
+        patch("app.integrations.base_client.asyncio.sleep", new_callable=AsyncMock) as sleep,
     ):
         mock_post.side_effect = [_response(502), httpx.ReadTimeout("slow"), _response(429), ok]
 
@@ -130,7 +130,7 @@ async def test_fetch_nearby_highways_retries_when_busy(highway_client):
 async def test_fetch_nearby_highways_gives_up_after_max_attempts(highway_client):
     with (
         patch.object(highway_client.client, "post", new_callable=AsyncMock) as mock_post,
-        patch("app.integrations.highway_api.asyncio.sleep", new_callable=AsyncMock),
+        patch("app.integrations.base_client.asyncio.sleep", new_callable=AsyncMock),
     ):
         mock_post.return_value = _response(502)
 
@@ -144,7 +144,7 @@ async def test_fetch_nearby_highways_gives_up_after_max_attempts(highway_client)
 async def test_fetch_nearby_highways_does_not_retry_client_errors(highway_client):
     with (
         patch.object(highway_client.client, "post", new_callable=AsyncMock) as mock_post,
-        patch("app.integrations.highway_api.asyncio.sleep", new_callable=AsyncMock) as sleep,
+        patch("app.integrations.base_client.asyncio.sleep", new_callable=AsyncMock) as sleep,
     ):
         mock_post.return_value = _response(400)
 
