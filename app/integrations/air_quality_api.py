@@ -1,25 +1,47 @@
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, Optional
 
-from app.core.config import settings
 from app.exceptions.external_api import ExternalAPIError
 
 from .base_client import BaseAPIClient
 
 logger = logging.getLogger(__name__)
 
+# US EPA AQI bands: (upper bound inclusive, category name)
+AQI_CATEGORIES = [
+    (50, "Good"),
+    (100, "Moderate"),
+    (150, "Unhealthy for Sensitive Groups"),
+    (200, "Unhealthy"),
+    (300, "Very Unhealthy"),
+]
+
+
+def aqi_category(aqi: Optional[float]) -> Optional[str]:
+    """Map a US AQI value to its EPA category name."""
+    if aqi is None:
+        return None
+    for upper, name in AQI_CATEGORIES:
+        if aqi <= upper:
+            return name
+    return "Hazardous"
+
 
 class AirQualityAPIClient(BaseAPIClient):
     """
-    Air Now API client for fetching air quality data.
+    Open-Meteo air quality client (no API key).
+
+    Replaced AirNow, which retired its lat/long web services on October 1, 2026.
+    Values are modelled (CAMS) for the location rather than read from the nearest
+    monitoring station.
     """
 
-    FORECAST_ENDPOINT = "aq/forecast/latLong/"
+    AIR_QUALITY_ENDPOINT = "v1/air-quality"
 
     def __init__(self):
         super().__init__(
-            base_url="https://www.airnowapi.org",
-            api_key=settings.airnow_api_key,
+            base_url="https://air-quality-api.open-meteo.com",
+            api_key=None,
             timeout=10.0,
             rate_limit_per_second=1.0,
         )
@@ -29,100 +51,63 @@ class AirQualityAPIClient(BaseAPIClient):
         return "air_quality"
 
     async def validate_api_key(self) -> bool:
-        """
-        Validate the API key by making a test request.
-
-        Returns:
-            True if the API key is valid, False otherwise.
-        """
+        """No key is needed; check the API answers."""
         try:
-            params = {
-                "API_KEY": self.api_key,
-                "latitude": "34.0522",  # Example coordinates (Los Angeles)
-                "longitude": "-118.2437",
-                "format": "application/json",
-                "distance": 25,
-            }
-            data = await self._make_request(
-                method="GET",
-                endpoint=self.FORECAST_ENDPOINT,
-                params=params,
-            )
-            if data:
-                return True
-            return False
-        except ExternalAPIError as e:
-            logger.error(f"API key validation failed: {e}")
+            return bool(await self.get_air_quality(latitude=34.0522, longitude=-118.2437))
+        except ExternalAPIError:
             return False
 
-    async def get_air_quality(
-        self, latitude: float, longitude: float, distance: int = 50
-    ) -> Dict[str, Any]:
+    async def get_air_quality(self, latitude: float, longitude: float) -> Dict[str, Any]:
         """
-        Fetch air quality data for given latitude and longitude.
-
-        Args:
-            latitude: Latitude of the location
-            longitude: Longitude of the location
-            distance: Distance in miles to search for air quality data
+        Fetch current air quality for a location.
 
         Returns:
-            Air quality data as a dictionary
+            {"aqi", "category", "pm2_5", "ozone"}, or {} if unavailable
         """
         logger.info(
-            "Fetching air quality data for (%.6f, %.6f) within %d miles",
+            "Fetching air quality data for (%.6f, %.6f)",
             latitude,
             longitude,
-            distance,
-            extra={"latitude": latitude, "longitude": longitude, "distance": distance},
+            extra={"latitude": latitude, "longitude": longitude},
         )
 
         params = {
-            "API_KEY": self.api_key,
-            "latitude": str(latitude),
-            "longitude": str(longitude),
-            "format": "application/json",
-            "distance": distance,
+            "latitude": latitude,
+            "longitude": longitude,
+            "current": "us_aqi,pm2_5,ozone",
         }
         try:
             response = await self._make_request(
                 method="GET",
-                endpoint=self.FORECAST_ENDPOINT,
+                endpoint=self.AIR_QUALITY_ENDPOINT,
                 params=params,
             )
-            # API returns a list of air quality data
-            data: List[Dict[str, Any]] = response if isinstance(response, list) else []
         except ExternalAPIError as e:
             logger.error(
                 "Failed to fetch air quality data for (%.6f, %.6f): %s",
                 latitude,
                 longitude,
-                str(e),
-                extra={"latitude": latitude, "longitude": longitude, "error": str(e)},
-                exc_info=True,
+                e.message,
+                extra={"latitude": latitude, "longitude": longitude, "error": e.message},
             )
             return {}
 
-        if not data or len(data) == 0:
-            logger.warning(
-                "No air quality data found for (%.6f, %.6f) within %d miles",
-                latitude,
-                longitude,
-                distance,
-            )
+        current = response.get("current") or {}
+        aqi = current.get("us_aqi")
+        if aqi is None:
+            logger.warning("No air quality data found for (%.6f, %.6f)", latitude, longitude)
             return {}
 
-        logger.debug("Air quality API response: %s", data)
-
-        result: dict = data[0]
-
+        result = {
+            "aqi": aqi,
+            "category": aqi_category(aqi),
+            "pm2_5": current.get("pm2_5"),
+            "ozone": current.get("ozone"),
+        }
         logger.info(
             "Air quality data retrieved: AQI=%s, category=%s",
-            result.get("AQI"),
-            result.get("Category"),
-            extra={
-                "aqi": result.get("AQI"),
-                "category": result.get("Category"),
-            },
+            result["aqi"],
+            result["category"],
+            extra={"aqi": result["aqi"], "category": result["category"]},
         )
         return result

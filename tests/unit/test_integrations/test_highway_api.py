@@ -17,7 +17,7 @@ async def test_init(highway_client):
     """Test HighwayAPIClient initialization."""
     assert highway_client.base_url == "https://overpass-api.de/api/interpreter"
     assert highway_client.api_key is None
-    assert highway_client.timeout == 20.0
+    assert highway_client.timeout == 40.0
     assert highway_client.rate_limit_per_second == 10.0
 
 
@@ -95,3 +95,61 @@ async def test_validate_api_key_request_error(highway_client):
         result = await highway_client.validate_api_key()
 
         assert result is False
+
+
+def _response(status_code, payload=None):
+    response = MagicMock()
+    response.status_code = status_code
+    response.json.return_value = payload
+    if status_code >= 400:
+        response.raise_for_status.side_effect = httpx.HTTPStatusError(
+            str(status_code), request=MagicMock(), response=response
+        )
+    return response
+
+
+@pytest.mark.asyncio
+async def test_fetch_nearby_highways_retries_when_busy(highway_client):
+    """502/429/timeouts are retried with backoff, as Overpass asks."""
+    ok = _response(200, {"elements": []})
+
+    with (
+        patch.object(highway_client.client, "post", new_callable=AsyncMock) as mock_post,
+        patch("app.integrations.highway_api.asyncio.sleep", new_callable=AsyncMock) as sleep,
+    ):
+        mock_post.side_effect = [_response(502), httpx.ReadTimeout("slow"), _response(429), ok]
+
+        result = await highway_client.fetch_nearby_highways(40.7, -74.0)
+
+    assert result == {"elements": []}
+    assert mock_post.call_count == 4
+    assert [c.args[0] for c in sleep.await_args_list] == [2.0, 4.0, 8.0]
+
+
+@pytest.mark.asyncio
+async def test_fetch_nearby_highways_gives_up_after_max_attempts(highway_client):
+    with (
+        patch.object(highway_client.client, "post", new_callable=AsyncMock) as mock_post,
+        patch("app.integrations.highway_api.asyncio.sleep", new_callable=AsyncMock),
+    ):
+        mock_post.return_value = _response(502)
+
+        with pytest.raises(httpx.HTTPStatusError):
+            await highway_client.fetch_nearby_highways(40.7, -74.0)
+
+    assert mock_post.call_count == 4
+
+
+@pytest.mark.asyncio
+async def test_fetch_nearby_highways_does_not_retry_client_errors(highway_client):
+    with (
+        patch.object(highway_client.client, "post", new_callable=AsyncMock) as mock_post,
+        patch("app.integrations.highway_api.asyncio.sleep", new_callable=AsyncMock) as sleep,
+    ):
+        mock_post.return_value = _response(400)
+
+        with pytest.raises(httpx.HTTPStatusError):
+            await highway_client.fetch_nearby_highways(40.7, -74.0)
+
+    assert mock_post.call_count == 1
+    sleep.assert_not_called()

@@ -29,7 +29,6 @@ class Settings(BaseSettings):
 
     # API Keys for external services
     walkscore_api_key: Optional[str] = Field(None, alias="WALKSCORE_API_KEY")
-    airnow_api_key: Optional[str] = Field(None, alias="AIRNOW_API_KEY")
     google_maps_api_key: Optional[str] = Field(None, alias="GOOGLE_MAPS_API_KEY")
     national_flood_data_api_key: Optional[str] = Field(None, alias="NATIONAL_FLOOD_DATA_API_KEY")
 

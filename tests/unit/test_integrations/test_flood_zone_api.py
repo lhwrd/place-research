@@ -112,3 +112,12 @@ async def test_fetch_flood_zone_data_success(flood_client):
         },
         headers={"x-api-key": "test-api-key"},
     )
+
+
+@pytest.mark.asyncio
+async def test_fetch_flood_zone_data_without_key(flood_client):
+    """A missing key fails clearly instead of sending "x-api-key: None"."""
+    flood_client.api_key = None
+
+    with pytest.raises(ValueError, match="NATIONAL_FLOOD_DATA_API_KEY is not set"):
+        await flood_client.fetch_flood_zone_data(29.1, -80.9, "1 Main St")

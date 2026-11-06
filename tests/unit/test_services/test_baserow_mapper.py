@@ -28,7 +28,7 @@ def test_enrichment_fields_maps_every_provider():
         "annual_average_climate_provider": _ok(
             {"annual_average_temperature": 72.34, "annual_average_precipitation": 51.06}
         ),
-        "air_quality_provider": _ok({"AQI": 31, "Category": {"Number": 1, "Name": "Good"}}),
+        "air_quality_provider": _ok({"aqi": 31, "category": "Good", "pm2_5": 5.0, "ozone": 40.0}),
         "distance_provider": _ok(
             {
                 "distances": [
@@ -86,8 +86,8 @@ def test_failed_and_empty_providers_leave_fields_untouched():
     assert set(fields) == {F.LATITUDE, F.LONGITUDE, F.LAST_ENRICHED}
 
 
-def test_air_quality_with_string_category():
+def test_air_quality_without_aqi():
     fields = enrichment_fields(
-        {"air_quality_provider": _ok({"Category": "Moderate"})}, 1.0, 2.0, NOW
+        {"air_quality_provider": _ok({"category": "Moderate"})}, 1.0, 2.0, NOW
     )
     assert fields[F.AIR_QUALITY] == "Moderate"

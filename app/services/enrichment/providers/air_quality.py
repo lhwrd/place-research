@@ -18,9 +18,9 @@ class AirQualityProvider(BaseEnrichmentProvider):
             name="air_quality_provider",
             category=ProviderCategory.ENVIRONMENTAL,
             enabled=True,
-            description="Provides air quality data using the AirNow API.",
-            version="1.0.0",
-            requires_api_key=True,
+            description="Provides current US AQI using the Open-Meteo air quality API.",
+            version="2.0.0",
+            requires_api_key=False,
             cost_per_call=0.0,
         )
 
@@ -46,6 +46,6 @@ class AirQualityProvider(BaseEnrichmentProvider):
         )
 
     async def validate_config(self) -> bool:
-        """Validate that the API key is set and valid."""
+        """Validate that the API is reachable."""
         is_valid = await self.api_client.validate_api_key()
         return is_valid

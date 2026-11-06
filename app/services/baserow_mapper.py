@@ -90,11 +90,8 @@ def _climate(data: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _air_quality(data: Dict[str, Any]) -> Dict[str, Any]:
-    aqi = data.get("AQI")
-    category = data.get("Category")
-    # AirNow returns Category as {"Number": 1, "Name": "Good"}
-    if isinstance(category, dict):
-        category = category.get("Name")
+    aqi = data.get("aqi")
+    category = data.get("category")
     parts = []
     if aqi is not None:
         parts.append(f"AQI {aqi}")

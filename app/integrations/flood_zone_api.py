@@ -42,6 +42,9 @@ class FloodZoneAPIClient(BaseAPIClient):
 
     async def fetch_flood_zone_data(self, latitude: float, longitude: float, address: str) -> dict:
         """Fetch flood zone data for a given location."""
+        if not self.api_key:
+            # Without this the request goes out with "x-api-key: None" and fails with a bare 403
+            raise ValueError("NATIONAL_FLOOD_DATA_API_KEY is not set")
         headers = self._get_auth_headers()
         params = {
             "lat": str(latitude),

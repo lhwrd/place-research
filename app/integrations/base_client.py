@@ -9,6 +9,7 @@ from typing import Any, Dict, Optional
 
 import httpx
 
+from app.core.redaction import redact_secrets
 from app.exceptions import (
     APIKeyInvalidError,
     APIQuotaExceededError,
@@ -16,6 +17,9 @@ from app.exceptions import (
 )
 
 logger = logging.getLogger(__name__)
+
+# Some APIs (e.g. Overpass) reject httpx's default User-Agent
+USER_AGENT = "place-research/2.0 (+https://github.com/lhwrd/place-research)"
 
 
 def retry_on_failure(max_retries: int = 3, backoff_factor: float = 1.0):
@@ -123,7 +127,11 @@ class BaseAPIClient(ABC):
     def client(self) -> httpx.AsyncClient:
         """Get or create HTTP client."""
         if self._client is None or self._client.is_closed:
-            self._client = httpx.AsyncClient(timeout=self.timeout, follow_redirects=True)
+            self._client = httpx.AsyncClient(
+                timeout=self.timeout,
+                follow_redirects=True,
+                headers={"User-Agent": USER_AGENT},
+            )
         return self._client
 
     async def close(self):
@@ -264,37 +272,39 @@ class BaseAPIClient(ABC):
         except httpx.HTTPStatusError as e:
             await self._handle_http_error(e)
         except httpx.RequestError as e:
+            error = redact_secrets(str(e))
             logger.error(
                 "%s API request failed: %s",
                 self._get_service_name(),
-                str(e),
+                error,
                 extra={
                     "service": self._get_service_name(),
                     "endpoint": endpoint,
-                    "error": str(e),
+                    "error": error,
                 },
                 exc_info=True,
             )
             raise ExternalAPIError(
                 service=self._get_service_name(),
-                message=f"Request failed: {str(e)}",
+                message=f"Request failed: {error}",
                 status_code=503,
             ) from e
         except Exception as e:
+            error = redact_secrets(str(e))
             logger.error(
                 "%s unexpected API error: %s",
                 self._get_service_name(),
-                str(e),
+                error,
                 extra={
                     "service": self._get_service_name(),
                     "endpoint": endpoint,
-                    "error": str(e),
+                    "error": error,
                 },
                 exc_info=True,
             )
             raise ExternalAPIError(
                 service=self._get_service_name(),
-                message=f"Unexpected error: {str(e)}",
+                message=f"Unexpected error: {error}",
                 status_code=500,
             ) from e
 
@@ -302,12 +312,17 @@ class BaseAPIClient(ABC):
         """Handle HTTP errors and convert to appropriate exceptions."""
         status_code = error.response.status_code
 
-        # Parse error response
+        # Parse error response. Bodies vary by API, so fall back to the status line and URL.
+        fallback = f"HTTP {status_code} from {redact_secrets(str(error.request.url))}"
         try:
             error_data = error.response.json()
-            error_message = error_data.get("error", {}).get("message", str(error))
+            detail = error_data.get("error") if isinstance(error_data, dict) else None
+            error_message = (
+                detail.get("message") if isinstance(detail, dict) else None
+            ) or fallback
         except ValueError:
-            error_message = error.response.text or str(error)
+            error_message = error.response.text or fallback
+        error_message = redact_secrets(error_message)
 
         logger.error(
             "%s API HTTP error: %d - %s",
