@@ -28,9 +28,11 @@ class TestAirQualityProvider:
         assert metadata.name == "air_quality_provider"
         assert metadata.category == ProviderCategory.ENVIRONMENTAL
         assert metadata.enabled is True
-        assert metadata.description == "Provides air quality data using the AirNow API."
-        assert metadata.version == "1.0.0"
-        assert metadata.requires_api_key is True
+        assert (
+            metadata.description == "Provides current US AQI using the Open-Meteo air quality API."
+        )
+        assert metadata.version == "2.0.0"
+        assert metadata.requires_api_key is False
         assert metadata.cost_per_call == 0.0
 
     @pytest.mark.asyncio

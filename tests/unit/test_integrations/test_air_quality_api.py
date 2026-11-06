@@ -1,124 +1,78 @@
-from unittest.mock import AsyncMock, patch
+"""Tests for the Open-Meteo air quality client."""
+
+from unittest.mock import AsyncMock
 
 import pytest
 
 from app.exceptions.external_api import ExternalAPIError
-from app.integrations.air_quality_api import AirQualityAPIClient
+from app.integrations.air_quality_api import AirQualityAPIClient, aqi_category
 
 
 @pytest.fixture
-def mock_settings():
-    with patch("app.integrations.air_quality_api.settings") as mock:
-        mock.airnow_api_key = "test_api_key"
-        yield mock
-
-
-@pytest.fixture
-def client(mock_settings):
+def client():
     return AirQualityAPIClient()
+
+
+def _response(us_aqi, pm2_5=7.9, ozone=56.0):
+    return {
+        "current": {"time": "2026-11-06T09:00", "us_aqi": us_aqi, "pm2_5": pm2_5, "ozone": ozone}
+    }
 
 
 class TestAirQualityAPIClient:
     def test_init(self, client):
-        assert client.base_url == "https://www.airnowapi.org"
-        assert client.api_key == "test_api_key"
-        assert client.timeout == 10.0
-        assert client.rate_limit_per_second == 1.0
-
-    def test_get_service_name(self, client):
-        assert client._get_service_name() == "air_quality"
-
-    def test_get_auth_headers(self, client):
+        assert client.base_url == "https://air-quality-api.open-meteo.com"
+        assert client.api_key is None
         assert client._get_auth_headers() == {}
-
-    @pytest.mark.asyncio
-    async def test_validate_api_key_success(self, client):
-        mock_data = [{"AQI": 50}]
-        client._make_request = AsyncMock(return_value=mock_data)
-
-        result = await client.validate_api_key()
-
-        assert result is True
-        client._make_request.assert_called_once_with(
-            method="GET",
-            endpoint="aq/forecast/latLong/",
-            params={
-                "API_KEY": "test_api_key",
-                "latitude": "34.0522",
-                "longitude": "-118.2437",
-                "format": "application/json",
-                "distance": 25,
-            },
-        )
-
-    @pytest.mark.asyncio
-    async def test_validate_api_key_empty_response(self, client):
-        client._make_request = AsyncMock(return_value=None)
-
-        result = await client.validate_api_key()
-
-        assert result is False
-
-    @pytest.mark.asyncio
-    async def test_validate_api_key_api_error(self, client):
-        client._make_request = AsyncMock(
-            side_effect=ExternalAPIError(service="air_quality", message="API Error")
-        )
-
-        result = await client.validate_api_key()
-
-        assert result is False
+        assert client._get_service_name() == "air_quality"
 
     @pytest.mark.asyncio
     async def test_get_air_quality_success(self, client):
-        mock_data = [{"AQI": 75, "Category": "Moderate"}]
-        client._make_request = AsyncMock(return_value=mock_data)
+        client._make_request = AsyncMock(return_value=_response(42))
 
-        result = await client.get_air_quality(40.7128, -74.0060, distance=30)
+        result = await client.get_air_quality(latitude=29.13, longitude=-80.98)
 
-        assert result == {"AQI": 75, "Category": "Moderate"}
-        client._make_request.assert_called_once_with(
+        assert result == {"aqi": 42, "category": "Good", "pm2_5": 7.9, "ozone": 56.0}
+        client._make_request.assert_awaited_once_with(
             method="GET",
-            endpoint="aq/forecast/latLong/",
-            params={
-                "API_KEY": "test_api_key",
-                "latitude": "40.7128",
-                "longitude": "-74.006",
-                "format": "application/json",
-                "distance": 30,
-            },
+            endpoint="v1/air-quality",
+            params={"latitude": 29.13, "longitude": -80.98, "current": "us_aqi,pm2_5,ozone"},
         )
 
     @pytest.mark.asyncio
-    async def test_get_air_quality_default_distance(self, client):
-        mock_data = [{"AQI": 100}]
-        client._make_request = AsyncMock(return_value=mock_data)
-
-        result = await client.get_air_quality(34.0522, -118.2437)
-
-        assert result == {"AQI": 100}
-        assert client._make_request.call_args[1]["params"]["distance"] == 50
-
-    @pytest.mark.asyncio
     async def test_get_air_quality_api_error(self, client):
-        client._make_request = AsyncMock(side_effect=ExternalAPIError("air_quality", "API Error"))
-
-        result = await client.get_air_quality(40.7128, -74.0060)
-
-        assert result == {}
-
-    @pytest.mark.asyncio
-    async def test_get_air_quality_empty_response(self, client):
-        client._make_request = AsyncMock(return_value=[])
-
-        result = await client.get_air_quality(40.7128, -74.0060)
-
-        assert result == {}
+        client._make_request = AsyncMock(
+            side_effect=ExternalAPIError(service="air_quality", message="boom")
+        )
+        assert await client.get_air_quality(latitude=1.0, longitude=2.0) == {}
 
     @pytest.mark.asyncio
-    async def test_get_air_quality_none_response(self, client):
-        client._make_request = AsyncMock(return_value=None)
+    @pytest.mark.parametrize("response", [{}, {"current": {}}, _response(None)])
+    async def test_get_air_quality_no_data(self, client, response):
+        client._make_request = AsyncMock(return_value=response)
+        assert await client.get_air_quality(latitude=1.0, longitude=2.0) == {}
 
-        result = await client.get_air_quality(40.7128, -74.0060)
+    @pytest.mark.asyncio
+    async def test_validate_api_key(self, client):
+        client._make_request = AsyncMock(return_value=_response(30))
+        assert await client.validate_api_key() is True
 
-        assert result == {}
+        client._make_request = AsyncMock(return_value={})
+        assert await client.validate_api_key() is False
+
+
+@pytest.mark.parametrize(
+    "aqi,expected",
+    [
+        (None, None),
+        (0, "Good"),
+        (50, "Good"),
+        (51, "Moderate"),
+        (150, "Unhealthy for Sensitive Groups"),
+        (200, "Unhealthy"),
+        (300, "Very Unhealthy"),
+        (301, "Hazardous"),
+    ],
+)
+def test_aqi_category(aqi, expected):
+    assert aqi_category(aqi) == expected

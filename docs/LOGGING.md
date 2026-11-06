@@ -13,12 +13,17 @@ Configured once at startup by `setup_logging()` in `app/core/logging_config.py`.
 
 `httpx`, `httpcore` and `urllib3` are capped at `WARNING`.
 
+Credential-like query parameters (`?API_KEY=`, `&wsapikey=`, anything with key, token,
+secret or password in the name) are replaced with `REDACTED` in every message, string
+field and traceback before it's written (`RedactingFilter`, `app/core/redaction.py`).
+
 ## Request IDs
 
 `RequestLoggingMiddleware` gives every request a UUID. The UUID appears on every log
 line written while the request is handled and is returned in the `X-Request-ID`
-response header. Background enrichment that a webhook queues runs after the response
-is sent, so its log lines don't carry that request's ID.
+response header. Background enrichment that a webhook queues runs in the same context,
+so its log lines carry the webhook request's ID, which makes it easy to find everything
+one Baserow event caused. Rows enriched by the periodic sweep have no request ID.
 
 ```python
 from app.core.logging_config import get_request_id

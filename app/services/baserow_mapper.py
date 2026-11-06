@@ -4,6 +4,7 @@ Only fields with data are returned, so a provider that fails on a re-enrich leav
 row's previous value in place instead of blanking it.
 """
 
+import re
 from datetime import datetime
 from typing import Any, Callable, Dict, List, Optional
 
@@ -65,10 +66,20 @@ def _walk_score(data: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _flood_zone(data: Dict[str, Any]) -> Dict[str, Any]:
-    zone, risk = data.get("flood_zone"), data.get("flood_risk")
+    """E.g. "AE (high-risk SFHA, BFE 7 ft)" or "X (0.2% annual chance flood hazard)"."""
+    zone = data.get("flood_zone")
     if not zone:
         return {}
-    return {F.FLOOD_ZONE: f"{zone} ({risk})" if risk else zone}
+
+    details = []
+    if data.get("flood_risk"):
+        # FEMA subtypes are upper case with "PCT" for percent
+        details.append(re.sub(r"\s*pct\b", "%", data["flood_risk"].lower()))
+    if data.get("in_sfha"):
+        details.append("high-risk SFHA")
+    if data.get("base_flood_elevation_ft") is not None:
+        details.append(f"BFE {data['base_flood_elevation_ft']:g} ft")
+    return {F.FLOOD_ZONE: f"{zone} ({', '.join(details)})" if details else zone}
 
 
 def _railroad(data: Dict[str, Any]) -> Dict[str, Any]:
@@ -90,11 +101,8 @@ def _climate(data: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _air_quality(data: Dict[str, Any]) -> Dict[str, Any]:
-    aqi = data.get("AQI")
-    category = data.get("Category")
-    # AirNow returns Category as {"Number": 1, "Name": "Good"}
-    if isinstance(category, dict):
-        category = category.get("Name")
+    aqi = data.get("aqi")
+    category = data.get("category")
     parts = []
     if aqi is not None:
         parts.append(f"AQI {aqi}")

@@ -1,6 +1,6 @@
 import httpx
 
-from .base_client import BaseAPIClient
+from .base_client import BaseAPIClient, send_with_retry
 
 
 class HighwayAPIClient(BaseAPIClient):
@@ -8,7 +8,8 @@ class HighwayAPIClient(BaseAPIClient):
         super().__init__(
             base_url="https://overpass-api.de/api/interpreter",
             api_key=None,  # Assuming no API key is required
-            timeout=20.0,
+            # Longer than the query's own [timeout:25] so the server, not us, gives up first
+            timeout=40.0,
             rate_limit_per_second=10.0,
         )
 
@@ -32,11 +33,16 @@ class HighwayAPIClient(BaseAPIClient):
         out geom;
         """
 
+        # The public instance answers 429/5xx when it's at capacity and asks clients to
+        # retry with exponential backoff
         async with self.client as client:
-            response = await client.post(
-                self.base_url,
-                data={"data": query},
-                headers={"Content-Type": "application/x-www-form-urlencoded"},
+            response = await send_with_retry(
+                lambda: client.post(
+                    self.base_url,
+                    data={"data": query},
+                    headers={"Content-Type": "application/x-www-form-urlencoded"},
+                ),
+                service="Overpass",
             )
             response.raise_for_status()
             return response.json()
