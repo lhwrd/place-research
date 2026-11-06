@@ -30,7 +30,7 @@ so they're ignored. A sweep on startup and every 15 minutes
 
 ## Tables
 
-All field names are defined in `apps/backend/app/integrations/baserow_schema.py`.
+All field names are defined in `app/integrations/baserow_schema.py`.
 
 - **Properties (837)**
   - Listing: Address, Zillow URL, Zillow ID, Status, Error, Photos, Listing JSON, Price,
@@ -50,7 +50,7 @@ A failed provider never blanks a field: only providers that return data are writ
 
 1. **Database token.** In Baserow: *My settings → Database tokens*. Give it create,
    read and update on database 259 and set it as `BASEROW_API_TOKEN`.
-2. **Schema.** From `apps/backend`, run:
+2. **Schema.** From the repo root, run:
 
    ```bash
    uv run python scripts/baserow_setup.py --webhook-url https://<backend-host>/api/v1/webhooks/baserow

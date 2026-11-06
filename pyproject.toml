@@ -1,0 +1,57 @@
+[project]
+name = "place-research"
+version = "0.1.0"
+description = "Enriches Zillow listings stored in Baserow"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "pydantic>=2.5.3",
+    "pydantic-settings>=2.1.0",
+    "python-multipart>=0.0.6",
+    "httpx>=0.26.0",
+    "python-json-logger>=4.0.0",
+    "pandas>=2.3.3",
+    "geopandas>=1.1.2",
+    "pyarrow>=26.0.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=7.4.4",
+    "pytest-asyncio>=0.23.3",
+    "pytest-cov>=4.1.0",
+    "httpx>=0.26.0", # For testing
+    "ruff>=0.1.11",
+    "mypy>=1.8.0",
+    "ipython>=8.19.0",
+]
+
+[tool.uv]
+# An application, not a distributable package: uv installs dependencies only
+package = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W"]
+ignore = ["E501"]
+exclude = [".venv/*"]
+
+[tool.mypy]
+python_version = "3.13"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "--strict-markers --tb=short --cov=app --cov-report=term-missing --cov-fail-under=70"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]

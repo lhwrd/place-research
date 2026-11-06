@@ -1,0 +1,17 @@
+# Local development. Deployment lives in howard-home.
+services:
+  backend:
+    build: .
+    container_name: place-research-backend
+    # Same .env the app reads when run with uv (see .env.example)
+    env_file: .env
+    environment:
+      # Data files are mounted at /app/data below
+      RAILLINES_PATH: ${CONTAINER_RAILLINES_PATH:-/app/data/raillines.geojson}
+      ANNUAL_CLIMATE_PATH: ${CONTAINER_ANNUAL_CLIMATE_PATH:-/app/data/annual_average_climate.csv}
+    volumes:
+      - ./data:/app/data:ro
+      - ./logs:/app/logs
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    restart: unless-stopped

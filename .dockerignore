@@ -1,0 +1,6 @@
+# Allowlist: the image only needs the dependency manifest and the app package
+*
+!pyproject.toml
+!uv.lock
+!app/
+**/__pycache__
