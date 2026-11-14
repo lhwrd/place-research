@@ -54,6 +54,17 @@ class PropertyFields:
     AIR_QUALITY = "Air quality"
     DRIVE_TIMES = "Drive times"
     NEARBY_PLACES = "Nearby places"
+    CITY = "City"
+    CITY_POPULATION = "City population"
+    COUNTY = "County"
+    COUNTY_POPULATION = "County population"
+    CENSUS_TRACT = "Census tract"
+    TRACT_POPULATION = "Tract population"
+    TRACT_MEDIAN_AGE = "Tract median age"
+    TRACT_BACHELORS_PCT = "Tract bachelor's+ (%)"
+    TRACT_AGE_GROUPS = "Tract age groups"
+    TRACT_RACE_ETHNICITY = "Tract race & ethnicity"
+    TRACT_EDUCATION = "Tract education"
     LAST_ENRICHED = "Last enriched"
 
     # Owned by the user; the backend never writes these
@@ -129,6 +140,17 @@ PROPERTY_FIELD_DEFS: List[Dict[str, Any]] = [
     {"name": PropertyFields.AIR_QUALITY, "type": "text"},
     {"name": PropertyFields.DRIVE_TIMES, "type": "long_text"},
     {"name": PropertyFields.NEARBY_PLACES, "type": "long_text"},
+    {"name": PropertyFields.CITY, "type": "text"},
+    _number(PropertyFields.CITY_POPULATION),
+    {"name": PropertyFields.COUNTY, "type": "text"},
+    _number(PropertyFields.COUNTY_POPULATION),
+    {"name": PropertyFields.CENSUS_TRACT, "type": "text"},
+    _number(PropertyFields.TRACT_POPULATION),
+    _number(PropertyFields.TRACT_MEDIAN_AGE, 1),
+    _number(PropertyFields.TRACT_BACHELORS_PCT, 1),
+    {"name": PropertyFields.TRACT_AGE_GROUPS, "type": "long_text"},
+    {"name": PropertyFields.TRACT_RACE_ETHNICITY, "type": "long_text"},
+    {"name": PropertyFields.TRACT_EDUCATION, "type": "long_text"},
     {
         "name": PropertyFields.LAST_ENRICHED,
         "type": "date",

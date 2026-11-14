@@ -3,8 +3,9 @@
 Research homes while browsing Zillow. Share a listing from your iPhone, and a row
 with the listing's photos and facts appears in Baserow. This service then enriches it
 with walk/bike/transit scores, flood zone, rail and highway distance, road noise,
-climate, air quality, nearby places and drive times to the people and places you care
-about.
+climate, air quality, nearby places, drive times to the people and places you care
+about, and Census data (city and county population; age, race/ethnicity and education
+for the census tract).
 
 ```
 iPhone Shortcut ──▶ /api/v1/listings ──▶ Baserow ──webhook──▶ enrichment ──▶ Baserow

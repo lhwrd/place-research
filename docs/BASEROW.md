@@ -38,6 +38,13 @@ All field names are defined in `app/integrations/baserow_schema.py`.
   - Enrichment: Walk, Bike and Transit score, Flood zone, Rail distance (mi), Highway
     distance (mi), Road noise, Avg temp, Avg precip, Air quality, Drive times,
     Nearby places, Last enriched.
+  - Census (ACS 5-year estimates, `CENSUS_ACS_YEAR`; needs `CENSUS_API_KEY`): City,
+    City population, County, County population, Census tract, Tract population, Tract
+    median age, Tract bachelor's+ (%), Tract age groups, Tract race & ethnicity, Tract
+    education. City is the incorporated place, or the census-designated place marked
+    "(CDP)" in unincorporated areas, and is left empty outside both. Race & ethnicity
+    groups are mutually exclusive (Hispanic or Latino of any race, the rest
+    non-Hispanic). Education is for adults 25 and over.
   - **Yours (never written by the backend):** Notes, Rating, Visited.
 - **Locations**: drive-time destinations. Name, Address, Type (Family / Friend / Work /
   Other), Active, Priority. Only Active rows are used, highest Priority first.

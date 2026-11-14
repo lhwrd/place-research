@@ -6,7 +6,7 @@ row's previous value in place instead of blanking it.
 
 import re
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 from app.integrations.baserow_schema import PropertyFields as F
 from app.services.zillow_listing import ListingFacts
@@ -132,6 +132,32 @@ def _nearby_places(data: Dict[str, Any]) -> Dict[str, Any]:
     return {F.NEARBY_PLACES: "\n".join(lines) or None}
 
 
+def _census(data: Dict[str, Any]) -> Dict[str, Any]:
+    city = data.get("city") or {}
+    county = data.get("county") or {}
+    tract = data.get("tract") or {}
+
+    city_name = city.get("name")
+    if city_name and city.get("type") == "CDP":
+        city_name = f"{city_name} (CDP)"
+
+    race = sorted((tract.get("race_ethnicity") or {}).items(), key=lambda kv: -kv[1])
+    return {
+        F.CITY: city_name,
+        F.CITY_POPULATION: city.get("population"),
+        F.COUNTY: _join(county.get("name"), data.get("state")),
+        F.COUNTY_POPULATION: county.get("population"),
+        F.CENSUS_TRACT: tract.get("geoid"),
+        F.TRACT_POPULATION: tract.get("population"),
+        F.TRACT_MEDIAN_AGE: tract.get("median_age"),
+        F.TRACT_BACHELORS_PCT: tract.get("bachelors_or_higher_pct"),
+        F.TRACT_AGE_GROUPS: _percent_lines((tract.get("age_groups") or {}).items()),
+        # Largest group first, and leave out groups with nobody in them
+        F.TRACT_RACE_ETHNICITY: _percent_lines((k, v) for k, v in race if v > 0),
+        F.TRACT_EDUCATION: _percent_lines((tract.get("education") or {}).items()),
+    }
+
+
 _PROVIDER_MAPPERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "walk_score_provider": _walk_score,
     "flood_zone_provider": _flood_zone,
@@ -141,6 +167,7 @@ _PROVIDER_MAPPERS: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
     "air_quality_provider": _air_quality,
     "distance_provider": _drive_times,
     "places_nearby_provider": _nearby_places,
+    "census_provider": _census,
 }
 
 
@@ -156,6 +183,14 @@ def _fmt(value: Any, places: int = 0) -> str:
     if value is None:
         return "?"
     return f"{float(value):.{places}f}"
+
+
+def _percent_lines(items: Iterable[Tuple[str, float]]) -> Optional[str]:
+    return "\n".join(f"{label}: {pct:g}%" for label, pct in items) or None
+
+
+def _join(*parts: Optional[str]) -> Optional[str]:
+    return ", ".join(p for p in parts if p) or None
 
 
 def _without_none(values: Dict[str, Any]) -> Dict[str, Any]:

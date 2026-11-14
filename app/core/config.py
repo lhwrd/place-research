@@ -30,6 +30,12 @@ class Settings(BaseSettings):
     # API Keys for external services
     walkscore_api_key: Optional[str] = Field(None, alias="WALKSCORE_API_KEY")
     google_maps_api_key: Optional[str] = Field(None, alias="GOOGLE_MAPS_API_KEY")
+    census_api_key: Optional[str] = Field(None, alias="CENSUS_API_KEY")
+    census_acs_year: int = Field(
+        2024,
+        alias="CENSUS_ACS_YEAR",
+        description="ACS 5-year release to use (2024 = 2020-2024 estimates, out Dec 2025)",
+    )
 
     # File paths for data sources
     raillines_path: Optional[Path] = Field(None, alias="RAILLINES_PATH")
