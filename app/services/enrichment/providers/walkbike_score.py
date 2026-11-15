@@ -46,11 +46,16 @@ class WalkScoreProvider(BaseEnrichmentProvider):
         try:
             result = await self.api_client.get_score(lat=latitude, lon=longitude, address=address)
 
+            # Bike and transit can come back as null where they aren't scored
+            bike = result.get("bike") or {}
+            transit = result.get("transit") or {}
             data = {
                 "walk_score": result.get("walkscore"),
-                "bike_score": result.get("bike", {}).get("score"),
-                "transit_score": result.get("transit", {}).get("score"),
-                "description": result.get("description"),
+                "bike_score": bike.get("score"),
+                "transit_score": transit.get("score"),
+                "description": result.get("description"),  # the walk description
+                "bike_description": bike.get("description"),
+                "transit_description": transit.get("description"),
             }
 
             return ProviderResult(
@@ -73,21 +78,3 @@ class WalkScoreProvider(BaseEnrichmentProvider):
     async def validate_config(self) -> bool:
         """Validate API key is configured."""
         return await self.api_client.validate_api_key()
-
-    def should_run(self, user_preferences: Optional[Dict[str, Any]] = None) -> bool:
-        """Run if user cares about walkability."""
-        if not super().should_run(user_preferences):
-            return False
-
-        # Run if user has walkability preferences set
-        if user_preferences:
-            return any(
-                [
-                    user_preferences.get("min_walk_score"),
-                    user_preferences.get("min_bike_score"),
-                    user_preferences.get("min_transit_score"),
-                ]
-            )
-
-        # Default to running
-        return True

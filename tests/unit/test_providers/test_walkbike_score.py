@@ -20,8 +20,8 @@ def mock_api_response():
     """Mock successful API response."""
     return {
         "walkscore": 85,
-        "bike": {"score": 75},
-        "transit": {"score": 65},
+        "bike": {"score": 75, "description": "Very Bikeable"},
+        "transit": {"score": 65, "description": "Good Transit", "summary": "12 routes"},
         "description": "Very Walkable",
     }
 
@@ -60,8 +60,23 @@ class TestWalkScoreProviderEnrich:
         assert result.data["bike_score"] == 75
         assert result.data["transit_score"] == 65
         assert result.data["description"] == "Very Walkable"
+        assert result.data["bike_description"] == "Very Bikeable"
+        assert result.data["transit_description"] == "Good Transit"
         assert result.api_calls_made == 1
         assert result.error_message is None
+
+    @pytest.mark.asyncio
+    async def test_enrich_null_bike_and_transit(self, provider):
+        """Walk Score can send null instead of an object where it has no score."""
+        response = {"walkscore": 85, "description": "Very Walkable", "bike": None, "transit": None}
+        provider.api_client.get_score = AsyncMock(return_value=response)
+
+        result = await provider.enrich(latitude=40.7, longitude=-74.0, address="x")
+
+        assert result.success is True
+        assert result.data["walk_score"] == 85
+        assert result.data["bike_score"] is None
+        assert result.data["transit_description"] is None
 
     @pytest.mark.asyncio
     async def test_enrich_missing_bike_score(self, provider):
@@ -116,29 +131,15 @@ class TestWalkScoreProviderValidateConfig:
 class TestWalkScoreProviderShouldRun:
     """Test should_run logic."""
 
-    def test_should_run_with_walk_score_preference(self, provider):
-        """Test should run when walk score preference is set."""
-        user_prefs = {"min_walk_score": 80}
+    def test_runs_with_the_apps_preferences(self, provider):
+        """The app always passes these; they used to make the provider skip itself."""
+        user_prefs = {
+            "preferred_amenities": ["park"],
+            "preferred_places": ["Costco"],
+            "custom_locations": [],
+        }
 
-        result = provider.should_run(user_prefs)
-
-        assert result is True
-
-    def test_should_run_with_bike_score_preference(self, provider):
-        """Test should run when bike score preference is set."""
-        user_prefs = {"min_bike_score": 70}
-
-        result = provider.should_run(user_prefs)
-
-        assert result is True
-
-    def test_should_run_with_transit_score_preference(self, provider):
-        """Test should run when transit score preference is set."""
-        user_prefs = {"min_transit_score": 60}
-
-        result = provider.should_run(user_prefs)
-
-        assert result is True
+        assert provider.should_run(user_prefs) is True
 
     def test_should_run_with_no_preferences(self, provider):
         """Test should run by default when no preferences."""

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, stars %}
+
+{% block content %}
+<form class="add-form" method="post" action="/properties">
+  <input name="query" type="text" required autocomplete="off"
+         placeholder="Street address or Zillow URL" aria-label="Street address or Zillow URL">
+  <button type="submit" class="primary">Add</button>
+</form>
+
+<div class="list-header">
+  <h1>{{ properties|length }} {{ 'property' if properties|length == 1 else 'properties' }}</h1>
+  {% if properties %}
+  <form method="get" class="sort">
+    <label for="sort">Sort</label>
+    <select id="sort" name="sort" onchange="this.form.submit()">
+      {% for key, label in sort_labels.items() %}
+        <option value="{{ key }}" {% if key == sort %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <noscript><button type="submit">Go</button></noscript>
+  </form>
+  {% endif %}
+</div>
+
+{% if not properties %}
+  <p class="empty">Nothing here yet. Add an address above, or share a listing from Zillow with the iOS Shortcut.</p>
+{% else %}
+<ul class="cards">
+  {% for p in properties %}
+  <li>
+    <a class="card" href="/properties/{{ p.id }}">
+      <div class="thumb">
+        {% if p.cover_photo_id %}<img src="/photos/{{ p.cover_photo_id }}" alt="" loading="lazy">
+        {% else %}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"/></svg>{% endif %}
+      </div>
+      <div class="card-body">
+        <div class="card-top">
+          <span class="price">{{ p.price|money }}</span>
+          {% if p.status != 'enriched' %}{{ status_badge(p.status) }}{% endif %}
+        </div>
+        <div class="address">{{ p.address }}</div>
+        <div class="facts">
+          {% if p.beds is not none %}{{ p.beds|num(1) }} bd{% endif %}
+          {% if p.baths is not none %} · {{ p.baths|num(1) }} ba{% endif %}
+          {% if p.sqft %} · {{ p.sqft|num }} sqft{% endif %}
+          {% if p.garage_spaces %} · {{ p.garage_spaces|garage }}{% endif %}
+          {% set walk = (p.enrichment.get('walk_score_provider') or {}).get('walk_score') %}
+          {% if walk is not none %} · Walk {{ walk }}{% endif %}
+        </div>
+        <div class="card-foot">
+          {{ stars(p.rating) }}
+          {% if p.neighborhood_rating %}<span class="tag" title="Neighborhood looks">Area {{ p.neighborhood_rating }}/5</span>{% endif %}
+          {% if p.visited %}<span class="tag">Visited</span>{% endif %}
+        </div>
+      </div>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if pending %}
+<script>
+  // Something is still enriching: refresh until it's done (unless you're typing)
+  setInterval(function () {
+    if (!document.querySelector('.add-form input').value) location.reload();
+  }, 5000);
+</script>
+{% endif %}
+{% endblock %}

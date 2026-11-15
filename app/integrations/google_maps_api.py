@@ -19,11 +19,13 @@ class GoogleMapsAPI(BaseAPIClient):
     - Geocoding API
     - Distance Matrix API
     - Directions API
+    - Street View metadata (free; needs the Street View Static API enabled)
     """
 
     # API endpoints
     GEOCODING_ENDPOINT = "geocode/json"
     DISTANCE_MATRIX_ENDPOINT = "distancematrix/json"
+    STREET_VIEW_METADATA_ENDPOINT = "streetview/metadata"
 
     def __init__(self):
         """Initialize Google Maps API client."""
@@ -328,3 +330,49 @@ class GoogleMapsAPI(BaseAPIClient):
             raise
 
     # Directions API
+
+    # Street View
+
+    async def street_view_metadata(
+        self,
+        latitude: float,
+        longitude: float,
+        radius_m: int = 100,
+        api_key: Optional[str] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        The nearest outdoor Street View panorama to a point. Metadata requests are free.
+
+        Args:
+            api_key: Key to use instead of the client's (e.g. the Street View embed key)
+
+        Returns:
+            {"pano_id", "latitude", "longitude", "date"}, or None if there's no
+            outdoor panorama within radius_m
+
+        Raises:
+            GoogleMapsAPIError: If the request is refused (e.g. the API isn't enabled
+                for the key)
+        """
+        params = {
+            "location": f"{latitude},{longitude}",
+            "radius": radius_m,
+            "source": "outdoor",  # skip indoor and business photospheres
+            "key": api_key or self.api_key,
+        }
+        data = await self._make_request("GET", self.STREET_VIEW_METADATA_ENDPOINT, params=params)
+        status = data.get("status")
+        if status in ("ZERO_RESULTS", "NOT_FOUND"):
+            return None
+        if status != "OK":
+            raise GoogleMapsAPIError(
+                message=f"Street View metadata failed: {data.get('error_message', status)}",
+                api_status_code=200,
+            )
+        location = data.get("location") or {}
+        return {
+            "pano_id": data.get("pano_id"),
+            "latitude": location.get("lat"),
+            "longitude": location.get("lng"),
+            "date": data.get("date"),
+        }

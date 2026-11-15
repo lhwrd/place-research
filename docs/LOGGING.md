@@ -21,9 +21,9 @@ field and traceback before it's written (`RedactingFilter`, `app/core/redaction.
 
 `RequestLoggingMiddleware` gives every request a UUID. The UUID appears on every log
 line written while the request is handled and is returned in the `X-Request-ID`
-response header. Background enrichment that a webhook queues runs in the same context,
-so its log lines carry the webhook request's ID, which makes it easy to find everything
-one Baserow event caused. Rows enriched by the periodic sweep have no request ID.
+response header. Background enrichment queued by a request (adding a property, Re-enrich) runs in the same
+context, so its log lines carry that request's ID, which makes it easy to find everything
+one add caused. Properties enriched on startup (left pending by a restart) have no request ID.
 
 ```python
 from app.core.logging_config import get_request_id

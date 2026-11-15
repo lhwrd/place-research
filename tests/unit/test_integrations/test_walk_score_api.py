@@ -41,6 +41,8 @@ async def test_get_score_success(walk_score_api):
             "lat": 47.608013,
             "lon": -122.335167,
             "address": "Seattle, WA",
+            "bike": 1,
+            "transit": 1,
             "wsapikey": "test_api_key",
         },
     )

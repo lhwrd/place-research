@@ -1,0 +1,16 @@
+{% macro status_badge(status) -%}
+  {%- set labels = {'new': 'Queued', 'enriching': 'Enriching…', 'enriched': 'Enriched', 'error': 'Error'} -%}
+  <span class="badge badge-{{ status }}">{{ labels.get(status, status) }}</span>
+{%- endmacro %}
+
+{% macro stars(rating) -%}
+  {%- if rating -%}<span class="stars" aria-label="{{ rating }} of 5">{{ '★' * rating }}<span class="dim">{{ '★' * (5 - rating) }}</span></span>{%- endif -%}
+{%- endmacro %}
+
+{% macro rows(items) -%}
+  <dl class="rows">
+    {% for label, value in items %}
+      <div><dt>{{ label }}</dt><dd>{{ value }}</dd></div>
+    {% endfor %}
+  </dl>
+{%- endmacro %}

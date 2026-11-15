@@ -4,9 +4,11 @@ import asyncio
 import contextlib
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
+from fastapi.staticfiles import StaticFiles
 
 from app.api.v1.router import api_router
 from app.core.config import settings
@@ -18,7 +20,9 @@ from app.exceptions.handlers import (
     validation_exception_handler,
 )
 from app.middleware.logging import RequestLoggingMiddleware
-from app.services.baserow_enrichment import get_baserow_service
+from app.middleware.security import SecurityMiddleware
+from app.services.property_service import get_property_service
+from app.web.routes import router as web_router
 
 # Initialize logging
 setup_logging(
@@ -30,50 +34,44 @@ setup_logging(
 logger = logging.getLogger(__name__)
 
 
-async def _sweep_forever(interval_seconds: int) -> None:
-    """Periodically enrich rows whose webhook was missed (e.g. backend was down)."""
-    service = get_baserow_service()
-    while True:
-        try:
-            await service.sweep()
-        except Exception as e:  # pylint: disable=broad-except
-            logger.error("Baserow sweep failed: %s", e, exc_info=True)
-        await asyncio.sleep(interval_seconds)
+async def _resume_pending() -> None:
+    """Finish enrichments interrupted by a restart."""
+    try:
+        await get_property_service().enrich_pending()
+    except Exception as e:  # pylint: disable=broad-except
+        logger.error("Resuming pending enrichments failed: %s", e, exc_info=True)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifespan manager.
-
-    - Startup: start the Baserow sweep loop (runs once immediately, then on an interval)
-    - Shutdown: stop it
-    """
-    sweep_task = None
-    if settings.baserow_configured and not settings.testing:
-        sweep_task = asyncio.create_task(_sweep_forever(settings.baserow_sweep_interval_seconds))
-        logger.info("Baserow sweep started (every %ds)", settings.baserow_sweep_interval_seconds)
-    else:
-        logger.warning("Baserow is not configured; enrichment sweep disabled")
+    """Open the database, then enrich anything left pending in the background."""
+    get_property_service()  # creates the database and schema
+    resume_task = None
+    if not settings.testing:
+        resume_task = asyncio.create_task(_resume_pending())
 
     yield
 
-    if sweep_task:
-        sweep_task.cancel()
+    if resume_task and not resume_task.done():
+        resume_task.cancel()
         with contextlib.suppress(asyncio.CancelledError):
-            await sweep_task
+            await resume_task
     logger.info("Application shutdown")
 
 
 # Initialize FastAPI app with lifespan
 app = FastAPI(
     title=settings.app_name,
-    description="Enriches Zillow listings stored in Baserow",
+    description="Collects and enriches homes you are considering",
     version="2.0.0",
     debug="DEBUG" in str(settings.log_level).upper(),
     lifespan=lifespan,
 )
 
-# Logging middleware
+# Block cross-site form posts to the login-free UI; add security headers
+app.add_middleware(SecurityMiddleware)
+
+# Logging middleware (added last, so it runs first and logs blocked requests too)
 app.add_middleware(
     RequestLoggingMiddleware,
     log_requests=settings.log_requests,
@@ -85,24 +83,18 @@ app.add_exception_handler(AppError, app_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(Exception, general_exception_handler)
 
-# Include API routes
+# iOS Shortcut API
 app.include_router(api_router, prefix="/api/v1")
 
-
-@app.get("/")
-async def root():
-    """Health check endpoint."""
-    return {"status": "healthy", "app": settings.app_name, "version": "2.0.0"}
+# Web UI
+app.mount("/static", StaticFiles(directory=Path(__file__).parent / "web" / "static"), name="static")
+app.include_router(web_router)
 
 
-@app.get("/health")
+@app.get("/health", include_in_schema=False)
 async def health_check():
-    """Detailed health check."""
-    return {
-        "status": "healthy",
-        "baserow": "configured" if settings.baserow_configured else "not configured",
-        "api": "ready",
-    }
+    """Health check."""
+    return {"status": "healthy", "app": settings.app_name}
 
 
 if __name__ == "__main__":

@@ -12,11 +12,14 @@ htmlcov/
 # Local config and data
 .env
 .vscode
-data/
+/data/
+/db/
 logs/
 cache/
 config.json
 *.csv
+# Bundled with the app (scripts/build_airports.py)
+!/app/data/*.csv
 *.xlsx
 *.ipynb
 

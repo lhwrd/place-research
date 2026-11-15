@@ -41,6 +41,9 @@ class WalkScoreAPI(BaseAPIClient):
             "lat": lat,
             "lon": lon,
             "address": address,
+            # Bike and transit scores are only returned when asked for
+            "bike": 1,
+            "transit": 1,
             "wsapikey": self.api_key,
         }
         try:

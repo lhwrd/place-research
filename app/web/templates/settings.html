@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Settings · Place Research{% endblock %}
+
+{% block content %}
+<h1>Settings</h1>
+<p class="lede">What to look for near each property. Used on the next enrichment; re-enrich a property to update it.</p>
+
+{% if saved %}<div class="alert alert-ok">Saved.</div>{% endif %}
+
+<form method="post" action="/settings" class="card-section settings-form">
+  <label>
+    <span class="label">Amenity types</span>
+    <span class="hint">Google Places types, one per line, e.g. <code>grocery_store</code>, <code>park</code>, <code>gym</code>.
+      <a href="https://developers.google.com/maps/documentation/places/web-service/place-types#table-a" target="_blank" rel="noopener">Full list ↗</a></span>
+    <textarea name="amenity_types" rows="6">{{ amenity_types }}</textarea>
+  </label>
+  <label>
+    <span class="label">Preferred places</span>
+    <span class="hint">Free-text searches, one per line, e.g. <code>Costco</code> or <code>Trader Joe's</code>.</span>
+    <textarea name="preferred_places" rows="6">{{ preferred_places }}</textarea>
+  </label>
+  <div><button type="submit" class="primary">Save settings</button></div>
+</form>
+{% endblock %}
