@@ -1,63 +1,140 @@
 # Place Research
 
-Research homes while browsing Zillow. Share a listing from your iPhone, and a row
-with the listing's photos and facts appears in Baserow. This service then enriches it
-with walk/bike/transit scores, flood zone, rail and highway distance, road noise,
-climate, air quality, nearby places, drive times to the people and places you care
-about, and Census data (city and county population; age, race/ethnicity and education
-for the census tract).
+Collect homes you're considering and see what living there would be like. Add a property
+by typing an address or pasting a Zillow URL, or share a listing from your iPhone. The
+app then enriches it with walk/bike/transit scores, flood zone, distance to the nearest highway,
+railroad and airport, an estimate of noise pollution from all three, air quality, nearby places, drive times to the people and places you
+care about, and Census data (city and county population; age, race/ethnicity and education
+for the census tract). Look around in Street View, rate the home and how the neighborhood looks, mark it
+visited, keep notes and photos.
 
 ```
-iPhone Shortcut ──▶ /api/v1/listings ──▶ Baserow ──webhook──▶ enrichment ──▶ Baserow
+Web UI / iOS Shortcut ──▶ FastAPI ──▶ SQLite
+                             └─(background)─▶ geocode ─▶ providers ─▶ SQLite
 ```
 
-Baserow is the UI and the only data store. This repo is a stateless FastAPI service
-that CI publishes as `ghcr.io/<repo>/backend`. Baserow, the VM, environment config and
-deployment live in howard-home.
+One FastAPI app serves the web UI (server-rendered HTML, no build step) and the Shortcut
+API. Everything lives in one SQLite file (`DATABASE_PATH`), photos included, so a backup
+is one file. CI publishes the image as `ghcr.io/<repo>/backend`; the VM, environment
+config and deployment live in howard-home.
 
-See [docs/BASEROW.md](docs/BASEROW.md) for the data flow, the Baserow schema and the
-iOS Shortcut API.
+There is no login: reach the UI over the tailnet only.
 
-## Endpoints
+## Pages
 
-| Endpoint                                | Caller        | Auth                                       |
-| --------------------------------------- | ------------- | ------------------------------------------ |
-| `POST /api/v1/listings`                 | iOS Shortcut  | `Authorization: Bearer INGEST_API_TOKEN`   |
-| `POST /api/v1/listings/{row_id}/images` | iOS Shortcut  | `Authorization: Bearer INGEST_API_TOKEN`   |
-| `POST /api/v1/webhooks/baserow`         | Baserow       | `X-Webhook-Secret: BASEROW_WEBHOOK_SECRET` |
-| `GET /health`                           | Health checks | none                                       |
+| Page              | What it's for                                                                        |
+| ----------------- | ------------------------------------------------------------------------------------ |
+| `/`               | All properties, sortable. Add one by address or Zillow URL.                          |
+| `/properties/{id}`| Facts, photos, enrichment, your rating / visited / notes. Re-enrich, edit, delete.   |
+| `/locations`      | Drive-time destinations (name, address, type, priority, active).                     |
+| `/settings`       | Amenity types (Google Places types) and preferred places to search for near each home. |
+
+Enrichment starts as soon as a property is added; the detail page refreshes itself when
+it finishes. **Re-enrich** runs it again without the cache (e.g. after changing locations
+or settings). A provider that fails keeps its previous data and is listed under the
+property; if the whole run fails (e.g. the address can't be geocoded) the property shows
+the error. Properties left mid-enrichment by a restart are picked up on startup.
+
+## iOS Shortcut API
+
+Both endpoints need `Authorization: Bearer <INGEST_API_TOKEN>`. The phone must be on the
+tailnet.
+
+### Add a listing
+
+```
+POST /api/v1/listings
+Content-Type: application/json
+
+{"url": "https://www.zillow.com/homedetails/.../46284123_zpid/",
+ "listing_json": { ...anything extracted from the page... }}
+```
+
+Response: `{"row_id": 12, "created": true}` (`row_id` is the property id). Sharing the
+same listing again (same zpid) returns the existing property with `"created": false`.
+
+`listing_json` is optional, as an object or a JSON string. The parser looks for Zillow's
+embedded property object (from `__NEXT_DATA__`, including the `gdpClientCache` JSON
+string) and schema.org JSON-LD blocks, and takes address, price, beds, baths, sqft, lot,
+year built, type and coordinates from them. Without it, the address comes from the URL
+slug and the geocoder does the rest.
+
+### Add photos
+
+```
+POST /api/v1/listings/{row_id}/images
+```
+
+Either `multipart/form-data` with one or more parts named `file` (up to 50 per request),
+or a raw image body with its `Content-Type` (e.g. `image/jpeg`), optionally
+`?filename=front`. Each image may be up to 25 MB. Response:
+`{"row_id": 12, "uploaded": 3, "photo_count": 7}`.
+
+```bash
+curl -s -X POST "$API/api/v1/listings" -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' -d '{"url": "https://www.zillow.com/homedetails/x/46284123_zpid/"}'
+
+curl -s -X POST "$API/api/v1/listings/12/images" -H "Authorization: Bearer $TOKEN" \
+  -F file=@front.jpg -F file=@kitchen.jpg
+```
+
+`GET /health` is unauthenticated, for health checks.
 
 ## Development
 
 ```bash
-cp .env.example .env   # Baserow token/ids, API keys, data file paths
+cp .env.example .env   # API keys, data file paths, ingest token
 uv sync
-make dev               # http://localhost:8000/docs
+make dev               # UI at http://localhost:8000, API docs at /docs
 make test
 make lint              # make format to fix
 ```
 
-Or in Docker: `docker compose up --build`. Put provider data files in `./data`.
+Or in Docker: `docker compose up --build`. Put provider data files in `./data`; the
+database is written to `./db`.
 
-Create the Baserow fields, tables and webhook once with
-`uv run python scripts/baserow_setup.py`.
+Local data files (a provider whose file isn't configured is skipped):
 
-`RAILLINES_PATH` can point at GeoParquet (`.parquet`) or GeoJSON; the loader picks the
-reader by extension. Production gets GeoParquet: the howard-home Ansible role downloads
-the GeoJSON and converts it at deploy time.
+- `RAILLINES_PATH`: rail lines, GeoParquet (`.parquet`) or GeoJSON; the loader picks the
+  reader by extension. Production gets GeoParquet: the howard-home Ansible role downloads
+  the GeoJSON and converts it at deploy time. Abandoned and out-of-service track is
+  ignored, and main lines are told apart from spurs and yards for noise.
+- `HIGHWAYS_PATH`: major roads (Census TIGER primary and secondary roads) for highway
+  distance and road noise. Build it with
+  `uv run python scripts/build_highways.py data/highways.parquet`, or limit it to the
+  states you're looking in (plus neighbors, for homes near a state line) with
+  `--states FL GA AL`.
+
+Airports ship with the app (`app/data/airports.csv`, large and medium airports from
+OurAirports); refresh the list with `uv run python scripts/build_airports.py`.
+
+Google APIs: `GOOGLE_MAPS_API_KEY` needs Geocoding, Distance Matrix and Places (New).
+`GOOGLE_MAPS_EMBED_KEY`, which the browser sees, needs the Maps Embed API (the Street View
+viewer) and Street View Static API (the free panorama lookup that points the viewer at
+the house). Without an embed key, the main key is used for both.
+
+Noise pollution is estimated from those distances by `app/services/noise.py`: each
+source starts at a typical level for its kind and fades with distance (about 5 dB per
+doubling for roads and railways, which are lines of sound; 6 dB for airports). Road
+traffic is rated by its average level; trains by a train passing, since they're
+intermittent but loud. The sources are combined as sound energy. It's a rough model for
+comparing homes; tune the levels there. The UI computes it at display time, so
+changing the model doesn't need a re-enrich.
 
 ## Layout
 
 ```
-app/api/                  listings + webhook endpoints, auth dependencies
-app/integrations/         external API clients, including baserow_api.py and baserow_schema.py
-app/services/             baserow_enrichment.py (ingest + enrichment), zillow_listing.py
-                          (listing JSON parser), baserow_mapper.py, geocoding, in-memory cache
+app/web/                  UI routes, Jinja templates, style.css
+app/api/                  iOS Shortcut endpoints and bearer-token auth
+app/db/                   SQLite schema and data access
+app/services/             property_service.py (ingest + enrichment), property_view.py
+                          (formats provider data for display), zillow_listing.py, geocoding
 app/services/enrichment/  orchestrator + auto-discovered providers
-scripts/                  baserow_setup.py
+app/integrations/         external API clients
+scripts/                  build_highways.py, build_airports.py
 tests/                    unit and endpoint tests (no network)
 ```
 
 Adding a provider: drop a `BaseEnrichmentProvider` subclass in
-`app/services/enrichment/providers/`, map its output to Baserow fields in
-`app/services/baserow_mapper.py`, and add the fields to `app/integrations/baserow_schema.py`.
+`app/services/enrichment/providers/`. Its data is stored as-is under its name; show it by
+adding rows to `build_view` in `app/services/property_view.py`.

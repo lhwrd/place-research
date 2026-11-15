@@ -36,6 +36,7 @@ class ListingFacts:
     lot_acres: Optional[float] = None
     year_built: Optional[int] = None
     property_type: Optional[str] = None
+    garage_spaces: Optional[int] = None  # 0 means the listing says there's no garage
     latitude: Optional[float] = None
     longitude: Optional[float] = None
 
@@ -146,8 +147,21 @@ def _apply_zillow_property(facts: ListingFacts, prop: Dict[str, Any]) -> None:
     facts.lot_acres = facts.lot_acres or _zillow_lot_acres(prop)
     facts.year_built = facts.year_built or _to_int(prop.get("yearBuilt"))
     facts.property_type = facts.property_type or _humanize(prop.get("homeType"))
+    if facts.garage_spaces is None:
+        facts.garage_spaces = _zillow_garage_spaces(prop)
     facts.latitude = facts.latitude or _to_float(prop.get("latitude"))
     facts.longitude = facts.longitude or _to_float(prop.get("longitude"))
+
+
+def _zillow_garage_spaces(prop: Dict[str, Any]) -> Optional[int]:
+    """Garage spaces from Zillow's RESO facts; 0 if it says there's no garage."""
+    reso = prop.get("resoFacts") if isinstance(prop.get("resoFacts"), dict) else {}
+    spaces = _to_int(reso.get("garageParkingCapacity", prop.get("garageParkingCapacity")))
+    if spaces is not None:
+        return spaces
+    if reso.get("hasGarage") is False:
+        return 0
+    return None
 
 
 def _zillow_lot_acres(prop: Dict[str, Any]) -> Optional[float]:

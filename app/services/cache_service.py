@@ -1,6 +1,6 @@
 """In-process TTL cache for enrichment and geocoding results.
 
-The backend keeps no database: results of record live in Baserow. This cache only saves
+Results of record live in the SQLite database. This cache only saves
 repeat external API calls (e.g. geocoding the same drive-time locations on every
 enrichment) for the lifetime of the process.
 """

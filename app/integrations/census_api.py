@@ -34,12 +34,8 @@ _MALE_AGE_START, _FEMALE_AGE_START = 3, 27
 AGE_GROUPS: List[Tuple[str, range]] = [
     # (label, offsets into the 23 age bands)
     ("Under 18", range(0, 4)),  # under 5 .. 15-17
-    ("18-24", range(4, 8)),  # 18-19 .. 22-24
-    ("25-34", range(8, 10)),
-    ("35-44", range(10, 12)),
-    ("45-54", range(12, 14)),
-    ("55-64", range(14, 17)),  # 55-59, 60-61, 62-64
-    ("65+", range(17, 23)),  # 65-66 .. 85+
+    ("18-54", range(4, 14)),  # 18-19 .. 50-54
+    ("55+", range(14, 23)),  # 55-59 .. 85+
 ]
 AGE_TOTAL = "B01001_001E"
 

@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, stars, rows %}
+
+{% block title %}{{ p.address }} · Place Research{% endblock %}
+
+{% block content %}
+<a class="back" href="/">← All properties</a>
+
+<section class="hero">
+  <div>
+    <h1>{{ p.address }}</h1>
+    <div class="hero-facts">
+      <span class="price">{{ p.price|money }}</span>
+      {% if p.beds is not none %}<span>{{ p.beds|num(1) }} bd</span>{% endif %}
+      {% if p.baths is not none %}<span>{{ p.baths|num(1) }} ba</span>{% endif %}
+      {% if p.sqft %}<span>{{ p.sqft|num }} sqft</span>{% endif %}
+      {% if p.garage_spaces is not none %}<span>{{ p.garage_spaces|garage }}</span>{% endif %}
+      {% if p.lot_acres %}<span>{{ p.lot_acres|num(2) }} ac lot</span>{% endif %}
+      {% if p.year_built %}<span>Built {{ p.year_built }}</span>{% endif %}
+      {% if p.property_type %}<span>{{ p.property_type }}</span>{% endif %}
+    </div>
+    <div class="hero-links">
+      {{ status_badge(p.status) }}
+      {% if p.zillow_url and p.zillow_url.lower().startswith(('http://', 'https://')) %}<a href="{{ p.zillow_url }}" target="_blank" rel="noopener">Zillow ↗</a>{% endif %}
+      {% if p.latitude is not none %}
+        <a href="https://www.google.com/maps/search/?api=1&query={{ p.latitude }},{{ p.longitude }}" target="_blank" rel="noopener">Map ↗</a>
+      {% else %}
+        <a href="https://www.google.com/maps/search/?api=1&query={{ p.address|urlquote }}" target="_blank" rel="noopener">Map ↗</a>
+      {% endif %}
+    </div>
+  </div>
+  <div class="hero-actions">
+    <form method="post" action="/properties/{{ p.id }}/reenrich">
+      <button type="submit" {% if pending %}disabled{% endif %}>Re-enrich</button>
+    </form>
+  </div>
+</section>
+
+{% if p.status == 'error' %}
+  <div class="alert alert-error"><strong>Enrichment failed.</strong> {{ p.error }}</div>
+{% elif pending %}
+  <div class="alert" id="pending-note">Enriching this property. The page will refresh when it's done.</div>
+{% endif %}
+
+<section class="card-section" id="notes">
+  <h2>Your notes</h2>
+  <form method="post" action="/properties/{{ p.id }}/notes" class="notes-form" data-track-dirty>
+    <div class="notes-row">
+      <fieldset class="rating">
+        <legend>Rating</legend>
+        {% for n in range(5, 0, -1) %}
+          <input type="radio" id="r{{ n }}" name="rating" value="{{ n }}" {% if p.rating == n %}checked{% endif %}>
+          <label for="r{{ n }}" title="{{ n }}">★</label>
+        {% endfor %}
+      </fieldset>
+      <label class="check"><input type="checkbox" name="visited" {% if p.visited %}checked{% endif %}> Visited</label>
+      {% if p.rating %}<button type="button" class="link" onclick="this.form.querySelectorAll('[name=rating]').forEach(r => r.checked = false)">Clear rating</button>{% endif %}
+    </div>
+    <textarea name="notes" rows="4" placeholder="What did you think?">{{ p.notes }}</textarea>
+    <div><button type="submit" class="primary">Save notes</button></div>
+  </form>
+</section>
+
+<section class="card-section" id="photos">
+  <h2>Photos {% if photo_ids %}<span class="count">{{ photo_ids|length }}</span>{% endif %}</h2>
+  {% if photo_ids %}
+  <div class="gallery">
+    {% for id in photo_ids %}
+    <figure>
+      <a href="/photos/{{ id }}" target="_blank"><img src="/photos/{{ id }}" alt="" loading="lazy"></a>
+      <form method="post" action="/photos/{{ id }}/delete" onsubmit="return confirm('Delete this photo?')">
+        <button type="submit" class="icon" title="Delete photo" aria-label="Delete photo">×</button>
+      </form>
+    </figure>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <form method="post" action="/properties/{{ p.id }}/photos" enctype="multipart/form-data" class="upload">
+    <input type="file" name="file" accept="image/*" multiple required>
+    <button type="submit">Upload</button>
+  </form>
+</section>
+
+{% if view.surroundings %}
+<section class="card-section">
+  <h2>Location</h2>
+  {{ rows(view.surroundings) }}
+</section>
+{% endif %}
+
+{% if view.drive_times %}
+<section class="card-section">
+  <h2>Drive times</h2>
+  <dl class="rows">
+    {% for d in view.drive_times %}
+      <div><dt>{{ d.name }}</dt>
+      <dd>{% if d.available %}{{ d.minutes|duration }} <span class="dim">· {{ d.miles|num(1) }} mi</span>{% else %}<span class="dim">unavailable</span>{% endif %}</dd></div>
+    {% endfor %}
+  </dl>
+</section>
+{% endif %}
+
+{% if view.nearby_places %}
+<section class="card-section">
+  <h2>Nearby</h2>
+  <dl class="rows">
+    {% for place in view.nearby_places %}
+      <div>
+        <dt class="place">
+          <a href="https://www.google.com/maps/search/?api=1&query={{ (place.name ~ ' ' ~ (place.address or ''))|urlquote }}" target="_blank" rel="noopener">{{ place.name }}</a>
+          {% if place.type %}<span class="dim small">{{ place.type }}</span>{% endif %}
+        </dt>
+        <dd>{% if place.minutes is not none %}{{ place.minutes|duration }} <span class="dim">· {{ place.miles|num(1) }} mi</span>{% else %}<span class="dim">unavailable</span>{% endif %}</dd>
+      </div>
+    {% endfor %}
+  </dl>
+</section>
+{% endif %}
+
+{% if view.census %}
+<section class="card-section">
+  <h2>Census {% if view.acs_year %}<span class="dim small">ACS {{ view.acs_year - 4 }}–{{ view.acs_year }}</span>{% endif %}</h2>
+  {{ rows(view.census) }}
+  {% if view.distributions %}
+  <div class="distributions">
+    {% for dist in view.distributions %}
+    <div>
+      <h3>{{ dist.title }}</h3>
+      <ul class="bars">
+        {% for label, pct in dist.items %}
+          <li><span class="bar-label">{{ label }}</span>
+              <span class="bar"><span style="width: {{ [pct, 100]|min }}%"></span></span>
+              <span class="bar-value">{{ '%g'|format(pct) }}%</span></li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</section>
+{% endif %}
+
+<section class="card-section" id="street-view">
+  <h2>Street View</h2>
+  {% set pano = p.enrichment.get('street_view_provider') or {} %}
+  {% if street_view_url %}
+    <div class="street-view">
+      <iframe src="{{ street_view_url }}" title="Street View of {{ p.address }}"
+              loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
+    </div>
+    {% if pano.date %}<p class="dim small">Imagery from {{ pano.date }}. Drag to look around; click the street to move.</p>{% endif %}
+  {% elif pano.available is sameas false %}
+    <p class="dim">Google has no Street View imagery near this property.</p>
+  {% elif p.latitude is none %}
+    <p class="dim">Available once the property has been enriched.</p>
+  {% else %}
+    <p class="dim">Street View needs a Google Maps key with the Maps Embed API enabled (<code>GOOGLE_MAPS_EMBED_KEY</code>).</p>
+  {% endif %}
+
+  <form method="post" action="/properties/{{ p.id }}/neighborhood" class="neighborhood-form">
+    <span class="label">How does the neighborhood look?</span>
+    <fieldset class="rating" onchange="this.form.submit()">
+      <legend>Neighborhood rating</legend>
+      {% for n in range(5, 0, -1) %}
+        <input type="radio" id="nr{{ n }}" name="neighborhood_rating" value="{{ n }}" {% if p.neighborhood_rating == n %}checked{% endif %}>
+        <label for="nr{{ n }}" title="{{ n }}">★</label>
+      {% endfor %}
+    </fieldset>
+    {% if p.neighborhood_rating %}<button type="submit" class="link" onclick="this.form.querySelectorAll('[name=neighborhood_rating]').forEach(r => r.checked = false)">Clear</button>{% endif %}
+    <noscript><button type="submit">Save</button></noscript>
+  </form>
+</section>
+
+<section class="card-section muted">
+  <details>
+    <summary>Edit listing details</summary>
+    <form method="post" action="/properties/{{ p.id }}/facts" class="facts-form" data-track-dirty>
+      <label class="wide">Address <input name="address" value="{{ p.address }}" required></label>
+      <label>Price <input name="price" inputmode="numeric" value="{{ p.price if p.price is not none else '' }}"></label>
+      <label>Beds <input name="beds" inputmode="decimal" value="{{ p.beds|num(1) if p.beds is not none else '' }}"></label>
+      <label>Baths <input name="baths" inputmode="decimal" value="{{ p.baths|num(1) if p.baths is not none else '' }}"></label>
+      <label>Sqft <input name="sqft" inputmode="numeric" value="{{ p.sqft if p.sqft is not none else '' }}"></label>
+      <label>Year built <input name="year_built" inputmode="numeric" value="{{ p.year_built or '' }}"></label>
+      <label>Garage spaces <input name="garage_spaces" inputmode="numeric" placeholder="0 = none" value="{{ p.garage_spaces if p.garage_spaces is not none else '' }}"></label>
+      <div class="wide"><button type="submit">Save details</button>
+        <span class="dim small">Changed the address? Re-enrich afterwards.</span></div>
+    </form>
+  </details>
+  {% if p.error and p.status != 'error' %}
+  <details>
+    <summary>Providers that failed last time</summary>
+    <pre class="small">{{ p.error }}</pre>
+  </details>
+  {% endif %}
+  <div class="meta">
+    <span>Added {{ p.created_at[:10] }}</span>
+    {% if p.enriched_at %}<span>Enriched {{ p.enriched_at[:16]|replace('T', ' ') }} UTC</span>{% endif %}
+    <form method="post" action="/properties/{{ p.id }}/delete" onsubmit="return confirm('Delete this property and its photos?')">
+      <button type="submit" class="link danger">Delete property</button>
+    </form>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Don't throw away typing when the page refreshes itself
+  var dirty = false;
+  document.querySelectorAll('[data-track-dirty]').forEach(function (form) {
+    form.addEventListener('input', function () { dirty = true; });
+    form.addEventListener('submit', function () { dirty = false; });
+  });
+  {% if pending %}
+  var timer = setInterval(function () {
+    fetch('/properties/{{ p.id }}/status').then(function (r) { return r.json(); }).then(function (s) {
+      if (s.status === 'new' || s.status === 'enriching') return;
+      clearInterval(timer);
+      if (!dirty) { location.reload(); return; }
+      var note = document.getElementById('pending-note');
+      if (note) note.innerHTML = 'Enrichment finished. <a href="">Reload</a> to see it (save your notes first).';
+    }).catch(function () {});
+  }, 3000);
+  {% endif %}
+</script>
+{% endblock %}

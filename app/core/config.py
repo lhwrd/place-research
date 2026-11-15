@@ -7,7 +7,7 @@ All provider API keys and file paths are defined here instead of scattered os.ge
 from pathlib import Path
 from typing import Optional
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     # API Keys for external services
     walkscore_api_key: Optional[str] = Field(None, alias="WALKSCORE_API_KEY")
     google_maps_api_key: Optional[str] = Field(None, alias="GOOGLE_MAPS_API_KEY")
+    # Sent to the browser for the Street View embed. Use a key restricted to the Maps Embed
+    # API (and your UI's address); falls back to GOOGLE_MAPS_API_KEY if unset.
+    google_maps_embed_key: Optional[str] = Field(None, alias="GOOGLE_MAPS_EMBED_KEY")
     census_api_key: Optional[str] = Field(None, alias="CENSUS_API_KEY")
     census_acs_year: int = Field(
         2024,
@@ -39,31 +42,24 @@ class Settings(BaseSettings):
 
     # File paths for data sources
     raillines_path: Optional[Path] = Field(None, alias="RAILLINES_PATH")
-    annual_climate_path: Optional[Path] = Field(None, alias="ANNUAL_CLIMATE_PATH")
+    # Census TIGER primary/secondary roads, built by scripts/build_highways.py
+    highways_path: Optional[Path] = Field(None, alias="HIGHWAYS_PATH")
 
-    # Baserow configuration (source of truth for properties, locations and settings)
-    baserow_url: Optional[str] = Field(None, alias="BASEROW_URL")
-    baserow_api_token: Optional[str] = Field(None, alias="BASEROW_API_TOKEN")
-    baserow_database_id: Optional[int] = Field(None, alias="BASEROW_DATABASE_ID")
-    baserow_properties_table_id: Optional[int] = Field(None, alias="BASEROW_PROPERTIES_TABLE_ID")
-    baserow_locations_table_id: Optional[int] = Field(None, alias="BASEROW_LOCATIONS_TABLE_ID")
-    baserow_settings_table_id: Optional[int] = Field(None, alias="BASEROW_SETTINGS_TABLE_ID")
-    baserow_webhook_secret: Optional[str] = Field(None, alias="BASEROW_WEBHOOK_SECRET")
-    baserow_sweep_interval_seconds: int = Field(
-        900,
-        alias="BASEROW_SWEEP_INTERVAL_SECONDS",
-        description="How often to enrich rows a webhook may have missed (default: 900 = 15 min)",
+    # SQLite database holding properties, photos, locations and settings
+    database_path: Path = Field(
+        Path("db/place-research.db"),
+        alias="DATABASE_PATH",
+        description="SQLite file; its directory is created if missing",
     )
+
+    @field_validator("raillines_path", "highways_path", mode="before")
+    @classmethod
+    def _blank_path_is_unset(cls, value):
+        """`RAILLINES_PATH=` in .env means "not set", not the current directory."""
+        return None if isinstance(value, str) and not value.strip() else value
 
     # Static bearer token for the iOS Shortcut ingest endpoints
     ingest_api_token: Optional[str] = Field(None, alias="INGEST_API_TOKEN")
-
-    @property
-    def baserow_configured(self) -> bool:
-        """Whether enough Baserow config exists to sync properties."""
-        return bool(
-            self.baserow_url and self.baserow_api_token and self.baserow_properties_table_id
-        )
 
     # Application settings
     testing: bool = Field(

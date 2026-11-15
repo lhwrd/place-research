@@ -252,3 +252,48 @@ class TestDistanceMatrix:
 
         with pytest.raises(GoogleMapsAPIError, match="Distance matrix failed"):
             await google_maps_api.distance_matrix((0, 0), [(1, 1)])
+
+
+class TestStreetViewMetadata:
+    @pytest.mark.asyncio
+    async def test_found(self, google_maps_api):
+        google_maps_api._make_request = AsyncMock(
+            return_value={
+                "status": "OK",
+                "pano_id": "abc",
+                "location": {"lat": 29.1, "lng": -81.0},
+                "date": "2024-03",
+            }
+        )
+
+        pano = await google_maps_api.street_view_metadata(29.0, -81.0)
+
+        assert pano == {"pano_id": "abc", "latitude": 29.1, "longitude": -81.0, "date": "2024-03"}
+        params = google_maps_api._make_request.call_args.kwargs["params"]
+        assert params["source"] == "outdoor"
+        assert params["location"] == "29.0,-81.0"
+
+    @pytest.mark.asyncio
+    async def test_key_override(self, google_maps_api):
+        google_maps_api._make_request = AsyncMock(return_value={"status": "ZERO_RESULTS"})
+
+        await google_maps_api.street_view_metadata(29.0, -81.0)
+        assert google_maps_api._make_request.call_args.kwargs["params"]["key"] == "test_api_key"
+
+        await google_maps_api.street_view_metadata(29.0, -81.0, api_key="embed-key")
+        assert google_maps_api._make_request.call_args.kwargs["params"]["key"] == "embed-key"
+
+    @pytest.mark.asyncio
+    async def test_no_coverage(self, google_maps_api):
+        google_maps_api._make_request = AsyncMock(return_value={"status": "ZERO_RESULTS"})
+
+        assert await google_maps_api.street_view_metadata(29.0, -81.0) is None
+
+    @pytest.mark.asyncio
+    async def test_refused(self, google_maps_api):
+        google_maps_api._make_request = AsyncMock(
+            return_value={"status": "REQUEST_DENIED", "error_message": "not authorized"}
+        )
+
+        with pytest.raises(GoogleMapsAPIError, match="not authorized"):
+            await google_maps_api.street_view_metadata(29.0, -81.0)

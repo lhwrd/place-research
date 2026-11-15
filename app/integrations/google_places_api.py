@@ -1,11 +1,13 @@
 """Google Maps API integration."""
 
 import logging
+import math
 from typing import Any, Dict, List, Optional
 
 from app.core.config import settings
 from app.exceptions import GoogleMapsAPIError
 from app.integrations.base_client import BaseAPIClient, retry_on_failure
+from app.utils.distance_calculator import haversine_distance
 
 logger = logging.getLogger(__name__)
 
@@ -233,15 +235,14 @@ class GooglePlacesAPI(BaseAPIClient):
             },
         )
 
+        # Text Search only accepts a rectangle as a hard restriction (a circle is allowed
+        # only as a bias), so restrict to the circle's bounding box and drop the corners below
         data = {
             "textQuery": text_query,
-            "maxResultCount": max_results,
-            "locationRestriction": {
-                "circle": {
-                    "center": {"latitude": lat, "longitude": lon},
-                    "radius": radius_meters,
-                }
-            },
+            # Extra results, since a store's departments (e.g. "Costco Bakery") come back too
+            "pageSize": min(max_results * 3, 20),
+            "rankPreference": "DISTANCE",
+            "locationRestriction": {"rectangle": bounding_box(lat, lon, radius_meters)},
         }
         headers = {
             "X-Goog-FieldMask": ",".join(["places." + field for field in self.FIELDS]),
@@ -264,13 +265,26 @@ class GooglePlacesAPI(BaseAPIClient):
             if not results:
                 return []
 
-            # Parse and enrich results
-            parsed_results = []
-            for place in results:
-                parsed_place = self._parse_place_result(place)
-                parsed_results.append(parsed_place)
-
-            return parsed_results
+            places: List[Dict[str, Any]] = []
+            for place in map(self._parse_place_result, results):
+                if place["latitude"] is None:
+                    continue
+                if (
+                    haversine_distance(lat, lon, place["latitude"], place["longitude"])
+                    > radius_meters
+                ):
+                    continue
+                # Departments ("Costco Bakery", "Publix Liquors") sit at their store
+                if any(
+                    haversine_distance(
+                        p["latitude"], p["longitude"], place["latitude"], place["longitude"]
+                    )
+                    < SAME_PLACE_METERS
+                    for p in places
+                ):
+                    continue
+                places.append(place)
+            return places[:max_results]
 
         except Exception as e:
             logger.error(
@@ -359,3 +373,18 @@ class GooglePlacesAPI(BaseAPIClient):
             "address": place.get("formattedAddress"),
             "type": place.get("primaryTypeDisplayName", {}).get("text"),
         }
+
+
+METERS_PER_DEGREE_LAT = 111_320
+# Text results closer together than this are one place (a store and its departments)
+SAME_PLACE_METERS = 200
+
+
+def bounding_box(lat: float, lon: float, radius_meters: float) -> Dict[str, Dict[str, float]]:
+    """The Places API rectangle (low = south-west, high = north-east) around a circle."""
+    dlat = radius_meters / METERS_PER_DEGREE_LAT
+    dlon = radius_meters / (METERS_PER_DEGREE_LAT * max(math.cos(math.radians(lat)), 0.01))
+    return {
+        "low": {"latitude": max(lat - dlat, -90.0), "longitude": lon - dlon},
+        "high": {"latitude": min(lat + dlat, 90.0), "longitude": lon + dlon},
+    }

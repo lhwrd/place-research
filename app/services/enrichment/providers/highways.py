@@ -1,21 +1,73 @@
+"""Distance to the nearest major road and an estimate of road noise, from a local file.
+
+Reads Census TIGER/Line primary and secondary roads (see scripts/build_highways.py) from
+HIGHWAYS_PATH: GeoParquet or any OGR-readable file with MTFCC, FULLNAME and line
+geometries. Lookups are in-memory spatial-index queries, so they take milliseconds and
+don't depend on a public API.
+"""
+
 import logging
 import math
-from typing import Any, Dict, Optional
+import threading
+from pathlib import Path
+from typing import Any, Dict, Optional, Tuple
 
-from app.integrations.highway_api import HighwayAPIClient
+import geopandas as gpd
+from shapely.geometry import Point
+
+from app.core.config import settings
+from app.services import noise
 from app.services.enrichment.base_provider import (
     BaseEnrichmentProvider,
     ProviderCategory,
     ProviderMetadata,
     ProviderResult,
 )
-from app.utils.distance_calculator import haversine_distance
+
+# TIGER MAF/TIGER feature class codes -> road class names (OSM-style, as stored before)
+ROAD_CLASSES = {
+    "S1100": "motorway",  # primary: interstates and other limited-access highways
+    "S1200": "primary",  # secondary: US, state and county highways
+}
+
+# Past this, the property is almost certainly outside the states in the file
+MAX_DISTANCE_M = 40 * 1609.344
+
+logger = logging.getLogger(__name__)
 
 
 class HighwayProvider(BaseEnrichmentProvider):
-    def __init__(self):
-        self.logger = logging.getLogger(__name__)
-        self.api_client = HighwayAPIClient()
+    """Nearest highway and road noise from TIGER roads, loaded once per process."""
+
+    # Road class -> that class's roads in EPSG:3857, shared by every instance
+    _shared_roads: Optional[Dict[str, gpd.GeoDataFrame]] = None
+    _data_lock = threading.Lock()
+
+    def __init__(self, roads: Optional[gpd.GeoDataFrame] = None):
+        """
+        Args:
+            roads: Pre-loaded roads (tests). If None, HIGHWAYS_PATH is loaded once and
+                shared across instances.
+
+        Raises:
+            ValueError: If HIGHWAYS_PATH isn't set or the data is unusable
+            FileNotFoundError: If HIGHWAYS_PATH doesn't exist
+        """
+        self.logger = logger
+        if roads is not None:
+            self._roads = _split_by_class(roads)
+            return
+
+        cls = self.__class__
+        if cls._shared_roads is None:
+            with cls._data_lock:
+                if cls._shared_roads is None:
+                    cls._shared_roads = _split_by_class(self._load(settings.highways_path))
+                    self.logger.info(
+                        "Loaded highways: %s",
+                        {k: len(v) for k, v in cls._shared_roads.items()},
+                    )
+        self._roads = cls._shared_roads
 
     @property
     def metadata(self) -> ProviderMetadata:
@@ -23,76 +75,23 @@ class HighwayProvider(BaseEnrichmentProvider):
             name="highway_provider",
             category=ProviderCategory.ENVIRONMENTAL,
             enabled=True,
-            description="Provides proximity to highways and estimates road noise levels using Highway API.",  # pylint: disable=line-too-long
-            version="1.0.0",
-            requires_api_key=True,
-            cost_per_call=0.001,  # Estimated cost per API call
+            description="Distance to the nearest major road and estimated road noise "
+            "(local Census TIGER roads file).",
+            version="2.0.0",
+            requires_api_key=False,
+            cost_per_call=0.0,
         )
 
-    def _calculate_min_distance_to_highways(
-        self, place_lat: float, place_lon: float, highways: list
-    ) -> float | None:
-        """
-        Calculate the minimum distance from the place to any highway segment.
-        """
-        min_distance = float("inf")
-
-        for highway in highways:
-            if highway.get("type") == "way" and "geometry" in highway:
-                # Calculate distance to each point in the highway geometry
-                for node in highway["geometry"]:
-                    node_lat = node.get("lat")
-                    node_lon = node.get("lon")
-                    if node_lat is not None and node_lon is not None:
-                        distance = haversine_distance(place_lat, place_lon, node_lat, node_lon)
-                        min_distance = min(min_distance, distance)
-
-        return min_distance if min_distance != float("inf") else None
-
-    def _estimate_road_noise_level(self, distance_m: float | None, highway_types: list) -> dict:
-        """
-        Estimate road noise level based on distance and highway types.
-        This is a simplified model - real noise depends on traffic volume,
-        terrain, barriers, etc.
-        """
-        if distance_m is None:
-            return {"noise_level_db": None, "noise_category": "Unknown"}
-
-        # Base noise levels for different highway types (approximate)
-        base_noise = {
-            "motorway": 75,  # dB(A) at 30m
-            "trunk": 70,  # dB(A) at 30m
-            "primary": 65,  # dB(A) at 30m
-        }
-
-        # Get the highest noise level from nearby highway types
-        max_base_noise = (
-            max([base_noise.get(htype, 60) for htype in highway_types]) if highway_types else 60
-        )
-
-        # Sound level decreases roughly 6 dB per doubling of distance
-        # Reference distance is 30 meters
-        reference_distance = 30
-        if distance_m <= reference_distance:
-            estimated_db = max_base_noise
-        else:
-            distance_ratio = distance_m / reference_distance
-            db_reduction = 6 * math.log2(distance_ratio)
-            estimated_db = max(max_base_noise - db_reduction, 35)  # Minimum ambient noise
-
-        # Categorize noise level
-        if estimated_db >= 70:
-            category = "Very High"
-        elif estimated_db >= 60:
-            category = "High"
-        elif estimated_db >= 50:
-            category = "Moderate"
-        elif estimated_db >= 40:
-            category = "Low"
-        else:
-            category = "Very Low"
-
-        return {"noise_level_db": round(estimated_db, 1), "noise_category": category}
+    def _load(self, path: Optional[Path]) -> gpd.GeoDataFrame:
+        if not path:
+            raise ValueError("HIGHWAYS_PATH not configured")
+        path = Path(path)
+        if not path.exists():
+            raise FileNotFoundError(f"Highways file not found: {path}")
+        self.logger.info("Loading highways from %s", path)
+        if path.suffix.lower() in (".parquet", ".geoparquet"):
+            return gpd.read_parquet(path)
+        return gpd.read_file(path)
 
     async def enrich(
         self,
@@ -102,83 +101,68 @@ class HighwayProvider(BaseEnrichmentProvider):
         property_data: Optional[Dict[str, Any]] = None,
         user_preferences: Optional[Dict[str, Any]] = None,
     ) -> ProviderResult:
-        """
-        Enrich property with provider-specific data.
-
-        Args:
-            latitude: Property latitude
-            longitude: Property longitude
-            address: Property address
-            property_data: Additional property information
-            user_preferences: User-specific preferences
-
-        Returns:
-            ProviderResult with enrichment data
-        """
-        # Get nearby highways
-        response = await self.api_client.fetch_nearby_highways(latitude, longitude)
-        highways = response.get("elements", [])
-
-        if not highways:
-            self.logger.info("No highways found near the place.")
-            return ProviderResult(
-                provider_name=self.metadata.name,
-                data={},
-                success=True,
-                api_calls_made=1,
+        nearest = self._nearest_by_class(latitude, longitude)
+        if not nearest:
+            self.logger.warning(
+                "No highway within %.0f mi of (%.5f, %.5f); is its state in HIGHWAYS_PATH?",
+                MAX_DISTANCE_M / 1609.344,
+                latitude,
+                longitude,
             )
+            return ProviderResult(provider_name=self.metadata.name, data={}, success=True)
 
-        # Calculate minimum distance
-        min_distance = self._calculate_min_distance_to_highways(latitude, longitude, highways)
-
-        # Extract highway types for noise estimation
-        highway_types = []
-        for highway in highways:
-            highway_type = highway.get("tags", {}).get("highway")
-            if highway_type:
-                highway_types.append(highway_type)
-
-        # Get the closest highway type
-        closest_highway_type = None
-        if highways and min_distance is not None:
-            closest_distance = float("inf")
-            for highway in highways:
-                if highway.get("type") == "way" and "geometry" in highway:
-                    for node in highway["geometry"]:
-                        node_lat = node.get("lat")
-                        node_lon = node.get("lon")
-                        if node_lat is not None and node_lon is not None:
-                            distance = haversine_distance(latitude, longitude, node_lat, node_lon)
-                            if distance < closest_distance:
-                                closest_distance = distance
-                                closest_highway_type = highway.get("tags", {}).get("highway")
-
-        # Estimate road noise
-        noise_data = self._estimate_road_noise_level(min_distance, highway_types)
-
-        # Store results
-        highway_distance_m = int(round(min_distance, 0)) if min_distance is not None else None
-        nearest_highway_type = closest_highway_type
-        road_noise_level_db = noise_data["noise_level_db"]
-        road_noise_category = noise_data["noise_category"]
-
+        road_class, (distance_m, name) = min(nearest.items(), key=lambda kv: kv[1][0])
+        distances = {c: int(round(d)) for c, (d, _) in nearest.items()}
+        noise_db = noise.loudest(noise.ROAD_LEVELS, distances)
         return ProviderResult(
             provider_name=self.metadata.name,
             data={
-                "highway_distance_m": highway_distance_m,
-                "nearest_highway_type": nearest_highway_type,
-                "road_noise_level_db": road_noise_level_db,
-                "road_noise_category": road_noise_category,
+                "highway_distance_m": int(round(distance_m)),
+                "nearest_highway_type": road_class,
+                "nearest_highway_name": name,
+                # Per road class, so the UI can recompute noise when the model changes
+                "highway_distances_m": distances,
+                "road_noise_level_db": noise_db,
+                "road_noise_category": noise.category(noise_db),
             },
             success=True,
-            api_calls_made=1,
         )
 
-    async def validate_config(self) -> bool:
-        """
-        Validate provider configuration (API keys, etc.).
+    def _nearest_by_class(
+        self, latitude: float, longitude: float
+    ) -> Dict[str, Tuple[float, Optional[str]]]:
+        """Road class -> (distance in meters, road name) of the nearest road of that class."""
+        point = gpd.GeoSeries([Point(longitude, latitude)], crs="EPSG:4326").to_crs(epsg=3857)[0]
+        # Web Mercator stretches distances by 1/cos(latitude); undo that locally
+        scale = math.cos(math.radians(latitude))
 
-        Returns:
-            True if configuration is valid
-        """
-        return await self.api_client.validate_api_key()
+        nearest: Dict[str, Tuple[float, Optional[str]]] = {}
+        for road_class, roads in self._roads.items():
+            if roads.empty:
+                continue
+            (_, (index,)), (mercator_distance,) = roads.sindex.nearest(
+                point, return_distance=True, return_all=False
+            )
+            distance_m = float(mercator_distance) * scale
+            if distance_m <= MAX_DISTANCE_M:
+                name = roads.iloc[index]["FULLNAME"] if "FULLNAME" in roads else None
+                nearest[road_class] = (distance_m, name if isinstance(name, str) else None)
+        return nearest
+
+    async def validate_config(self) -> bool:
+        return bool(self._roads)
+
+
+def _split_by_class(roads: gpd.GeoDataFrame) -> Dict[str, gpd.GeoDataFrame]:
+    """Project to EPSG:3857 once and index each road class separately."""
+    if roads.crs is None:
+        raise ValueError("Highways data must have a CRS")
+    if "MTFCC" not in roads:
+        raise ValueError("Highways data must have an MTFCC column (TIGER roads)")
+    roads = roads.to_crs(epsg=3857)
+    by_class = {}
+    for code, road_class in ROAD_CLASSES.items():
+        subset = roads[roads["MTFCC"] == code].reset_index(drop=True)
+        _ = subset.sindex  # build now, not on the first request
+        by_class[road_class] = subset
+    return by_class

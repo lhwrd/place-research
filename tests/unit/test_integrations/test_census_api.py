@@ -31,8 +31,8 @@ def _tract_values():
     values.update({"B01003_001E": 1000, "B01002_001E": 36.4, "B01001_001E": 1000})
     values["B01001_003E"] = 100  # male under 5   -> Under 18
     values["B01001_030E"] = 100  # female 15-17   -> Under 18
-    values["B01001_011E"] = 300  # male 25-29     -> 25-34
-    values["B01001_049E"] = 500  # female 85+     -> 65+
+    values["B01001_011E"] = 300  # male 25-29     -> 18-54
+    values["B01001_049E"] = 500  # female 85+     -> 55+
     values.update({"B03002_001E": 1000, "B03002_003E": 700, "B03002_012E": 250,
                    "B03002_006E": 50})  # fmt: skip
     # 25+: 800 adults
@@ -123,12 +123,8 @@ async def test_demographics(api):
             "median_age": 36.4,
             "age_groups": {
                 "Under 18": 20.0,
-                "18-24": 0.0,
-                "25-34": 30.0,
-                "35-44": 0.0,
-                "45-54": 0.0,
-                "55-64": 0.0,
-                "65+": 50.0,
+                "18-54": 30.0,
+                "55+": 50.0,
             },  # fmt: skip
             "race_ethnicity": {
                 "White": 70.0,

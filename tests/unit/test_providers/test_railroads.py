@@ -1,104 +1,116 @@
-"""Example tests for RailroadProvider showing improved testability."""
-
-from unittest.mock import Mock, patch
+"""Tests for the file-based RailroadProvider."""
 
 import geopandas as gpd
 import pytest
-from shapely.geometry import LineString, Point
+from shapely.geometry import LineString
 
+from app.services.enrichment.providers import railroads
 from app.services.enrichment.providers.railroads import RailroadProvider
 
-
-@pytest.fixture
-def mock_railroad_data():
-    """Create mock railroad data for testing."""
-    # Create a simple railroad line
-    lines = [
-        LineString([(0, 0), (1, 1)]),
-        LineString([(2, 2), (3, 3)]),
-    ]
-    return gpd.GeoDataFrame(geometry=lines, crs="EPSG:4326")
+# ~111 km per degree of latitude
+METERS_PER_DEGREE_LAT = 110_950
 
 
-class TestRailroadProviderTestability:
-    """Examples demonstrating improved testability."""
+def _east_west_lines(lat, lon, *offsets):
+    """East-west rail lines `offset` degrees north of (lat, lon)."""
+    return gpd.GeoDataFrame(
+        geometry=[LineString([(lon - 0.05, lat + o), (lon + 0.05, lat + o)]) for o in offsets],
+        crs="EPSG:4326",
+    )
 
+
+class TestDistance:
+    @pytest.mark.parametrize("lat", [0.0, 29.0, 40.0, 47.0])
     @pytest.mark.asyncio
-    async def test_enrich_with_injected_data(self, mock_railroad_data):
-        """Test enrichment by injecting mock data - no file I/O needed."""
-        # BEFORE: Had to create actual files or mock settings and gpd.read_file
-        # NOW: Just inject the data directly
-        provider = RailroadProvider(raillines_data=mock_railroad_data)
+    async def test_true_distance_at_any_latitude(self, lat):
+        """Web Mercator's stretch (14% at 29°N, 30% at 40°N) is corrected."""
+        provider = RailroadProvider(raillines_data=_east_west_lines(lat, -100.0, 0.01, -0.05))
 
-        result = await provider.enrich(latitude=0.5, longitude=0.5, address="123 Test St")
+        result = await provider.enrich(lat, -100.0, "x")
 
         assert result.success
-        assert "railroad_distance_m" in result.data
-        assert result.data["railroad_distance_m"] >= 0
-
-    def test_calculate_distance_isolated(self, mock_railroad_data):
-        """Test distance calculation logic in isolation."""
-        # BEFORE: Had to test through enrich() method
-        # NOW: Can test the calculation directly
-        provider = RailroadProvider(raillines_data=mock_railroad_data)
-
-        distance = provider._calculate_nearest_distance(0.5, 0.5)
-
-        assert isinstance(distance, int)
-        assert distance >= 0
-
-    def test_load_geodataframe_can_be_mocked(self):
-        """Test that file loading can be easily mocked."""
-        # BEFORE: Had to mock gpd.read_file globally
-        # NOW: Can mock just the provider's method
-        provider = RailroadProvider.__new__(RailroadProvider)
-        provider._raillines_data = None
-        provider.logger = Mock()
-
-        mock_gdf = gpd.GeoDataFrame(geometry=[Point(0, 0)], crs="EPSG:4326")
-        provider._load_geodataframe = Mock(return_value=mock_gdf)
-
-        with (
-            patch("app.services.enrichment.providers.railroads.settings") as mock_settings,
-            patch("app.services.enrichment.providers.railroads.Path.exists", return_value=True),
-        ):
-            mock_settings.raillines_path = "/fake/path.geojson"
-            provider._load_raillines_data()
-
-        assert provider._raillines_data is not None
-        provider._load_geodataframe.assert_called_once()
-
-    @pytest.mark.asyncio
-    async def test_enrich_without_file_dependency(self):
-        """Complete end-to-end test without touching filesystem."""
-        # Create test data
-        lines = [LineString([(0, 0), (1, 1)])]
-        test_data = gpd.GeoDataFrame(geometry=lines, crs="EPSG:4326")
-
-        # Test without any file I/O
-        provider = RailroadProvider(raillines_data=test_data)
-
-        result = await provider.enrich(latitude=0.5, longitude=0.5, address="Test Location")
-
-        assert result.success
-        assert result.provider_name == "railroad_provider"
         assert result.api_calls_made == 0
+        assert result.data["railroad_distance_m"] == pytest.approx(
+            0.01 * METERS_PER_DEGREE_LAT, rel=0.01
+        )
+
+    def test_providers_keep_their_own_data(self):
+        near = RailroadProvider(raillines_data=_east_west_lines(29.0, -81.0, 0.001))
+        far = RailroadProvider(raillines_data=_east_west_lines(29.0, -81.0, 0.02))
+
+        assert near._calculate_nearest_distance(29.0, -81.0) < 150
+        assert far._calculate_nearest_distance(29.0, -81.0) > 2000
+
+    @pytest.mark.asyncio
+    async def test_no_lines(self):
+        provider = RailroadProvider(raillines_data=_east_west_lines(29.0, -81.0))
+
+        result = await provider.enrich(29.0, -81.0, "x")
+
+        assert result.success
+        assert result.data == {}
+        assert await provider.validate_config() is False
+
+    @pytest.mark.asyncio
+    async def test_ignores_abandoned_track_and_finds_main_line(self):
+        lines = _east_west_lines(29.0, -81.0, 0.001, 0.002, 0.005, 0.01)
+        lines["NET_CODE"] = ["A", "X", "O", "M"]  # abandoned, out of service, spur, main
+
+        data = (await RailroadProvider(raillines_data=lines).enrich(29.0, -81.0, "x")).data
+
+        assert data["railroad_distance_m"] == pytest.approx(0.005 * METERS_PER_DEGREE_LAT, rel=0.01)
+        assert data["mainline_distance_m"] == pytest.approx(0.01 * METERS_PER_DEGREE_LAT, rel=0.01)
+
+    @pytest.mark.asyncio
+    async def test_without_net_codes_all_lines_count(self):
+        data = (
+            await RailroadProvider(raillines_data=_east_west_lines(29.0, -81.0, 0.01)).enrich(
+                29.0, -81.0, "x"
+            )
+        ).data
+
+        assert "mainline_distance_m" not in data
+        assert data["railroad_distance_m"] > 0
+
+    def test_requires_crs(self):
+        lines = _east_west_lines(29.0, -81.0, 0.01).set_crs(None, allow_override=True)
+        with pytest.raises(ValueError, match="CRS"):
+            RailroadProvider(raillines_data=lines)
 
 
-class TestRailroadFileFormats:
-    """The loader picks a reader by file extension."""
-
+class TestLoading:
     @pytest.mark.parametrize("suffix", [".geojson", ".parquet"])
-    def test_load_geodataframe_round_trip(self, tmp_path, mock_railroad_data, suffix):
+    def test_shared_load(self, tmp_path, monkeypatch, suffix):
         path = tmp_path / f"rails{suffix}"
+        lines = _east_west_lines(29.0, -81.0, 0.01, 0.02)
         if suffix == ".parquet":
-            mock_railroad_data.to_parquet(path)
+            lines.to_parquet(path)
         else:
-            mock_railroad_data.to_file(path, driver="GeoJSON")
+            lines.to_file(path, driver="GeoJSON")
+        monkeypatch.setattr(railroads.settings, "raillines_path", path)
+        monkeypatch.setattr(RailroadProvider, "_shared_raillines", None)
 
-        provider = RailroadProvider(raillines_data=mock_railroad_data)
-        loaded = provider._load_geodataframe(path)
+        first, second = RailroadProvider(), RailroadProvider()
 
-        assert len(loaded) == 2
-        assert loaded.crs.to_epsg() == 4326
-        assert loaded.geometry.equals(mock_railroad_data.geometry)
+        assert first._raillines is second._raillines
+        assert len(first._raillines.all) == 2
+        assert first._calculate_nearest_distance(29.0, -81.0) == pytest.approx(1110, rel=0.01)
+
+    def test_not_configured(self, monkeypatch):
+        monkeypatch.setattr(railroads.settings, "raillines_path", None)
+        monkeypatch.setattr(RailroadProvider, "_shared_raillines", None)
+
+        with pytest.raises(ValueError, match="RAILLINES_PATH"):
+            RailroadProvider()
+
+    def test_missing_file(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(railroads.settings, "raillines_path", tmp_path / "nope.parquet")
+        monkeypatch.setattr(RailroadProvider, "_shared_raillines", None)
+
+        with pytest.raises(FileNotFoundError):
+            RailroadProvider()
+
+    def test_metadata(self):
+        metadata = RailroadProvider(raillines_data=_east_west_lines(0, 0, 0.1)).metadata
+        assert metadata.name == "railroad_provider"
+        assert metadata.requires_api_key is False

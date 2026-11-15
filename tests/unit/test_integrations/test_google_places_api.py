@@ -137,6 +137,44 @@ class TestGooglePlacesAPI:
         assert results[0]["name"] == "Walmart Supercenter"
 
     @pytest.mark.asyncio
+    async def test_text_search_restricts_to_rectangle(self, google_places_api):
+        """Text Search rejects a circle in locationRestriction; it only takes a rectangle."""
+        google_places_api._make_request = AsyncMock(return_value={"places": []})
+
+        await google_places_api.text_search(
+            lat=40.0, lon=-105.0, text_query="Costco", radius_miles=10.0, max_results=2
+        )
+
+        body = google_places_api._make_request.call_args[1]["json_data"]
+        assert body["textQuery"] == "Costco"
+        assert body["pageSize"] == 6
+        assert body["rankPreference"] == "DISTANCE"
+        assert "circle" not in body["locationRestriction"]
+        rect = body["locationRestriction"]["rectangle"]
+        assert rect["low"]["latitude"] < 40.0 < rect["high"]["latitude"]
+        assert rect["low"]["longitude"] < -105.0 < rect["high"]["longitude"]
+
+    @pytest.mark.asyncio
+    async def test_text_search_drops_results_outside_radius(self, google_places_api):
+        def place(name, lat, lon):
+            return {"displayName": {"text": name}, "location": {"latitude": lat, "longitude": lon}}
+
+        google_places_api._make_request = AsyncMock(
+            return_value={
+                "places": [
+                    place("Near", 40.05, -105.0),  # ~3.5 mi
+                    place("Corner", 40.14, -105.18),  # inside the box, ~13 mi away
+                ]
+            }
+        )
+
+        results = await google_places_api.text_search(
+            lat=40.0, lon=-105.0, text_query="Costco", radius_miles=10.0
+        )
+
+        assert [r["name"] for r in results] == ["Near"]
+
+    @pytest.mark.asyncio
     async def test_text_search_empty_results(self, google_places_api):
         """Test text search with empty results."""
         google_places_api._make_request = AsyncMock(return_value={"places": []})
@@ -196,3 +234,44 @@ class TestGooglePlacesAPI:
         assert parsed["place_id"] == "test_id"
         assert parsed["name"] is None
         assert parsed["latitude"] is None
+
+
+@pytest.mark.asyncio
+async def test_text_search_one_result_per_store(google_places_api):
+    def place(name, lat):
+        return {"displayName": {"text": name}, "formattedAddress": name,
+                "location": {"latitude": lat, "longitude": -105.0}}  # fmt: skip
+
+    google_places_api._make_request = AsyncMock(
+        return_value={
+            "places": [
+                place("Costco Gas Station", 40.0100),
+                place("Costco Food Court", 40.0101),  # ~11 m away: same store
+                place("Costco Wholesale", 40.0500),
+                place("Costco Pharmacy", 40.0505),  # ~55 m away: same store
+                place("Costco Wholesale #3", 40.0800),
+            ]
+        }
+    )
+
+    results = await google_places_api.text_search(
+        lat=40.0, lon=-105.0, text_query="Costco", max_results=2
+    )
+
+    assert [r["name"] for r in results] == ["Costco Gas Station", "Costco Wholesale"]
+
+
+@pytest.mark.parametrize("lat", [0.0, 40.0, 64.0])
+def test_bounding_box_contains_circle(lat):
+    from app.integrations.google_places_api import bounding_box
+    from app.utils.distance_calculator import haversine_distance
+
+    box = bounding_box(lat, -105.0, 16093)
+
+    # Each edge's midpoint is the radius away from the center
+    assert haversine_distance(lat, -105.0, box["high"]["latitude"], -105.0) == pytest.approx(
+        16093, rel=0.01
+    )
+    assert haversine_distance(lat, -105.0, lat, box["high"]["longitude"]) == pytest.approx(
+        16093, rel=0.01
+    )

@@ -1,20 +1,17 @@
 """Shared pytest fixtures and configuration."""
 
 import os
+import tempfile
+from pathlib import Path
 from typing import Generator
 
 import pytest
 from fastapi.testclient import TestClient
 
 # Set test environment variables BEFORE importing app. Explicit values win over any
-# developer .env, so tests never talk to a real Baserow.
+# developer .env, so tests never touch a real database.
 os.environ["TESTING"] = "1"
-os.environ["BASEROW_URL"] = "https://baserow.test"
-os.environ["BASEROW_API_TOKEN"] = "test-baserow-token"
-os.environ["BASEROW_PROPERTIES_TABLE_ID"] = "837"
-os.environ["BASEROW_LOCATIONS_TABLE_ID"] = "838"
-os.environ["BASEROW_SETTINGS_TABLE_ID"] = "839"
-os.environ["BASEROW_WEBHOOK_SECRET"] = "test-webhook-secret"
+os.environ["DATABASE_PATH"] = str(Path(tempfile.mkdtemp(prefix="place-research-")) / "test.db")
 os.environ["INGEST_API_TOKEN"] = "test-ingest-token"
 
 
@@ -87,4 +84,9 @@ def clear_cache():
     yield
 
 
-# Mock external API fixtures
+@pytest.fixture
+def db(tmp_path):
+    """A fresh, empty database per test."""
+    from app.db import Database
+
+    return Database(tmp_path / "test.db")

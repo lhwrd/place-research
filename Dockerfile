@@ -26,7 +26,7 @@ COPY --chown=appuser:appuser app ./app
 
 ENV PATH="/app/.venv/bin:$PATH"
 
-RUN mkdir -p /app/logs && chown appuser:appuser /app/logs
+RUN mkdir -p /app/logs /app/db && chown appuser:appuser /app/logs /app/db
 
 USER appuser
 

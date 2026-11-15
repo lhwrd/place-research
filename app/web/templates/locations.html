@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Locations · Place Research{% endblock %}
+
+{% macro type_select(selected) -%}
+  <select name="type" aria-label="Type">
+    <option value="">—</option>
+    {% for t in types %}<option {% if t == selected %}selected{% endif %}>{{ t }}</option>{% endfor %}
+  </select>
+{%- endmacro %}
+
+{% block content %}
+<h1>Locations</h1>
+<p class="lede">Places you want drive times to: family, friends, work. Active locations are used on the next enrichment, highest priority first.</p>
+
+<section class="card-section">
+  <h2>Add a location</h2>
+  <form method="post" action="/locations" class="loc-form">
+    <input name="name" placeholder="Name" required aria-label="Name">
+    <input name="address" placeholder="Address" required aria-label="Address" class="grow">
+    {{ type_select('') }}
+    <label class="inline">Priority <input name="priority" type="number" value="0" class="narrow"></label>
+    <button type="submit" class="primary">Add</button>
+  </form>
+</section>
+
+{% if locations %}
+<section class="card-section">
+  <h2>Saved</h2>
+  <div class="loc-list">
+    {% for loc in locations %}
+    <div class="loc-item {% if not loc.active %}inactive{% endif %}">
+      <form method="post" action="/locations/{{ loc.id }}" class="loc-form">
+        <input name="name" value="{{ loc.name }}" required aria-label="Name">
+        <input name="address" value="{{ loc.address }}" required aria-label="Address" class="grow">
+        {{ type_select(loc.type) }}
+        <label class="inline">Priority <input name="priority" type="number" value="{{ loc.priority }}" class="narrow"></label>
+        <label class="check"><input type="checkbox" name="active" {% if loc.active %}checked{% endif %}> Active</label>
+        <button type="submit">Save</button>
+      </form>
+      <form method="post" action="/locations/{{ loc.id }}/delete" data-confirm="Delete {{ loc.name }}?" onsubmit="return confirm(this.dataset.confirm)">
+        <button type="submit" class="icon" aria-label="Delete {{ loc.name }}" title="Delete">×</button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

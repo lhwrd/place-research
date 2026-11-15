@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class CustomLocation:
-    """A drive-time destination (a row in the Baserow Locations table)."""
+    """A drive-time destination (a row on the Locations page)."""
 
     id: int
     name: str

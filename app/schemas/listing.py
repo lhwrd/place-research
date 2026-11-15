@@ -1,8 +1,9 @@
-"""Listing ingest and Baserow webhook schemas."""
+"""Listing ingest schemas (iOS Shortcut API)."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
+from urllib.parse import urlparse
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class ListingCreateRequest(BaseModel):
@@ -15,12 +16,22 @@ class ListingCreateRequest(BaseModel):
         "as an object or a JSON string",
     )
 
+    @field_validator("url")
+    @classmethod
+    def _http_url(cls, value: str) -> str:
+        """The URL becomes a link in the UI, so no javascript:, data: or other schemes."""
+        value = value.strip()
+        parsed = urlparse(value)
+        if parsed.scheme.lower() not in ("http", "https") or not parsed.netloc:
+            raise ValueError("url must be an http(s) URL")
+        return value
+
 
 class ListingCreateResponse(BaseModel):
-    """Schema for the created (or existing) Baserow row."""
+    """Schema for the created (or existing) listing."""
 
-    row_id: int
-    created: bool = Field(..., description="False if the listing was already in Baserow")
+    row_id: int = Field(..., description="Property id (named row_id for Shortcut compatibility)")
+    created: bool = Field(..., description="False if the listing was already saved")
 
 
 class ListingImagesResponse(BaseModel):
@@ -29,11 +40,3 @@ class ListingImagesResponse(BaseModel):
     row_id: int
     uploaded: int
     photo_count: int
-
-
-class BaserowWebhookPayload(BaseModel):
-    """Subset of Baserow's row webhook payload that the handler uses."""
-
-    table_id: Optional[int] = None
-    event_type: str
-    items: List[Dict[str, Any]] = Field(default_factory=list)

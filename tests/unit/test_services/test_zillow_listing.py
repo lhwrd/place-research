@@ -112,6 +112,21 @@ class TestParseListingJson:
 
         assert facts.sqft == 1850
 
+    @pytest.mark.parametrize(
+        "prop,expected",
+        [
+            ({"resoFacts": {"garageParkingCapacity": 2, "hasGarage": True}}, 2),
+            ({"resoFacts": {"garageParkingCapacity": "3"}}, 3),
+            ({"garageParkingCapacity": 1}, 1),
+            ({"resoFacts": {"hasGarage": False}}, 0),  # says there's none
+            ({"resoFacts": {"hasGarage": True}}, None),  # has one, size unknown
+            ({}, None),
+        ],
+    )
+    def test_garage_spaces(self, prop, expected):
+        facts = parse_listing_json({"zpid": 1, "price": 100, **prop})
+        assert facts.garage_spaces == expected
+
     def test_lot_size_in_sqft(self):
         prop = {**ZILLOW_PROPERTY, "lotAreaValue": 10890, "lotAreaUnits": "sqft"}
         assert parse_listing_json({"property": prop}).lot_acres == 0.25
