@@ -8,12 +8,22 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
 
-from app.services import noise
+from app.services import noise, ratings
 from app.services.noise import NoiseEstimate
 
 METERS_PER_MILE = 1609.344
 
-Rows = List[Tuple[str, str]]
+
+@dataclass
+class Row:
+    """One labelled value, rated ratings.GOOD/FAIR/POOR or unrated (None)."""
+
+    label: str
+    value: str
+    level: Optional[str] = None
+
+
+Rows = List[Row]
 
 
 @dataclass
@@ -21,6 +31,7 @@ class DriveTime:
     name: str
     minutes: Optional[float]
     miles: Optional[float]
+    level: Optional[str] = None
 
     @property
     def available(self) -> bool:
@@ -45,8 +56,28 @@ class PropertyView:
     acs_year: Optional[int] = None
     noise: Optional[NoiseEstimate] = None
     hazards: Rows = field(default_factory=list)
-    internet_summary: Optional[str] = None
+    internet_summary: Optional[Row] = None
     internet: List[Dict[str, Any]] = field(default_factory=list)
+
+    def scorecard(self) -> Dict[str, Any]:
+        """
+        Counts of rated data points by level, and the labels of the poor ones.
+
+        Only the property's own data points count. Drive times and nearby places are rated
+        too, but they depend on which places you've added, so a far-off favorite (a theme
+        park, an outlet mall) would otherwise outweigh a flood zone.
+        """
+        rated = [
+            *self.surroundings,
+            *self.hazards,
+            *([self.internet_summary] if self.internet_summary else []),
+        ]
+        counts = {level: sum(1 for r in rated if r.level == level) for level in ratings.LEVELS}
+        return {
+            "counts": counts,
+            "total": sum(counts.values()),
+            "poor": [r.label for r in rated if r.level == ratings.POOR],
+        }
 
 
 def build_view(enrichment: Dict[str, Dict[str, Any]]) -> PropertyView:
@@ -61,25 +92,42 @@ def build_view(enrichment: Dict[str, Dict[str, Any]]) -> PropertyView:
     airports = data("airport_provider").get("airports")
     view.noise = noise_estimate(highway, rail, airports)
     nearest_airport = airports[0] if airports else None
+    local_noise = data("local_noise_sources_provider")
+    flood = data("flood_zone_provider")
+    air = data("air_quality_provider")
     view.surroundings = _rows(
-        ("Walk score", _score_text(walk.get("walk_score"), walk.get("description"))),
-        ("Bike score", _score_text(walk.get("bike_score"), walk.get("bike_description"))),
+        (
+            "Walk score",
+            _score_text(walk.get("walk_score"), walk.get("description")),
+            ratings.walk_score(walk.get("walk_score")),
+        ),
+        (
+            "Bike score",
+            _score_text(walk.get("bike_score"), walk.get("bike_description")),
+            ratings.bike_score(walk.get("bike_score")),
+        ),
         (
             "Transit score",
             _score_text(walk.get("transit_score"), walk.get("transit_description")),
+            ratings.transit_score(walk.get("transit_score")),
         ),
-        ("Noise", noise_text(view.noise)),
+        ("Noise", noise_text(view.noise), ratings.noise_level(view.noise)),
         ("Noise by source", noise_sources_text(view.noise)),
-        ("Fireworks", fireworks_text(data("local_noise_sources_provider"))),
-        ("Rocket launches", launch_text(data("local_noise_sources_provider"))),
-        ("Flood zone", flood_zone_text(data("flood_zone_provider"))),
+        ("Fireworks", fireworks_text(local_noise), ratings.fireworks(local_noise)),
+        ("Rocket launches", launch_text(local_noise), ratings.launches(local_noise)),
+        ("Flood zone", flood_zone_text(flood), ratings.flood_zone(flood)),
         (
             "Nearest highway",
             _with_name(
                 _miles_text(highway.get("highway_distance_m")), highway.get("nearest_highway_name")
             ),
+            ratings.highway(highway.get("highway_distance_m")),
         ),
-        ("Nearest railroad", _miles_text(rail.get("railroad_distance_m"))),
+        (
+            "Nearest railroad",
+            _miles_text(rail.get("railroad_distance_m")),
+            ratings.railroad(rail.get("railroad_distance_m")),
+        ),
         (
             "Nearest airport",
             _with_name(
@@ -89,7 +137,7 @@ def build_view(enrichment: Dict[str, Dict[str, Any]]) -> PropertyView:
             if nearest_airport
             else None,
         ),
-        ("Air quality", air_quality_text(data("air_quality_provider"))),
+        ("Air quality", air_quality_text(air), ratings.air_quality(air)),
     )
 
     view.drive_times = drive_times(data("distance_provider"))
@@ -100,24 +148,45 @@ def build_view(enrichment: Dict[str, Dict[str, Any]]) -> PropertyView:
             "address": p.get("address"),
             "minutes": p.get("drive_minutes"),
             "miles": p.get("drive_miles"),
+            "level": ratings.nearby_minutes(p.get("drive_minutes")),
         }
         for p in data("places_nearby_provider").get("places_nearby", [])
         if p.get("name")
     ]
 
+    sinkholes = data("sinkhole_provider")
+    elevation = data("elevation_provider")
+    evacuation = data("evacuation_zone_provider")
+    wetlands = data("wetlands_provider")
+    contamination = data("contamination_provider")
+    waters = data("impaired_waters_provider")
     view.hazards = _rows(
-        ("Sinkhole geology", sinkhole_text(data("sinkhole_provider"))),
-        ("Sinkhole reports", sinkhole_reports_text(data("sinkhole_provider"))),
-        ("Elevation", elevation_text(data("elevation_provider"))),
-        ("Evacuation zone", evacuation_zone_text(data("evacuation_zone_provider"))),
-        ("Wetlands", wetlands_text(data("wetlands_provider"))),
-        ("Contamination sites", contamination_text(data("contamination_provider"))),
-        ("Impaired waters", impaired_waters_text(data("impaired_waters_provider"))),
+        ("Sinkhole geology", sinkhole_text(sinkholes), ratings.sinkhole_geology(sinkholes)),
+        (
+            "Sinkhole reports",
+            sinkhole_reports_text(sinkholes),
+            ratings.sinkhole_reports(sinkholes),
+        ),
+        ("Elevation", elevation_text(elevation), ratings.elevation(elevation)),
+        (
+            "Evacuation zone",
+            evacuation_zone_text(evacuation),
+            ratings.evacuation_zone(evacuation),
+        ),
+        ("Wetlands", wetlands_text(wetlands), ratings.wetlands(wetlands)),
+        (
+            "Contamination sites",
+            contamination_text(contamination),
+            ratings.contamination(contamination),
+        ),
+        ("Impaired waters", impaired_waters_text(waters), ratings.impaired_waters(waters)),
     )
 
     broadband = data("broadband_provider")
-    view.internet_summary = internet_summary_text(broadband)
     view.internet = internet_providers(broadband)
+    summary = internet_summary_text(broadband)
+    if summary:
+        view.internet_summary = Row("Internet", summary, ratings.internet(broadband, view.internet))
 
     census = data("census_provider")
     view.acs_year = census.get("acs_year")
@@ -368,6 +437,7 @@ def drive_times(data: Dict[str, Any]) -> List[DriveTime]:
                 name=d.get("location_name") or "Unknown",
                 minutes=minutes,
                 miles=d.get("distance_miles") if ok else None,
+                level=ratings.drive_minutes(minutes),
             )
         )
     return times
@@ -403,8 +473,13 @@ def census_sections(data: Dict[str, Any]) -> Tuple[Rows, List[Distribution]]:
     return rows, [d for d in distributions if d.items]
 
 
-def _rows(*pairs: Tuple[str, Any]) -> Rows:
-    return [(label, str(value)) for label, value in pairs if value is not None and value != ""]
+def _rows(*items: Tuple[Any, ...]) -> Rows:
+    """Rows from (label, value) or (label, value, level), skipping empty values."""
+    return [
+        Row(item[0], str(item[1]), item[2] if len(item) > 2 else None)
+        for item in items
+        if item[1] is not None and item[1] != ""
+    ]
 
 
 def _miles_text(meters: Any) -> Optional[str]:

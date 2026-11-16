@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import status_badge, stars, rows %}
+{% from "_macros.html" import status_badge, stars, rows, signal %}
 
 {% block title %}{{ p.address }} · Place Research{% endblock %}
 
@@ -40,6 +40,18 @@
   <div class="alert alert-error"><strong>Enrichment failed.</strong> {{ p.error }}</div>
 {% elif pending %}
   <div class="alert" id="pending-note">Enriching this property. The page will refresh when it's done.</div>
+{% endif %}
+
+{% set score = view.scorecard() %}
+{% if score.total %}
+<section class="card-section scorecard" aria-label="Data point ratings">
+  <div class="score-tiles">
+    {% for level, name in [('good', 'Good'), ('fair', 'Fair'), ('poor', 'Poor')] %}
+      <div class="score-tile score-{{ level }}">{{ signal(level) }}<span class="score-count">{{ score.counts[level] }}</span><span class="score-name">{{ name }}</span></div>
+    {% endfor %}
+  </div>
+  {% if score.poor %}<p class="score-watch"><span class="dim">Poor:</span> {{ score.poor|join(', ') }}</p>{% endif %}
+</section>
 {% endif %}
 
 <section class="card-section" id="notes">
@@ -98,9 +110,9 @@
 {% if view.internet_summary %}
 <section class="card-section">
   <h2>Internet</h2>
-  <p>{{ view.internet_summary }}</p>
+  {{ rows([view.internet_summary]) }}
   {% if view.internet %}
-  <dl class="rows">
+  <dl class="rows isps">
     {% for isp in view.internet %}
       <div><dt>{{ isp.name }} <span class="dim small">{{ isp.technology }}</span></dt>
       <dd>{{ isp.max_down_mbps|num }}/{{ isp.max_up_mbps|num }} Mbps{% if isp.coverage_pct is not none and isp.coverage_pct < 90 %} <span class="dim">· {{ isp.coverage_pct }}% of block</span>{% endif %}</dd></div>
@@ -116,7 +128,7 @@
   <dl class="rows">
     {% for d in view.drive_times %}
       <div><dt>{{ d.name }}</dt>
-      <dd>{% if d.available %}{{ d.minutes|duration }} <span class="dim">· {{ d.miles|num(1) }} mi</span>{% else %}<span class="dim">unavailable</span>{% endif %}</dd></div>
+      <dd>{% if d.available %}{{ d.minutes|duration }} <span class="dim">· {{ d.miles|num(1) }} mi</span>{% else %}<span class="dim">unavailable</span>{% endif %}{{ signal(d.level) }}</dd></div>
     {% endfor %}
   </dl>
 </section>
@@ -132,7 +144,7 @@
           <a href="https://www.google.com/maps/search/?api=1&query={{ (place.name ~ ' ' ~ (place.address or ''))|urlquote }}" target="_blank" rel="noopener">{{ place.name }}</a>
           {% if place.type %}<span class="dim small">{{ place.type }}</span>{% endif %}
         </dt>
-        <dd>{% if place.minutes is not none %}{{ place.minutes|duration }} <span class="dim">· {{ place.miles|num(1) }} mi</span>{% else %}<span class="dim">unavailable</span>{% endif %}</dd>
+        <dd>{% if place.minutes is not none %}{{ place.minutes|duration }} <span class="dim">· {{ place.miles|num(1) }} mi</span>{% else %}<span class="dim">unavailable</span>{% endif %}{{ signal(place.level) }}</dd>
       </div>
     {% endfor %}
   </dl>
@@ -142,7 +154,7 @@
 {% if view.census %}
 <section class="card-section">
   <h2>Census {% if view.acs_year %}<span class="dim small">ACS {{ view.acs_year - 4 }}–{{ view.acs_year }}</span>{% endif %}</h2>
-  {{ rows(view.census) }}
+  {{ rows(view.census, rated=false) }}
   {% if view.distributions %}
   <div class="distributions">
     {% for dist in view.distributions %}

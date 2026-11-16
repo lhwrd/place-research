@@ -240,6 +240,37 @@ pre { white-space: pre-wrap; margin: 0.5rem 0 0; color: var(--muted); }
 .rows dt:not(.place) { white-space: nowrap; }
 .rows dd { margin: 0; text-align: right; font-weight: 500; }
 
+/* Good / fair / poor markers */
+.signal {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 1.2rem; height: 1.2rem; flex: none;
+  margin-left: 0.5rem; vertical-align: -0.15rem;
+  border-radius: 50%;
+  font-size: 0.72rem; font-weight: 800; line-height: 1;
+}
+.signal-good { background: var(--accent-soft); color: var(--accent); }
+.signal-fair { background: var(--warn-soft); color: var(--warn); }
+.signal-poor { background: var(--error-soft); color: var(--error); }
+
+/* ISP rows sit under the rated Internet row: indent their values to the same edge */
+.rows.isps dd { padding-right: 1.7rem; }
+
+.scorecard { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.5rem; }
+.score-tiles { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+.score-tile {
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.4rem 0.8rem 0.4rem 0.45rem;
+  border-radius: 99px;
+  font-variant-numeric: tabular-nums;
+}
+.score-tile .signal { margin-left: 0; background: var(--surface); }
+.score-good { background: var(--accent-soft); }
+.score-fair { background: var(--warn-soft); }
+.score-poor { background: var(--error-soft); }
+.score-count { font-weight: 700; font-size: 1.05rem; }
+.score-name { color: var(--muted); font-size: 0.85rem; }
+.score-watch { margin: 0; font-size: 0.9rem; flex: 1; min-width: 14rem; }
+
 .rows dt.place { display: flex; flex-direction: column; min-width: 0; }
 .rows dt.place + dd { white-space: nowrap; }
 

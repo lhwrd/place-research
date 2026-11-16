@@ -10,6 +10,18 @@ from app.services.property_view import (
 )
 
 
+def values(rows):
+    return {r.label: r.value for r in rows}
+
+
+def pairs(rows):
+    return [(r.label, r.value) for r in rows]
+
+
+def levels(rows):
+    return {r.label: r.level for r in rows}
+
+
 def test_build_view_formats_every_provider():
     view = build_view(
         {
@@ -73,7 +85,7 @@ def test_build_view_formats_every_provider():
         }
     )
 
-    assert view.surroundings == [
+    assert pairs(view.surroundings) == [
         ("Walk score", "45 · Car-Dependent"),
         ("Bike score", "60 · Bikeable"),
         ("Noise", noise_text(view.noise)),
@@ -87,7 +99,21 @@ def test_build_view_formats_every_provider():
     ]
     assert view.noise.main_source == "rail"
     assert noise_text(view.noise).startswith("Moderate · ")
-    assert view.drive_times == [DriveTime("Mom", 15, 6.14), DriveTime("Work", None, None)]
+    assert view.drive_times == [
+        DriveTime("Mom", 15, 6.14, "good"),
+        DriveTime("Work", None, None, None),
+    ]
+    assert levels(view.surroundings) == {
+        "Walk score": "fair",
+        "Bike score": "fair",
+        "Noise": "fair",  # 56 dB
+        "Noise by source": None,
+        "Flood zone": "poor",
+        "Nearest highway": "good",
+        "Nearest railroad": "good",
+        "Nearest airport": None,
+        "Air quality": "good",
+    }
     assert not view.drive_times[1].available
     assert [p["name"] for p in view.nearby_places] == ["Publix", "Riverside Park"]
     assert (view.nearby_places[0]["minutes"], view.nearby_places[0]["miles"]) == (7, 2.4)
@@ -130,7 +156,7 @@ def test_census():
     )
 
     assert view.acs_year == 2024
-    assert dict(view.census) == {
+    assert values(view.census) == {
         "City": "Highlands Ranch (CDP)",
         "City population": "103,000",
         "County": "Douglas County, Colorado",
@@ -158,13 +184,13 @@ def test_census_outside_any_city():
         }  # fmt: skip
     )
 
-    assert "City" not in dict(view.census)
-    assert dict(view.census)["County population"] == "330,000"
+    assert "City" not in values(view.census)
+    assert values(view.census)["County population"] == "330,000"
 
 
 def test_air_quality_without_aqi():
     view = build_view({"air_quality_provider": {"category": "Moderate"}})
-    assert dict(view.surroundings)["Air quality"] == "Moderate"
+    assert values(view.surroundings)["Air quality"] == "Moderate"
 
 
 def test_flood_zone_text():
@@ -225,7 +251,7 @@ def test_scores_without_descriptions():
     """Enriched before descriptions were stored: just the number."""
     view = build_view({"walk_score_provider": {"walk_score": 47, "bike_score": 62}})
 
-    assert view.surroundings == [("Walk score", "47"), ("Bike score", "62")]
+    assert pairs(view.surroundings) == [("Walk score", "47"), ("Bike score", "62")]
 
 
 class TestHazardsAndInternet:
@@ -291,7 +317,7 @@ class TestHazardsAndInternet:
             }
         )
 
-        assert dict(view.hazards) == {
+        assert values(view.hazards) == {
             "Sinkhole geology": "Most favorable to sinkhole formation",
             "Sinkhole reports": "3 within 1 mi (1 verified) · nearest 0.3 mi, 2008",
             "Elevation": "82 ft · 3.5 ft below surrounding ground",
@@ -300,11 +326,64 @@ class TestHazardsAndInternet:
             "Contamination sites": "2 open within ½ mi · nearest Fera Cleaners (PFAS), 643 ft",
             "Impaired waters": "Lake Eola (nutrients, mercury)",
         }
-        surroundings = dict(view.surroundings)
+        surroundings = values(view.surroundings)
         assert surroundings["Fireworks"] == "EPCOT 3.6 mi"
         assert surroundings["Rocket launches"] == "12 mi from the Cape · sonic booms likely"
-        assert view.internet_summary == "No fiber · 1 wired provider · up to 1,000 Mbps"
+        assert view.internet_summary.value == "No fiber · 1 wired provider · up to 1,000 Mbps"
         assert [p["name"] for p in view.internet] == ["Spectrum"]
+
+    def test_levels_and_scorecard(self):
+        view = build_view(
+            {
+                "sinkhole_provider": {"favorability": "Most favorable", "incidents_within_1mi": 0},
+                "elevation_provider": {"elevation_ft": 82.0, "relative_ft": -1.5},
+                "evacuation_zone_provider": {"evacuation_zone": "A"},
+                "contamination_provider": {"sites_within_half_mi": 0},
+                "broadband_provider": {
+                    "providers": [
+                        {
+                            "name": "Spectrum",
+                            "technology": "Cable",
+                            "max_down_mbps": 1000.0,
+                            "max_up_mbps": 35.0,
+                            "coverage_pct": 100,
+                        }
+                    ],
+                },  # fmt: skip
+                "distance_provider": {
+                    "distances": [
+                        {
+                            "location_name": "Work",
+                            "status": "OK",
+                            "duration_minutes": 45,
+                            "distance_miles": 30,
+                        }
+                    ]
+                },  # fmt: skip
+                "places_nearby_provider": {
+                    "places_nearby": [{"name": "Publix", "drive_minutes": 4, "drive_miles": 1}]
+                },
+                "census_provider": {"county": {"name": "Orange County", "population": 1}},
+            }
+        )
+
+        assert levels(view.hazards) == {
+            "Sinkhole geology": "poor",
+            "Sinkhole reports": "good",
+            "Elevation": "fair",
+            "Evacuation zone": "poor",
+            "Contamination sites": "good",
+        }
+        assert view.internet_summary.level == "fair"  # fast cable, no fiber
+        assert all(r.level is None for r in view.census)  # demographics are never rated
+        # Rated, but left out of the scorecard
+        assert view.drive_times[0].level == "poor"
+        assert view.nearby_places[0]["level"] == "good"
+        assert view.scorecard() == {
+            "counts": {"good": 2, "fair": 2, "poor": 2},
+            "total": 6,
+            "poor": ["Sinkhole geology", "Evacuation zone"],
+        }
 
     def test_missing_providers_add_nothing(self):
         view = build_view({})
@@ -326,7 +405,7 @@ class TestHazardsAndInternet:
             }
         )
 
-        assert dict(view.hazards) == {
+        assert values(view.hazards) == {
             "Sinkhole reports": "None within 1 mi",
             "Elevation": "100 ft · level with surroundings",
             "Evacuation zone": "Zone A (evacuates first)",
@@ -334,4 +413,4 @@ class TestHazardsAndInternet:
             "Contamination sites": "None within ½ mi",
             "Impaired waters": "None nearby",
         }
-        assert view.internet_summary == "No wired or fixed wireless providers listed"
+        assert view.internet_summary.value == "No wired or fixed wireless providers listed"
