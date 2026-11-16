@@ -159,3 +159,24 @@ def test_sort_by_neighborhood(db):
         "Plain",
         "Unrated",
     ]
+
+
+def test_stored_walk_scores_are_removed_on_open(tmp_path):
+    """Earlier versions saved them; Walk Score's terms don't allow that."""
+    path = tmp_path / "db.sqlite"
+    db = Database(path)
+    property_id = db.create_property(
+        {
+            "address": "1 Main",
+            "enrichment": {"walk_score_provider": {"walk_score": 72}, "flood_zone_provider": {"flood_zone": "X"}},
+            "enrichment_meta": {"walk_score_provider": {"ok": True}, "flood_zone_provider": {"ok": True}},
+        }
+    )  # fmt: skip
+    untouched = db.create_property({"address": "2 Main"})
+
+    reopened = Database(path)
+
+    prop = reopened.get_property(property_id)
+    assert prop["enrichment"] == {"flood_zone_provider": {"flood_zone": "X"}}
+    assert prop["enrichment_meta"] == {"flood_zone_provider": {"ok": True}}
+    assert reopened.get_property(untouched)["enrichment"] == {}

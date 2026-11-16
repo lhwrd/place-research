@@ -31,7 +31,8 @@ class Settings(BaseSettings):
     walkscore_api_key: Optional[str] = Field(None, alias="WALKSCORE_API_KEY")
     google_maps_api_key: Optional[str] = Field(None, alias="GOOGLE_MAPS_API_KEY")
     # Sent to the browser for the Street View embed. Use a key restricted to the Maps Embed
-    # API (and your UI's address); falls back to GOOGLE_MAPS_API_KEY if unset.
+    # API (and your UI's address). Without it there is no embed: GOOGLE_MAPS_API_KEY is
+    # never sent to the browser.
     google_maps_embed_key: Optional[str] = Field(None, alias="GOOGLE_MAPS_EMBED_KEY")
     census_api_key: Optional[str] = Field(None, alias="CENSUS_API_KEY")
     census_acs_year: int = Field(

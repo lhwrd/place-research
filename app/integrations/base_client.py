@@ -4,12 +4,11 @@ import asyncio
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
-from functools import wraps
 from typing import Any, Awaitable, Callable, Dict, Optional
 
 import httpx
 
-from app.core.redaction import redact_secrets
+from app.core.redaction import redact_secrets, redact_value
 from app.exceptions import (
     APIKeyInvalidError,
     APIQuotaExceededError,
@@ -73,67 +72,6 @@ async def send_with_retry(
     raise RuntimeError("unreachable")
 
 
-def retry_on_failure(max_retries: int = 3, backoff_factor: float = 1.0):
-    """
-    Decorator to retry API calls on failure with exponential backoff.
-
-    Args:
-        max_retries: Maximum number of retry attempts
-        backoff_factor: Multiplier for exponential backoff (seconds)
-    """
-
-    def decorator(func):
-        @wraps(func)
-        async def wrapper(*args, **kwargs):
-            last_exception = None
-
-            for attempt in range(max_retries):
-                try:
-                    return await func(*args, **kwargs)
-                except httpx.HTTPStatusError as e:
-                    last_exception = e
-
-                    # Don't retry on client errors (4xx)
-                    if 400 <= e.response.status_code < 500:
-                        raise
-
-                    # Exponential backoff
-                    if attempt < max_retries - 1:
-                        wait_time = backoff_factor * (2**attempt)
-                        logger.warning(
-                            "API call failed (attempt %d/%d), retrying in %.1fs: %s",
-                            attempt + 1,
-                            max_retries,
-                            wait_time,
-                            str(e),
-                            extra={
-                                "attempt": attempt + 1,
-                                "max_retries": max_retries,
-                                "wait_time": wait_time,
-                            },
-                        )
-                        await asyncio.sleep(wait_time)
-                except Exception as e:
-                    last_exception = e
-                    # Don't retry on unexpected exceptions
-                    logger.error(
-                        "Unexpected error during API call: %s",
-                        str(e),
-                        extra={"error": str(e), "error_type": type(e).__name__},
-                        exc_info=True,
-                    )
-                    raise
-
-            # All retries exhausted
-            if last_exception:
-                raise last_exception
-            raise RuntimeError("Max retries reached without exception")
-
-        return wrapper
-
-    return decorator
-
-
 class BaseAPIClient(ABC):
     """
     Base class for external API integrations.
@@ -170,6 +108,7 @@ class BaseAPIClient(ABC):
         # Rate limiting state
         self._last_request_time = None
         self._request_count = 0
+        self._rate_lock = asyncio.Lock()
 
         # HTTP client (async)
         self._client: Optional[httpx.AsyncClient] = None
@@ -191,28 +130,30 @@ class BaseAPIClient(ABC):
             await self._client.aclose()
 
     async def _rate_limit(self):
-        """Enforce rate limiting."""
+        """Space this client's requests at least 1 / rate_limit_per_second apart."""
         if not self.rate_limit_per_second:
             return
 
-        if self._last_request_time:
-            elapsed = (datetime.now(timezone.utc) - self._last_request_time).total_seconds()
-            min_interval = 1.0 / self.rate_limit_per_second
+        min_interval = 1.0 / self.rate_limit_per_second
+        # Held across the wait, so concurrent callers queue up instead of all seeing the
+        # same last request time and going out together
+        async with self._rate_lock:
+            if self._last_request_time:
+                elapsed = (datetime.now(timezone.utc) - self._last_request_time).total_seconds()
+                if elapsed < min_interval:
+                    wait_time = min_interval - elapsed
+                    logger.debug(
+                        "Rate limiting: waiting %.3fs (limit: %d req/s)",
+                        wait_time,
+                        self.rate_limit_per_second,
+                        extra={
+                            "wait_time": wait_time,
+                            "rate_limit": self.rate_limit_per_second,
+                        },
+                    )
+                    await asyncio.sleep(wait_time)
 
-            if elapsed < min_interval:
-                wait_time = min_interval - elapsed
-                logger.debug(
-                    "Rate limiting: waiting %.3fs (limit: %d req/s)",
-                    wait_time,
-                    self.rate_limit_per_second,
-                    extra={
-                        "wait_time": wait_time,
-                        "rate_limit": self.rate_limit_per_second,
-                    },
-                )
-                await asyncio.sleep(wait_time)
-
-        self._last_request_time = datetime.now(timezone.utc)
+            self._last_request_time = datetime.now(timezone.utc)
 
     async def _make_request(
         self,
@@ -249,6 +190,9 @@ class BaseAPIClient(ABC):
         if self.api_key:
             request_headers.update(self._get_auth_headers())
 
+        # Several APIs take their key as a query parameter; keep it out of the logs
+        logged_params = redact_value(params)
+
         # Log request
         logger.info(
             "%s API request: %s %s",
@@ -260,7 +204,7 @@ class BaseAPIClient(ABC):
                 "method": method,
                 "endpoint": endpoint,
                 "url": url,
-                "params": params,
+                "params": logged_params,
                 "has_body": json_data is not None,
             },
         )
@@ -281,7 +225,7 @@ class BaseAPIClient(ABC):
         logger.debug(
             "%s request details - params: %s",
             self._get_service_name(),
-            params,
+            logged_params,
             extra={
                 "headers": masked_headers,
                 "has_api_key": self.api_key is not None,

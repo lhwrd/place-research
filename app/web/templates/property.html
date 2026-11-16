@@ -31,7 +31,8 @@
   </div>
   <div class="hero-actions">
     <form method="post" action="/properties/{{ p.id }}/reenrich">
-      <button type="submit" {% if pending %}disabled{% endif %}>Re-enrich</button>
+      <button type="submit" {% if pending %}disabled{% endif %} title="Fetch what is missing, failed, out of date or affected by changed settings">Re-enrich</button>
+      <button type="submit" name="everything" value="1" class="link" {% if pending %}disabled{% endif %} title="Fetch everything again, including the paid Google lookups">Redo all</button>
     </form>
   </div>
 </section>
@@ -97,6 +98,11 @@
 <section class="card-section">
   <h2>Location</h2>
   {{ rows(view.surroundings) }}
+  {% if walk and walk.walk_score is not none %}
+    {# Only ever link to walkscore.com, whatever the API response held #}
+    {% set walk_link = walk.link if (walk.link or '').startswith('https://www.walkscore.com/') else 'https://www.walkscore.com/how-it-works/' %}
+    <p class="dim small">Walk, bike and transit scores from <a href="{{ walk_link }}" target="_blank" rel="noopener">Walk Score<sup>®</sup> ↗</a></p>
+  {% endif %}
 </section>
 {% endif %}
 

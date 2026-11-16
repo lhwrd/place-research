@@ -11,7 +11,7 @@ from app.exceptions import (
     APIQuotaExceededError,
     ExternalAPIError,
 )
-from app.integrations.base_client import BaseAPIClient, retry_on_failure
+from app.integrations.base_client import BaseAPIClient
 
 
 class ConcreteAPIClient(BaseAPIClient):
@@ -268,93 +268,3 @@ class TestBaseAPIClient:
             await client._handle_http_error(error)
 
         assert "Page not found" in exc_info.value.message
-
-
-class TestRetryDecorator:
-    """Test retry_on_failure decorator."""
-
-    @pytest.mark.asyncio
-    async def test_retry_success_on_first_attempt(self):
-        """Test successful execution on first attempt."""
-        mock_func = AsyncMock(return_value="success")
-        decorated = retry_on_failure(max_retries=3)(mock_func)
-
-        result = await decorated()
-
-        assert result == "success"
-        assert mock_func.call_count == 1
-
-    @pytest.mark.asyncio
-    async def test_retry_success_after_failures(self):
-        """Test successful execution after retries."""
-        mock_func = AsyncMock(
-            side_effect=[
-                httpx.HTTPStatusError(
-                    "Server Error", request=Mock(), response=Mock(status_code=500)
-                ),
-                httpx.HTTPStatusError(
-                    "Server Error", request=Mock(), response=Mock(status_code=503)
-                ),
-                "success",
-            ]
-        )
-        decorated = retry_on_failure(max_retries=3, backoff_factor=0.01)(mock_func)
-
-        result = await decorated()
-
-        assert result == "success"
-        assert mock_func.call_count == 3
-
-    @pytest.mark.asyncio
-    async def test_retry_no_retry_on_4xx(self):
-        """Test that 4xx errors are not retried."""
-        mock_response = Mock(status_code=404)
-        error = httpx.HTTPStatusError("Not Found", request=Mock(), response=mock_response)
-        mock_func = AsyncMock(side_effect=error)
-        decorated = retry_on_failure(max_retries=3)(mock_func)
-
-        with pytest.raises(httpx.HTTPStatusError):
-            await decorated()
-
-        assert mock_func.call_count == 1
-
-    @pytest.mark.asyncio
-    async def test_retry_exhausted(self):
-        """Test that exception is raised after all retries exhausted."""
-        mock_response = Mock(status_code=500)
-        error = httpx.HTTPStatusError("Server Error", request=Mock(), response=mock_response)
-        mock_func = AsyncMock(side_effect=error)
-        decorated = retry_on_failure(max_retries=3, backoff_factor=0.01)(mock_func)
-
-        with pytest.raises(httpx.HTTPStatusError):
-            await decorated()
-
-        assert mock_func.call_count == 3
-
-    @pytest.mark.asyncio
-    async def test_retry_exponential_backoff(self):
-        """Test exponential backoff timing."""
-        mock_response = Mock(status_code=500)
-        error = httpx.HTTPStatusError("Server Error", request=Mock(), response=mock_response)
-        mock_func = AsyncMock(side_effect=error)
-        decorated = retry_on_failure(max_retries=3, backoff_factor=0.1)(mock_func)
-
-        start = datetime.now()
-        with pytest.raises(httpx.HTTPStatusError):
-            await decorated()
-        elapsed = (datetime.now() - start).total_seconds()
-
-        # Backoff: 0.1 * 2^0 + 0.1 * 2^1 = 0.1 + 0.2 = 0.3 seconds
-        assert elapsed >= 0.25
-
-    @pytest.mark.asyncio
-    async def test_retry_non_http_exception_raised_immediately(self):
-        """Test that non-HTTP exceptions are raised immediately."""
-        error = ValueError("Some error")
-        mock_func = AsyncMock(side_effect=error)
-        decorated = retry_on_failure(max_retries=3)(mock_func)
-
-        with pytest.raises(ValueError):
-            await decorated()
-
-        assert mock_func.call_count == 1

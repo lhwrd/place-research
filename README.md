@@ -2,7 +2,7 @@
 
 Collect homes you're considering and see what living there would be like. Add a property
 by typing an address or pasting a Zillow URL, or share a listing from your iPhone. The
-app then enriches it with walk/bike/transit scores, flood zone, distance to the nearest highway,
+app then enriches it with flood zone, distance to the nearest highway,
 railroad and airport, an estimate of noise pollution from all three, air quality, nearby places, drive times to the people and places you
 care about, and Census data (city and county population; age, race/ethnicity and education
 for the census tract). In Florida it also covers sinkhole geology and reported sinkholes,
@@ -33,8 +33,10 @@ There is no login: reach the UI over the tailnet only.
 | `/settings`       | Amenity types (Google Places types) and preferred places to search for near each home. |
 
 Enrichment starts as soon as a property is added; the detail page refreshes itself when
-it finishes. **Re-enrich** runs it again without the cache (e.g. after changing locations
-or settings). A provider that fails keeps its previous data and is listed under the
+it finishes. Each provider's stored result is kept until it is too old (its
+`cache_duration_days`), it failed, or the locations or settings it used have changed.
+**Re-enrich** fetches only those, so the billed Google lookups aren't repeated for
+nothing; **Redo all** fetches everything again. A provider that fails keeps its previous data and is listed under the
 property; if the whole run fails (e.g. the address can't be geocoded) the property shows
 the error. Properties left mid-enrichment by a restart are picked up on startup.
 
@@ -122,10 +124,16 @@ national. None needs a key.
 Airports ship with the app (`app/data/airports.csv`, large and medium airports from
 OurAirports); refresh the list with `uv run python scripts/build_airports.py`.
 
+Walk, bike and transit scores (`WALKSCORE_API_KEY`) are the exception to "enrich once and
+store": Walk Score's terms don't allow keeping its scores, so they are fetched each time a
+property page is opened, shown with a link to Walk Score, and never saved. They aren't on
+the property list for the same reason.
+
 Google APIs: `GOOGLE_MAPS_API_KEY` needs Geocoding, Distance Matrix and Places (New).
 `GOOGLE_MAPS_EMBED_KEY`, which the browser sees, needs the Maps Embed API (the Street View
 viewer) and Street View Static API (the free panorama lookup that points the viewer at
-the house). Without an embed key, the main key is used for both.
+the house). Without an embed key there is no Street View: the main key is never sent to
+the browser.
 
 Noise pollution is estimated from those distances by `app/services/noise.py`: each
 source starts at a typical level for its kind and fades with distance (about 5 dB per

@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from app.core.config import settings
 from app.exceptions import GoogleMapsAPIError
-from app.integrations.base_client import BaseAPIClient, retry_on_failure
+from app.integrations.base_client import BaseAPIClient
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +61,6 @@ class GoogleMapsAPI(BaseAPIClient):
 
     # Geocoding API
 
-    @retry_on_failure(max_retries=3, backoff_factor=1.0)
     async def geocode(
         self, address: str, components: Optional[Dict[str, str]] = None
     ) -> Optional[Dict[str, Any]]:
@@ -174,7 +173,6 @@ class GoogleMapsAPI(BaseAPIClient):
 
     # Distance Matrix API
 
-    @retry_on_failure(max_retries=3, backoff_factor=1.0)
     async def distance_matrix(
         self,
         origin: Tuple[float, float],
@@ -189,7 +187,8 @@ class GoogleMapsAPI(BaseAPIClient):
             origin: Origin coordinates (lat, lon)
             destinations:  List of destination coordinates
             mode:  Travel mode (driving, walking, bicycling, transit)
-            departure_time: Optional departure time for traffic estimates
+            departure_time: Departure time for a traffic estimate (billed at a higher
+                rate). Without one, durations are typical drive times.
 
         Returns:
             List of distance/duration information for each destination
@@ -234,14 +233,11 @@ class GoogleMapsAPI(BaseAPIClient):
             "key": self.api_key,
         }
 
-        # Add departure time for traffic data
+        # Traffic estimates only when asked for: a departure time bills every destination at
+        # the Advanced rate (twice the basic one), and "now" would make drive times depend on
+        # the hour a property happened to be enriched
         if departure_time:
-            # Convert to Unix timestamp
-            timestamp = int(departure_time.timestamp())
-            params["departure_time"] = timestamp
-        elif mode == "driving":
-            # Use "now" for current traffic
-            params["departure_time"] = "now"
+            params["departure_time"] = int(departure_time.timestamp())
 
         try:
             data = await self._make_request("GET", self.DISTANCE_MATRIX_ENDPOINT, params=params)

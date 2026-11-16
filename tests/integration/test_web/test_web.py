@@ -14,8 +14,8 @@ from app.services.property_service import (
 )
 from app.web.routes import duration
 
+WALK_SCORES = {"walk_score": 72, "bike_score": 55}
 ENRICHMENT = {
-    "walk_score_provider": {"walk_score": 72, "bike_score": 55},
     "distance_provider": {
         "distances": [
             {"location_name": "Mom", "status": "OK", "duration_minutes": 18, "distance_miles": 9.2}
@@ -45,6 +45,16 @@ def service(db):
     service = PropertyService(db=db, geocoder=Mock(), orchestrator=Mock())
     service.enrich = AsyncMock()
     return service
+
+
+@pytest.fixture(autouse=True)
+def walk_scores(monkeypatch):
+    """Walk Score is asked on every property page view; answer for it here."""
+    from app.web import routes
+
+    lookup = AsyncMock(return_value=dict(WALK_SCORES))
+    monkeypatch.setattr(routes, "live_walk_scores", lookup)
+    return lookup
 
 
 @pytest.fixture
@@ -82,7 +92,7 @@ class TestPropertyList:
         assert "42 Elm St, Denver, CO" in html
         assert "$615,000" in html
         assert "3 bd" in html and "2.5 ba" in html
-        assert "Walk 72" in html
+        assert "Walk" not in html  # scores can't be stored, and the list doesn't fetch them
         assert f'href="/properties/{enriched}"' in html
 
     def test_sort(self, web, db):
@@ -112,10 +122,11 @@ class TestPropertyList:
 
 
 class TestPropertyDetail:
-    def test_shows_enrichment(self, web, enriched):
+    def test_shows_enrichment(self, web, enriched, walk_scores):
         html = web.get(f"/properties/{enriched}").text
 
         assert "Walk score" in html and ">72<" in html
+        walk_scores.assert_awaited_once_with(39.7, -104.9, "42 Elm St, Denver, CO")
         assert "Mom" in html and "18m" in html
         assert "Denver" in html and "715,000" in html
         assert "Under 18" in html
@@ -178,11 +189,66 @@ class TestPropertyDetail:
         assert db.get_property(enriched)["garage_spaces"] == 0
         assert "No garage" in web.get(f"/properties/{enriched}").text
 
-    def test_reenrich_bypasses_cache(self, web, db, service, enriched):
+    def test_walk_score_links_to_walkscore(self, web, enriched, walk_scores):
+        html = web.get(f"/properties/{enriched}").text
+        assert 'href="https://www.walkscore.com/how-it-works/"' in html
+
+        for link, shown in [
+            ("https://www.walkscore.com/score/42-elm-st", True),
+            ("https://evil.example/walkscore", False),
+        ]:
+            walk_scores.return_value = {**WALK_SCORES, "link": link}
+            assert (f'href="{link}"' in web.get(f"/properties/{enriched}").text) is shown
+
+    def test_walk_scores_are_fetched_per_view_and_never_stored(
+        self, web, db, enriched, walk_scores
+    ):
+        web.get(f"/properties/{enriched}")
+        web.get(f"/properties/{enriched}")
+
+        assert walk_scores.await_count == 2
+        assert "walk_score" not in str(db.get_property(enriched)["enrichment"])
+
+    def test_page_renders_without_walk_scores(self, web, db, enriched, walk_scores):
+        walk_scores.return_value = {}
+
+        html = web.get(f"/properties/{enriched}").text
+
+        assert "Walk score" not in html and "walkscore.com" not in html
+        assert "Mom" in html
+
+    def test_no_lookup_before_the_property_is_located(self, web, db, walk_scores):
+        property_id = db.create_property({"address": "1 New St"})
+
+        assert web.get(f"/properties/{property_id}").status_code == 200
+        walk_scores.assert_not_awaited()
+
+    def test_reenrich_keeps_results_that_are_still_good(self, web, db, service, enriched):
         web.post(f"/properties/{enriched}/reenrich")
 
         assert db.get_property(enriched)["status"] == PropertyStatus.NEW
+        service.enrich.assert_awaited_once_with(enriched, use_cached=True)
+
+    def test_redo_all_runs_every_provider(self, web, service, enriched):
+        web.post(f"/properties/{enriched}/reenrich", data={"everything": "1"})
+
         service.enrich.assert_awaited_once_with(enriched, use_cached=False)
+
+    def test_new_address_forgets_the_old_location(self, web, db, enriched):
+        db.update_property(enriched, {"enrichment_meta": {"walk_score_provider": {"ok": True}}})
+
+        web.post(f"/properties/{enriched}/facts", data={"address": "9 Other Rd"})
+
+        prop = db.get_property(enriched)
+        assert (prop["latitude"], prop["longitude"]) == (None, None)
+        assert prop["enrichment_meta"] == {}
+
+    def test_same_address_keeps_the_location(self, web, db, enriched):
+        before = db.get_property(enriched)
+
+        web.post(f"/properties/{enriched}/facts", data={"address": before["address"]})
+
+        assert db.get_property(enriched)["latitude"] == before["latitude"]
 
     def test_delete(self, web, db, enriched):
         response = web.post(f"/properties/{enriched}/delete", follow_redirects=False)
@@ -213,15 +279,22 @@ class TestStreetView:
         assert "server-key" not in html
         assert "Imagery from 2024-03" in html
 
-    def test_falls_back_to_location_and_server_key(self, web, enriched, monkeypatch):
+    def test_falls_back_to_location_without_a_panorama(self, web, enriched):
+        html = web.get(f"/properties/{enriched}").text
+
+        assert "key=browser-key" in html
+        assert "location=39.7%2C-104.9" in html
+
+    def test_server_key_is_never_sent_to_the_browser(self, web, enriched, monkeypatch):
         from app.web import routes
 
         monkeypatch.setattr(routes.settings, "google_maps_embed_key", None)
 
         html = web.get(f"/properties/{enriched}").text
 
-        assert "key=server-key" in html
-        assert "location=39.7%2C-104.9" in html
+        assert "server-key" not in html
+        assert "maps/embed" not in html
+        assert "GOOGLE_MAPS_EMBED_KEY" in html
 
     def test_no_coverage(self, web, db, enriched):
         db.update_property(

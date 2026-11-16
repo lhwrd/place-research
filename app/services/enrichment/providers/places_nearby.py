@@ -38,6 +38,14 @@ class PlacesNearbyProvider(BaseEnrichmentProvider):
             dependencies=[],
         )
 
+    def inputs(self, user_preferences: Optional[Dict[str, Any]] = None) -> Any:
+        """The amenity types and place searches from the Settings page."""
+        preferences = user_preferences or {}
+        return {
+            "amenities": preferences.get("preferred_amenities", []),
+            "places": preferences.get("preferred_places", []),
+        }
+
     async def enrich(
         self,
         latitude: float,
@@ -61,13 +69,16 @@ class PlacesNearbyProvider(BaseEnrichmentProvider):
         """
         place_types = user_preferences.get("preferred_amenities", []) if user_preferences else []
         text_queries = user_preferences.get("preferred_places", []) if user_preferences else []
-        places_types_results = await self.places_api.nearby_search(
-            lat=latitude,
-            lon=longitude,
-            place_types=place_types,
-            radius_miles=10.0,
-            max_results=3,
-        )
+        # With no types the API returns any popular places nearby, so don't ask
+        places_types_results = []
+        if place_types:
+            places_types_results = await self.places_api.nearby_search(
+                lat=latitude,
+                lon=longitude,
+                place_types=place_types,
+                radius_miles=10.0,
+                max_results=3,
+            )
 
         text_query_results = []
 
@@ -99,7 +110,7 @@ class PlacesNearbyProvider(BaseEnrichmentProvider):
             data={"places_nearby": all_places},
             success=True,
             error_message=None,
-            api_calls_made=1 + len(text_queries) + distance_calls,
+            api_calls_made=(1 if place_types else 0) + len(text_queries) + distance_calls,
             cached=False,
         )
 

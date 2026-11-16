@@ -50,6 +50,14 @@ class DistanceProvider(BaseEnrichmentProvider):
             cost_per_call=0.005,  # Cost per destination
         )
 
+    def inputs(self, user_preferences: Optional[Dict[str, Any]] = None) -> Any:
+        """The destinations: adding, moving or renaming one makes stored drive times stale."""
+        locations: List[CustomLocation] = (user_preferences or {}).get("custom_locations", [])
+        return sorted(
+            [loc.id, loc.name, loc.location_type, loc.priority, loc.latitude, loc.longitude]
+            for loc in locations
+        )
+
     async def enrich(
         self,
         latitude: float,

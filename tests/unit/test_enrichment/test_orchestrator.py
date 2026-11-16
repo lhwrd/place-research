@@ -209,3 +209,26 @@ def test_format_response(orchestrator):
     assert response["metadata"]["failed_providers"] == 1
     assert response["metadata"]["total_api_calls"] == 1
     assert response["enrichment_data"]["provider2"]["error"] == "API Error"
+
+
+def test_provider_info(orchestrator):
+    plain = _provider("plain")
+    plain.inputs = Mock(return_value=None)
+    configured = _provider("configured")
+    configured.metadata.cache_duration_days = 7
+    configured.inputs = Mock(side_effect=lambda preferences: preferences["places"])
+    skipped = _provider("skipped")
+    skipped.should_run = Mock(return_value=False)
+    orchestrator.provider_registry.get_enabled_providers = Mock(
+        return_value=[plain, configured, skipped]
+    )
+
+    info = orchestrator.provider_info({"places": ["Costco"]})
+    changed = orchestrator.provider_info({"places": ["Costco", "Wawa"]})
+
+    assert info["plain"] == {"max_age_days": 30, "inputs": None}
+    assert info["configured"]["max_age_days"] == 7
+    assert set(info) == {"plain", "configured"}
+    # Same settings give the same fingerprint; different settings a different one
+    assert info == orchestrator.provider_info({"places": ["Costco"]})
+    assert info["configured"]["inputs"] != changed["configured"]["inputs"]

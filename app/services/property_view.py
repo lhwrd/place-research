@@ -80,12 +80,20 @@ class PropertyView:
         }
 
 
-def build_view(enrichment: Dict[str, Dict[str, Any]]) -> PropertyView:
-    """Build the detail-page view from {provider name: data}."""
+def build_view(
+    enrichment: Dict[str, Dict[str, Any]], walk_scores: Optional[Dict[str, Any]] = None
+) -> PropertyView:
+    """
+    Build the detail-page view from {provider name: data}.
+
+    Args:
+        walk_scores: Scores fetched for this page view (app.services.walk_score); they
+            aren't part of the stored enrichment
+    """
     view = PropertyView()
     data = lambda name: enrichment.get(name) or {}  # noqa: E731
 
-    walk = data("walk_score_provider")
+    walk = walk_scores or {}
 
     highway = data("highway_provider")
     rail = data("railroad_provider")

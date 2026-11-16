@@ -24,15 +24,15 @@ def levels(rows):
 
 def test_build_view_formats_every_provider():
     view = build_view(
-        {
-            "walk_score_provider": {
-                "walk_score": 45,
-                "description": "Car-Dependent",
-                "bike_score": 60,
-                "bike_description": "Bikeable",
-                "transit_score": None,
-                "transit_description": None,
-            },
+        walk_scores={
+            "walk_score": 45,
+            "description": "Car-Dependent",
+            "bike_score": 60,
+            "bike_description": "Bikeable",
+            "transit_score": None,
+            "transit_description": None,
+        },
+        enrichment={
             "flood_zone_provider": {
                 "flood_zone": "AE",
                 "flood_risk": None,
@@ -82,7 +82,7 @@ def test_build_view_formats_every_provider():
                     {"type": "No name"},
                 ]
             },
-        }
+        },
     )
 
     assert pairs(view.surroundings) == [
@@ -248,8 +248,8 @@ class TestNoiseEstimate:
 
 
 def test_scores_without_descriptions():
-    """Enriched before descriptions were stored: just the number."""
-    view = build_view({"walk_score_provider": {"walk_score": 47, "bike_score": 62}})
+    """Just the number where Walk Score sends no description."""
+    view = build_view({}, {"walk_score": 47, "bike_score": 62})
 
     assert pairs(view.surroundings) == [("Walk score", "47"), ("Bike score", "62")]
 
@@ -414,3 +414,10 @@ class TestHazardsAndInternet:
             "Impaired waters": "None nearby",
         }
         assert view.internet_summary.value == "No wired or fixed wireless providers listed"
+
+
+def test_scores_saved_by_earlier_versions_are_not_shown():
+    """Walk Score's terms don't allow storing scores; only ones fetched for this view count."""
+    view = build_view({"walk_score_provider": {"walk_score": 47}})
+
+    assert view.surroundings == []

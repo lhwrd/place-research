@@ -8,7 +8,7 @@ import httpx
 import pytest
 
 from app.core.logging_config import CustomJsonFormatter, RedactingFilter
-from app.core.redaction import redact_secrets
+from app.core.redaction import redact_secrets, redact_value
 from app.integrations.base_client import USER_AGENT, BaseAPIClient
 
 URL = "https://www.airnowapi.org/aq/forecast/latLong/?API_KEY=FBD89C42-SECRET&latitude=29.1"
@@ -70,6 +70,32 @@ def test_filter_redacts_traceback_in_text_format():
     assert "Traceback" in output and "API_KEY=REDACTED" in output
 
 
+def test_redact_value_masks_credential_keys_in_params_and_headers():
+    params = {"address": "1 Main St", "key": "AIzaSECRET", "wsapikey": "WS-SECRET", "lat": 1.5}
+    assert redact_value(params) == {
+        "address": "1 Main St",
+        "key": "REDACTED",
+        "wsapikey": "REDACTED",
+        "lat": 1.5,
+    }
+    assert params["key"] == "AIzaSECRET"  # the request's own dict is untouched
+    assert redact_value({"headers": {"X-Goog-Api-Key": "AIzaSECRET"}, "urls": [URL]}) == {
+        "headers": {"X-Goog-Api-Key": "REDACTED"},
+        "urls": ["https://www.airnowapi.org/aq/forecast/latLong/?API_KEY=REDACTED&latitude=29.1"],
+    }
+    assert redact_value(None) is None
+
+
+def test_filter_redacts_dict_extras():
+    output = _emit(
+        {"args": ("request",), "extra": {"params": {"key": "AIzaSECRET", "q": "x"}}},
+        CustomJsonFormatter("%(message)s"),
+    )
+
+    assert "AIzaSECRET" not in output
+    assert json.loads(output)["params"] == {"key": "REDACTED", "q": "x"}
+
+
 class _Client(BaseAPIClient):
     def _get_service_name(self):
         return "test"
@@ -100,3 +126,20 @@ async def test_http_error_message_is_redacted_and_ua_is_set():
     message = exc_info.value.message
     assert "SECRET123" not in message
     assert "HTTP 410 from https://api.test/aq?API_KEY=REDACTED&lat=1" == message
+
+
+@pytest.mark.asyncio
+async def test_request_logging_never_includes_the_key(caplog):
+    """Google and Walk Score take their key as a query parameter."""
+    client = _Client(base_url="https://api.test")
+    client._client = httpx.AsyncClient(
+        transport=httpx.MockTransport(lambda request: httpx.Response(200, json={}))
+    )
+
+    with caplog.at_level(logging.DEBUG, logger="app.integrations.base_client"):
+        await client._make_request("GET", "geocode", params={"address": "x", "key": "AIzaSECRET"})
+
+    assert caplog.records
+    for record in caplog.records:
+        assert "AIzaSECRET" not in record.getMessage()
+        assert "AIzaSECRET" not in repr(record.__dict__)

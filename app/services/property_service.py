@@ -4,16 +4,21 @@ Properties come from the iOS Shortcut (a Zillow URL plus scraped listing JSON) o
 web UI (a Zillow URL or a plain address). Each new property is enriched in the background:
 geocode, run every provider, and store each provider's data on the row. A provider that
 fails keeps its previous data, so a flaky API never blanks a property.
+
+The stored results are the cache. Enriching again only calls the providers whose result
+is missing, failed last time, is older than the provider's cache_duration_days, or was
+computed from settings that have since changed; several providers are billed per call.
 """
 
 import json
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 from app.db import Database, PropertyStatus, get_database
+from app.db.database import LOCATION_GEOCODE_COLUMNS
 from app.services.enrichment.orchestrator import EnrichmentOrchestrator
 from app.services.enrichment.providers.driving_distance import CustomLocation
 from app.services.geocoding_service import GeocodingService
@@ -115,6 +120,10 @@ class PropertyService:
         """
         Enrich a property and store the results.
 
+        Args:
+            use_cached: Keep stored provider results that are still good and only run the
+                rest. False runs every provider.
+
         Returns:
             True if enrichment ran, False if the property is missing or already running
         """
@@ -169,33 +178,65 @@ class PropertyService:
 
         latitude, longitude = facts.latitude, facts.longitude
         if latitude is None or longitude is None:
+            # Geocoded on an earlier run (editing the address clears these)
+            latitude, longitude = prop.get("latitude"), prop.get("longitude")
+        if latitude is None or longitude is None:
             geocoded = await self.geocoder.geocode_address(address)
             latitude, longitude = geocoded["latitude"], geocoded["longitude"]
+        latitude, longitude = round(latitude, 6), round(longitude, 6)
+        moved = (latitude, longitude) != (prop.get("latitude"), prop.get("longitude"))
 
-        result = await self.orchestrator.enrich(
-            latitude=latitude,
-            longitude=longitude,
-            address=address,
-            property_data=_property_data(facts),
-            user_preferences=await self.load_preferences(),
-            use_cached=use_cached,
+        preferences = await self.load_preferences()
+        providers = self.orchestrator.provider_info(preferences)
+        now = datetime.now(timezone.utc)
+        runs = _previous_runs(prop)
+        to_run = [
+            name
+            for name, info in providers.items()
+            if not use_cached or moved or not _is_fresh(runs.get(name), info, now)
+        ]
+        logger.info(
+            "Property %s: running %d of %d providers", prop["id"], len(to_run), len(providers)
         )
+
+        results: Dict[str, Any] = {}
+        if to_run:
+            result = await self.orchestrator.enrich(
+                latitude=latitude,
+                longitude=longitude,
+                address=address,
+                property_data=_property_data(facts),
+                user_preferences=preferences,
+                # What to reuse was decided above; the orchestrator's own cache doesn't
+                # know about settings changes
+                use_cached=False,
+                provider_filter=to_run,
+            )
+            results = result.get("enrichment_data") or {}
 
         # Keep each provider's previous data unless it succeeded this time
         enrichment = dict(prop.get("enrichment") or {})
         failed = []
-        for name, provider_result in (result.get("enrichment_data") or {}).items():
-            if provider_result.get("success") and provider_result.get("data"):
+        timestamp = now.isoformat(timespec="seconds")
+        for name, provider_result in results.items():
+            succeeded = bool(provider_result.get("success"))
+            if succeeded and provider_result.get("data"):
                 enrichment[name] = provider_result["data"]
-            elif not provider_result.get("success"):
+            elif not succeeded:
                 failed.append(f"{name}: {provider_result.get('error') or 'failed'}")
+            runs[name] = {
+                "at": timestamp,
+                "ok": succeeded,
+                "inputs": (providers.get(name) or {}).get("inputs"),
+            }
 
         return {
             **_listing_columns(facts),
-            "latitude": round(latitude, 6),
-            "longitude": round(longitude, 6),
+            "latitude": latitude,
+            "longitude": longitude,
             "enrichment": enrichment,
-            "enriched_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "enrichment_meta": runs,
+            "enriched_at": timestamp,
             "status": PropertyStatus.ENRICHED,
             # Partial failures are worth seeing, but don't make the property an Error
             "error": "\n".join(failed)[:MAX_ERROR_CHARS] or None,
@@ -219,13 +260,21 @@ class PropertyService:
         }
 
     async def _custom_location(self, row: Dict[str, Any]) -> Optional[CustomLocation]:
-        try:
-            geocoded = await self.geocoder.geocode_address(row["address"])
-        except Exception as e:  # pylint: disable=broad-except
-            logger.warning(
-                "Skipping location %r: could not geocode %r: %s", row["name"], row["address"], e
-            )
-            return None
+        geocoded = row
+        if row.get("latitude") is None or row.get("longitude") is None:
+            # First use of this address: geocode it once and keep the answer on the row
+            try:
+                found = await self.geocoder.geocode_address(row["address"])
+            except Exception as e:  # pylint: disable=broad-except
+                logger.warning(
+                    "Skipping location %r: could not geocode %r: %s",
+                    row["name"],
+                    row["address"],
+                    e,
+                )
+                return None
+            geocoded = {column: found.get(column) for column in LOCATION_GEOCODE_COLUMNS}
+            self.db.update_location(row["id"], geocoded)
         return CustomLocation(
             id=row["id"],
             name=row["name"],
@@ -237,6 +286,37 @@ class PropertyService:
             city=geocoded.get("city"),
             state=geocoded.get("state"),
         )
+
+
+def _previous_runs(prop: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+    """
+    Provider name -> {"at", "ok", "inputs"} for each provider's latest run.
+
+    Properties enriched before runs were recorded only have the property's enriched_at and
+    its list of failures, so every stored result gets that time and unknown inputs (which
+    reruns the providers that depend on settings, once).
+    """
+    recorded = prop.get("enrichment_meta")
+    if recorded:
+        return dict(recorded)
+    failed = {line.split(":", 1)[0] for line in (prop.get("error") or "").splitlines()}
+    return {
+        name: {"at": prop.get("enriched_at"), "ok": name not in failed, "inputs": None}
+        for name in prop.get("enrichment") or {}
+    }
+
+
+def _is_fresh(run: Optional[Dict[str, Any]], info: Dict[str, Any], now: datetime) -> bool:
+    """Whether a provider's stored result can stand in for calling it again."""
+    if not run or not run.get("ok") or run.get("inputs") != info.get("inputs"):
+        return False
+    try:
+        ran_at = datetime.fromisoformat(run["at"])
+    except (KeyError, TypeError, ValueError):
+        return False
+    if ran_at.tzinfo is None:
+        ran_at = ran_at.replace(tzinfo=timezone.utc)
+    return now - ran_at < timedelta(days=info.get("max_age_days") or 0)
 
 
 def _listing_columns(facts: ListingFacts) -> Dict[str, Any]:

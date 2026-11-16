@@ -15,7 +15,7 @@ from typing import Any, Optional
 
 from pythonjsonlogger import json as jsonlogger
 
-from app.core.redaction import redact_secrets
+from app.core.redaction import redact_secrets, redact_value
 
 # Context variable for request ID (thread-safe across async contexts)
 request_id_var: ContextVar[Optional[str]] = ContextVar("request_id", default=None)
@@ -40,15 +40,15 @@ class ContextFilter(logging.Filter):
 
 
 class RedactingFilter(logging.Filter):
-    """Remove API keys from the message, string extras and traceback of every record."""
+    """Remove API keys from the message, extras and traceback of every record."""
 
     def filter(self, record: logging.LogRecord) -> bool:
         record.msg = redact_secrets(record.getMessage())
         record.args = None
 
         for name, value in list(record.__dict__.items()):
-            if isinstance(value, str) and name != "msg":
-                setattr(record, name, redact_secrets(value))
+            if isinstance(value, (str, dict, list, tuple)) and name != "msg":
+                setattr(record, name, redact_value(value))
 
         # Render the traceback now so it can be redacted; formatters use exc_text as-is
         if record.exc_info:

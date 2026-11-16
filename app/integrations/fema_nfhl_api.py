@@ -7,12 +7,14 @@ https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer
 import logging
 from typing import Any, Dict, Optional
 
-from .base_client import BaseAPIClient, send_with_retry
+from .arcgis_api import ArcGISClient
 
 logger = logging.getLogger(__name__)
 
+FEMA_NFHL = "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer"
 # Layer 28 is "Flood Hazard Zones" (the S_FLD_HAZ_AR polygons)
-FLOOD_HAZARD_ZONES_LAYER = 28
+FLOOD_HAZARD_ZONES_LAYER = "28"
+FIELDS = ("FLD_ZONE", "ZONE_SUBTY", "SFHA_TF", "STATIC_BFE")
 
 # FEMA uses -9999 for "no value" in numeric fields
 NO_VALUE = -9999
@@ -20,19 +22,13 @@ NO_VALUE = -9999
 NOT_MAPPED = "Not mapped"
 
 
-class FemaNfhlAPIClient(BaseAPIClient):
+class FemaNfhlAPIClient(ArcGISClient):
     """Flood zone lookups against FEMA's NFHL map service."""
 
     def __init__(self):
-        super().__init__(
-            base_url="https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer",
-            api_key=None,
-            timeout=30.0,
-            rate_limit_per_second=5.0,
-        )
-
-    def _get_service_name(self) -> str:
-        return "fema_nfhl"
+        # The service intermittently resets connections; the ArcGIS client's retries
+        # usually succeed
+        super().__init__(base_url=FEMA_NFHL, service="FEMA NFHL")
 
     async def validate_api_key(self) -> bool:
         """No key is needed; check the service answers for a known mapped point."""
@@ -54,29 +50,9 @@ class FemaNfhlAPIClient(BaseAPIClient):
             httpx.HTTPError: If the service can't be reached or returns an HTTP error
             ValueError: If the service returns an ArcGIS error body
         """
-        params = {
-            "geometry": f"{longitude},{latitude}",
-            "geometryType": "esriGeometryPoint",
-            "inSR": 4326,
-            "spatialRel": "esriSpatialRelIntersects",
-            "outFields": "FLD_ZONE,ZONE_SUBTY,SFHA_TF,STATIC_BFE",
-            "returnGeometry": "false",
-            "f": "json",
-        }
-        url = f"{self.base_url}/{FLOOD_HAZARD_ZONES_LAYER}/query"
-
-        # The service intermittently resets connections; retries usually succeed
-        response = await send_with_retry(
-            lambda: self.client.get(url, params=params), service="FEMA NFHL"
+        zones = await self.query_near(
+            FLOOD_HAZARD_ZONES_LAYER, latitude, longitude, out_fields=FIELDS
         )
-        response.raise_for_status()
-        data = response.json()
-
-        # ArcGIS reports query errors with HTTP 200 and an "error" body
-        if "error" in data:
-            raise ValueError(f"FEMA NFHL query failed: {data['error'].get('message')}")
-
-        zones = [feature["attributes"] for feature in data.get("features", [])]
         if not zones:
             logger.info("No FEMA flood map at (%.6f, %.6f)", latitude, longitude)
             return {

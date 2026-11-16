@@ -45,8 +45,6 @@
           {% if p.baths is not none %} · {{ p.baths|num(1) }} ba{% endif %}
           {% if p.sqft %} · {{ p.sqft|num }} sqft{% endif %}
           {% if p.garage_spaces %} · {{ p.garage_spaces|garage }}{% endif %}
-          {% set walk = (p.enrichment.get('walk_score_provider') or {}).get('walk_score') %}
-          {% if walk is not none %} · Walk {{ walk }}{% endif %}
         </div>
         <div class="card-foot">
           {{ stars(p.rating) }}

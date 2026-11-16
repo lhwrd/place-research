@@ -49,6 +49,9 @@ CREATE TABLE IF NOT EXISTS properties (
     -- JSON object: provider name -> that provider's latest successful data
     enrichment    TEXT NOT NULL DEFAULT '{}',
     enriched_at   TEXT,
+    -- JSON object: provider name -> {"at", "ok", "inputs"} for its latest run, which decides
+    -- whether a refresh needs to call it again
+    enrichment_meta TEXT NOT NULL DEFAULT '{}',
     -- Yours; enrichment never writes these
     notes         TEXT NOT NULL DEFAULT '',
     rating        INTEGER,
@@ -74,7 +77,12 @@ CREATE TABLE IF NOT EXISTS locations (
     address  TEXT NOT NULL,
     type     TEXT,
     active   INTEGER NOT NULL DEFAULT 1,
-    priority INTEGER NOT NULL DEFAULT 0
+    priority INTEGER NOT NULL DEFAULT 0,
+    -- Geocoded once from the address; cleared when the address changes
+    latitude  REAL,
+    longitude REAL,
+    city      TEXT,
+    state     TEXT
 );
 
 CREATE TABLE IF NOT EXISTS settings (
@@ -104,6 +112,7 @@ PROPERTY_COLUMNS = frozenset(
         "longitude",
         "enrichment",
         "enriched_at",
+        "enrichment_meta",
         "notes",
         "rating",
         "neighborhood_rating",
@@ -116,8 +125,16 @@ PROPERTY_COLUMNS = frozenset(
 ADDED_COLUMNS = [
     ("properties", "neighborhood_rating", "INTEGER"),
     ("properties", "garage_spaces", "INTEGER"),
+    ("properties", "enrichment_meta", "TEXT NOT NULL DEFAULT '{}'"),
+    ("locations", "latitude", "REAL"),
+    ("locations", "longitude", "REAL"),
+    ("locations", "city", "TEXT"),
+    ("locations", "state", "TEXT"),
 ]
-LOCATION_COLUMNS = frozenset({"name", "address", "type", "active", "priority"})
+LOCATION_GEOCODE_COLUMNS = ("latitude", "longitude", "city", "state")
+LOCATION_COLUMNS = frozenset(
+    {"name", "address", "type", "active", "priority", *LOCATION_GEOCODE_COLUMNS}
+)
 LOCATION_TYPES = ("Family", "Friend", "Work", "Other")
 
 # Sortable columns on the property list: query value -> ORDER BY clause
@@ -153,6 +170,7 @@ class Database:
         with self._connect() as conn:
             conn.executescript(SCHEMA)
             _add_missing_columns(conn)
+            _remove_stored_walk_scores(conn)
 
     @contextmanager
     def _connect(self) -> Iterator[sqlite3.Connection]:
@@ -292,9 +310,18 @@ class Database:
             return int(cursor.lastrowid or 0)
 
     def update_location(self, location_id: int, values: Dict[str, Any]) -> bool:
+        """Update a location. A new address drops the stored coordinates of the old one."""
         _check_columns(values, LOCATION_COLUMNS)
-        assignments = ", ".join(f"{k} = ?" for k in values)
+        if not values:
+            return True
         with self._connect() as conn:
+            if "address" in values and "latitude" not in values:
+                row = conn.execute(
+                    "SELECT address FROM locations WHERE id = ?", (location_id,)
+                ).fetchone()
+                if row is not None and row["address"] != values["address"]:
+                    values = {**values, **dict.fromkeys(LOCATION_GEOCODE_COLUMNS)}
+            assignments = ", ".join(f"{k} = ?" for k in values)
             cursor = conn.execute(
                 f"UPDATE locations SET {assignments} WHERE id = ?",
                 [*values.values(), location_id],
@@ -325,8 +352,9 @@ class Database:
     @staticmethod
     def _encode(values: Dict[str, Any]) -> Dict[str, Any]:
         encoded = dict(values)
-        if "enrichment" in encoded and not isinstance(encoded["enrichment"], str):
-            encoded["enrichment"] = json.dumps(encoded["enrichment"])
+        for column in ("enrichment", "enrichment_meta"):
+            if column in encoded and not isinstance(encoded[column], str):
+                encoded[column] = json.dumps(encoded[column])
         if "visited" in encoded:
             encoded["visited"] = int(bool(encoded["visited"]))
         return encoded
@@ -335,8 +363,25 @@ class Database:
     def _decode(row: sqlite3.Row) -> Dict[str, Any]:
         record = dict(row)
         record["enrichment"] = json.loads(record.get("enrichment") or "{}")
+        record["enrichment_meta"] = json.loads(record.get("enrichment_meta") or "{}")
         record["visited"] = bool(record.get("visited"))
         return record
+
+
+def _remove_stored_walk_scores(conn: sqlite3.Connection) -> None:
+    """
+    Earlier versions saved Walk Score results with the other enrichment data. Its terms
+    don't allow storing them (they're now fetched per page view), so delete any that remain.
+    """
+    conn.execute(
+        """
+        UPDATE properties
+        SET enrichment = json_remove(enrichment, '$.walk_score_provider'),
+            enrichment_meta = json_remove(enrichment_meta, '$.walk_score_provider')
+        WHERE enrichment LIKE '%"walk_score_provider"%'
+           OR enrichment_meta LIKE '%"walk_score_provider"%'
+        """
+    )
 
 
 def _add_missing_columns(conn: sqlite3.Connection) -> None:
