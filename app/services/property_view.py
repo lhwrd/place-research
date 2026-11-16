@@ -45,7 +45,7 @@ class PropertyView:
     acs_year: Optional[int] = None
     noise: Optional[NoiseEstimate] = None
     hazards: Rows = field(default_factory=list)
-    safety: Rows = field(default_factory=list)
+    internet_summary: Optional[str] = None
     internet: List[Dict[str, Any]] = field(default_factory=list)
 
 
@@ -115,15 +115,8 @@ def build_view(enrichment: Dict[str, Dict[str, Any]]) -> PropertyView:
         ("Impaired waters", impaired_waters_text(data("impaired_waters_provider"))),
     )
 
-    crime = data("crime_provider")
     broadband = data("broadband_provider")
-    view.safety = _rows(
-        ("Police agency", crime.get("agency")),
-        ("Violent crime", crime_rate_text(crime, "violent")),
-        ("Property crime", crime_rate_text(crime, "property")),
-        ("Crime data period", crime_period_text(crime)),
-        ("Internet", internet_summary_text(broadband)),
-    )
+    view.internet_summary = internet_summary_text(broadband)
     view.internet = internet_providers(broadband)
 
     census = data("census_provider")
@@ -330,30 +323,6 @@ def impaired_waters_text(data: Dict[str, Any]) -> Optional[str]:
         return ", ".join(names)
 
     return "; ".join(f"{w['name']} ({issues(w.get('parameters') or [])})" for w in waters[:3])
-
-
-def crime_rate_text(data: Dict[str, Any], kind: str) -> Optional[str]:
-    """E.g. "412 per 100k · 1.3× Florida"."""
-    if not data:
-        return None
-    if data.get("reporting") is False:
-        return "Agency not reporting to the FBI" if kind == "violent" else None
-    rate, state = data.get(f"{kind}_per_100k"), data.get(f"state_{kind}_per_100k")
-    if rate is None:
-        return None
-    text = f"{rate:,.0f} per 100k"
-    if state:
-        text += f" · {rate / state:.1f}× Florida"
-    if data.get("likely_incomplete") and kind == "property":
-        text += " · reporting looks incomplete"
-    return text
-
-
-def crime_period_text(data: Dict[str, Any]) -> Optional[str]:
-    if not data.get("reporting"):
-        return None
-    scope = "city" if data.get("jurisdiction") == "city" else "agency-wide (county)"
-    return f"{data['period_start']} to {data['period_end']} ({data['months']} mo) · {scope}"
 
 
 def internet_summary_text(data: Dict[str, Any]) -> Optional[str]:

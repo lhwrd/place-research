@@ -8,8 +8,7 @@ care about, and Census data (city and county population; age, race/ethnicity and
 for the census tract). In Florida it also covers sinkhole geology and reported sinkholes,
 open contamination cleanups, impaired lakes, hurricane evacuation zone, theme park
 fireworks and Cape launches; anywhere, nearby wetlands, whether the house sits below
-the ground around it, FBI crime rates for the covering police agency, and FCC home internet
-providers. Look around in Street View, rate the home and how the neighborhood looks, mark it
+the ground around it, and FCC home internet providers. Look around in Street View, rate the home and how the neighborhood looks, mark it
 visited, keep notes and photos.
 
 ```
@@ -115,12 +114,6 @@ Local data files (a provider whose file isn't configured is skipped):
   `uv run python scripts/build_broadband.py data/broadband.parquet ~/Downloads/bdc_12_*.zip`.
   Satellite is skipped (it's available everywhere). Refresh after each FCC release
   (twice a year).
-
-Crime needs `CRIME_DATA_API_KEY`, a free api.data.gov key for the FBI Crime Data
-Explorer; without it the provider is skipped. Rates are for the whole agency (the city
-police department inside city limits, otherwise the county sheriff), annualized over the
-latest 12 months it reported. Florida agencies report through NIBRS from 2025 and some,
-Orlando PD included, haven't reported yet; those show as not reporting.
 
 The Florida hazard providers (sinkholes, contamination, impaired waters, evacuation zone)
 query FDEP and state ArcGIS services; wetlands (USFWS) and elevation (USGS 3DEP) are

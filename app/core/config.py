@@ -40,9 +40,6 @@ class Settings(BaseSettings):
         description="ACS 5-year release to use (2024 = 2020-2024 estimates, out Dec 2025)",
     )
 
-    # FBI Crime Data Explorer, via api.data.gov (free: https://api.data.gov/signup/)
-    crime_data_api_key: Optional[str] = Field(None, alias="CRIME_DATA_API_KEY")
-
     # File paths for data sources
     raillines_path: Optional[Path] = Field(None, alias="RAILLINES_PATH")
     # Census TIGER primary/secondary roads, built by scripts/build_highways.py

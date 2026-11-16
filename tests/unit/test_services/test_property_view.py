@@ -228,7 +228,7 @@ def test_scores_without_descriptions():
     assert view.surroundings == [("Walk score", "47"), ("Bike score", "62")]
 
 
-class TestHazardsAndSafety:
+class TestHazardsAndInternet:
     def test_build_view_sections(self):
         view = build_view(
             {
@@ -267,19 +267,6 @@ class TestHazardsAndSafety:
                     "fireworks": [{"name": "EPCOT", "distance_m": 5787}],
                     "launch_site": {"name": "Cape Canaveral landing zones", "distance_m": 19521},
                 },
-                "crime_provider": {
-                    "agency": "Orange County Sheriff's Office",
-                    "jurisdiction": "county",
-                    "reporting": True,
-                    "period_start": "01-2025",
-                    "period_end": "09-2025",
-                    "months": 9,
-                    "likely_incomplete": True,
-                    "violent_per_100k": 400.0,
-                    "state_violent_per_100k": 200.0,
-                    "property_per_100k": 1500.0,
-                    "state_property_per_100k": None,
-                },
                 "broadband_provider": {
                     "providers": [
                         {
@@ -316,19 +303,12 @@ class TestHazardsAndSafety:
         surroundings = dict(view.surroundings)
         assert surroundings["Fireworks"] == "EPCOT 3.6 mi"
         assert surroundings["Rocket launches"] == "12 mi from the Cape · sonic booms likely"
-        assert dict(view.safety) == {
-            "Police agency": "Orange County Sheriff's Office",
-            "Violent crime": "400 per 100k · 2.0× Florida",
-            "Property crime": "1,500 per 100k · reporting looks incomplete",
-            "Crime data period": "01-2025 to 09-2025 (9 mo) · agency-wide (county)",
-            # Fiber reaches 10% of the block, so it's neither listed nor counted
-            "Internet": "No fiber · 1 wired provider · up to 1,000 Mbps",
-        }
+        assert view.internet_summary == "No fiber · 1 wired provider · up to 1,000 Mbps"
         assert [p["name"] for p in view.internet] == ["Spectrum"]
 
     def test_missing_providers_add_nothing(self):
         view = build_view({})
-        assert view.hazards == [] and view.safety == [] and view.internet == []
+        assert view.hazards == [] and view.internet_summary is None and view.internet == []
 
     def test_quiet_results(self):
         view = build_view(
@@ -342,7 +322,6 @@ class TestHazardsAndSafety:
                 },
                 "contamination_provider": {"sites_within_half_mi": 0},
                 "impaired_waters_provider": {"impaired_waters": []},
-                "crime_provider": {"agency": "Orlando Police Department", "reporting": False},
                 "broadband_provider": {"providers": []},
             }
         )
@@ -355,8 +334,4 @@ class TestHazardsAndSafety:
             "Contamination sites": "None within ½ mi",
             "Impaired waters": "None nearby",
         }
-        assert dict(view.safety) == {
-            "Police agency": "Orlando Police Department",
-            "Violent crime": "Agency not reporting to the FBI",
-            "Internet": "No wired or fixed wireless providers listed",
-        }
+        assert view.internet_summary == "No wired or fixed wireless providers listed"

@@ -95,10 +95,10 @@
 </section>
 {% endif %}
 
-{% if view.safety or view.internet %}
+{% if view.internet_summary %}
 <section class="card-section">
-  <h2>Safety &amp; internet</h2>
-  {{ rows(view.safety) }}
+  <h2>Internet</h2>
+  <p>{{ view.internet_summary }}</p>
   {% if view.internet %}
   <dl class="rows">
     {% for isp in view.internet %}
