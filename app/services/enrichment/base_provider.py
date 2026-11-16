@@ -20,6 +20,7 @@ class ProviderCategory(Enum):
     TRANSIT = "transit"
     DEMOGRAPHICS = "demographics"
     CONNECTIVITY = "connectivity"
+    PROPERTY = "property"
 
 
 @dataclass

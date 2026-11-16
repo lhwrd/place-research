@@ -58,6 +58,9 @@ class PropertyView:
     hazards: Rows = field(default_factory=list)
     internet_summary: Optional[Row] = None
     internet: List[Dict[str, Any]] = field(default_factory=list)
+    # The county property appraiser's record (Florida); unrated, so not in the scorecard
+    parcel: Rows = field(default_factory=list)
+    parcel_note: Optional[str] = None
 
     def scorecard(self) -> Dict[str, Any]:
         """
@@ -195,6 +198,8 @@ def build_view(
     summary = internet_summary_text(broadband)
     if summary:
         view.internet_summary = Row("Internet", summary, ratings.internet(broadband, view.internet))
+
+    view.parcel, view.parcel_note = parcel_section(data("parcel_provider"))
 
     census = data("census_provider")
     view.acs_year = census.get("acs_year")
@@ -479,6 +484,79 @@ def census_sections(data: Dict[str, Any]) -> Tuple[Rows, List[Distribution]]:
         Distribution("Education (25+)", list((tract.get("education") or {}).items())),
     ]
     return rows, [d for d in distributions if d.items]
+
+
+MONTHS = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split()
+
+
+def parcel_section(data: Dict[str, Any]) -> Tuple[Rows, Optional[str]]:
+    """The appraiser's record as rows, and a note when it may be the wrong parcel."""
+    if not data.get("found"):
+        return [], None
+
+    year, effective = data.get("year_built"), data.get("effective_year_built")
+    built = str(year) if year else None
+    if built and effective and effective != year:
+        built += f" (effective {effective}, after updates)"
+
+    lot_text = None
+    if data.get("lot_acres"):
+        lot_text = f"{data['lot_acres']:g} ac ({data['lot_sqft']:,} sqft)"
+
+    value = _money(data.get("just_value"))
+    if value and data.get("land_value"):
+        value += f" (land {_money(data['land_value'])})"
+
+    units = data.get("residential_units")
+    rows = _rows(
+        ("Use", data.get("use")),
+        ("Year built", built),
+        (
+            "Living area",
+            f"{data['living_area_sqft']:,} sqft" if data.get("living_area_sqft") else None,
+        ),
+        ("Lot", lot_text),
+        ("Units", f"{units} residential units" if units and units > 1 else None),
+        ("Construction quality", data.get("quality")),
+        ("Just (market) value", value),
+        ("Taxable value", _money(data.get("taxable_value"))),
+        ("Homestead", "Yes, owner-occupied" if data.get("homestead") else "No"),
+        ("Recent sales", "; ".join(sale_text(s) for s in data.get("recent_sales") or []) or None),
+        (
+            "Parcel",
+            _join(
+                f"{data['county']} County" if data.get("county") else None,
+                data.get("parcel_id"),
+                f"{data['assessment_year']} roll" if data.get("assessment_year") else None,
+            ),
+        ),
+    )
+
+    note = None
+    if data.get("match") == "nearest":
+        address = data.get("situs_address")
+        note = "No parcel matched this address, so this is the parcel nearest the map pin" + (
+            f" ({address})." if address else "."
+        )
+    return rows, note
+
+
+def sale_text(sale: Dict[str, Any]) -> str:
+    """E.g. "Mar 2025 · $410,000" or "Nov 2025 · $100 (not arm's length)"."""
+    month = sale.get("month")
+    when = (
+        f"{MONTHS[month - 1]} {sale['year']}" if month and 1 <= month <= 12 else str(sale["year"])
+    )
+    text = f"{when} · {_money(sale.get('price')) or 'price not recorded'}"
+    if not sale.get("arms_length"):
+        text += " (not arm's length)"
+    elif sale.get("vacant_land"):
+        text += " (land only)"
+    return text
+
+
+def _money(value: Any) -> Optional[str]:
+    return f"${int(value):,}" if value else None
 
 
 def _rows(*items: Tuple[Any, ...]) -> Rows:

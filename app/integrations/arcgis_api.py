@@ -6,6 +6,7 @@ ImageServer rasters. This client answers the two questions the providers ask of 
 """
 
 import logging
+import math
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from shapely.geometry import shape
@@ -84,6 +85,43 @@ class ArcGISClient(BaseAPIClient):
             ]
         return [f.get("attributes") or {} for f in data.get("features", [])]
 
+    async def query_box(
+        self,
+        layer: str,
+        latitude: float,
+        longitude: float,
+        half_size_m: float,
+        out_fields: Sequence[str] = ("*",),
+    ) -> List[Dict[str, Any]]:
+        """
+        Features intersecting a square of 2 * half_size_m around a point, with geometries.
+
+        Use this rather than query_near(distance_m=...) for layers stored in a projection
+        the server can't buffer in (it answers distance queries with an SRID error). The
+        Florida statewide parcels, in Florida GDL Albers, are one.
+
+        Returns:
+            One dict per feature: its attributes plus "geometry" (a shapely geometry in WGS84)
+        """
+        dlat = half_size_m / 110_950.0
+        dlon = half_size_m / (111_320.0 * math.cos(math.radians(latitude)))
+        params: Dict[str, Any] = {
+            "geometry": f"{longitude - dlon},{latitude - dlat},{longitude + dlon},{latitude + dlat}",
+            "geometryType": "esriGeometryEnvelope",
+            "inSR": 4326,
+            "spatialRel": "esriSpatialRelIntersects",
+            "outFields": ",".join(out_fields),
+            "returnGeometry": "true",
+            "outSR": 4326,
+            "geometryPrecision": 6,
+            "f": "geojson",
+        }
+        data = await self._get(f"{layer}/query", params)
+        return [
+            {**(f.get("properties") or {}), "geometry": _shape(f.get("geometry"))}
+            for f in data.get("features", [])
+        ]
+
     async def sample(
         self, image_service: str, latitude: float, longitude: float
     ) -> Optional[float]:
@@ -144,3 +182,5 @@ FDEP_OPEN_DATA = "https://ca.dep.state.fl.us/arcgis/rest/services"
 USFWS_WETLANDS = "https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services"
 USGS_ELEVATION = "https://elevation.nationalmap.gov/arcgis/rest/services"
 FL_EVACUATION_ZONES = "https://services1.arcgis.com/CY1LXxl9zlJeBuRZ/ArcGIS/rest/services"
+# Florida GIO's ArcGIS Online org: the Department of Revenue's statewide parcels
+FL_GIO = "https://services9.arcgis.com/Gh9awoU677aKree0/arcgis/rest/services"

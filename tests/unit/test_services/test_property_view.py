@@ -421,3 +421,72 @@ def test_scores_saved_by_earlier_versions_are_not_shown():
     view = build_view({"walk_score_provider": {"walk_score": 47}})
 
     assert view.surroundings == []
+
+
+class TestParcel:
+    RECORD = {
+        "found": True,
+        "match": "address",
+        "county": "Orange",
+        "parcel_id": "242229582203011",
+        "assessment_year": 2026,
+        "situs_address": "1216 VIRGINIA DR, Orlando",
+        "use": "Single family",
+        "year_built": 1955,
+        "effective_year_built": 1980,
+        "living_area_sqft": 2376,
+        "lot_sqft": 12333,
+        "lot_acres": 0.28,
+        "residential_units": 1,
+        "quality": "Average",
+        "just_value": 636740,
+        "land_value": 374400,
+        "taxable_value": 561740,
+        "homestead": True,
+        "recent_sales": [
+            {"year": 2025, "month": 11, "price": 100, "arms_length": False, "vacant_land": False},
+            {"year": 2025, "month": 3, "price": 410000, "arms_length": True, "vacant_land": False},
+        ],
+    }
+
+    def test_rows(self):
+        view = build_view({"parcel_provider": self.RECORD})
+        assert pairs(view.parcel) == [
+            ("Use", "Single family"),
+            ("Year built", "1955 (effective 1980, after updates)"),
+            ("Living area", "2,376 sqft"),
+            ("Lot", "0.28 ac (12,333 sqft)"),
+            ("Construction quality", "Average"),
+            ("Just (market) value", "$636,740 (land $374,400)"),
+            ("Taxable value", "$561,740"),
+            ("Homestead", "Yes, owner-occupied"),
+            ("Recent sales", "Nov 2025 · $100 (not arm's length); Mar 2025 · $410,000"),
+            ("Parcel", "Orange County, 242229582203011, 2026 roll"),
+        ]
+        assert view.parcel_note is None
+
+    def test_unrated_and_not_in_scorecard(self):
+        view = build_view({"parcel_provider": self.RECORD})
+        assert all(r.level is None for r in view.parcel)
+        assert view.scorecard()["total"] == 0
+
+    def test_vacant_lot_and_multiple_units(self):
+        record = {"found": True, "use": "Multi-family, under 10 units", "residential_units": 2,
+                  "year_built": 1950, "effective_year_built": 1950, "homestead": False}  # fmt: skip
+        assert pairs(build_view({"parcel_provider": record}).parcel) == [
+            ("Use", "Multi-family, under 10 units"),
+            ("Year built", "1950"),
+            ("Units", "2 residential units"),
+            ("Homestead", "No"),
+        ]
+
+    def test_nearest_parcel_is_flagged(self):
+        view = build_view({"parcel_provider": {**self.RECORD, "match": "nearest"}})
+        assert view.parcel_note == (
+            "No parcel matched this address, so this is the parcel nearest the map pin "
+            "(1216 VIRGINIA DR, Orlando)."
+        )
+
+    def test_not_found_or_missing(self):
+        assert build_view({"parcel_provider": {"found": False}}).parcel == []
+        assert build_view({}).parcel == []

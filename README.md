@@ -6,7 +6,7 @@ app then enriches it with flood zone, distance to the nearest highway,
 railroad and airport, an estimate of noise pollution from all three, air quality, nearby places, drive times to the people and places you
 care about, and Census data (city and county population; age, race/ethnicity and education
 for the census tract). In Florida it also covers sinkhole geology and reported sinkholes,
-open contamination cleanups, impaired lakes, hurricane evacuation zone, theme park
+open contamination cleanups, impaired lakes, hurricane evacuation zone, the property appraiser's record (year built, living area, value, recent sales), theme park
 fireworks and Cape launches; anywhere, nearby wetlands, whether the house sits below
 the ground around it, and FCC home internet providers. Look around in Street View, rate the home and how the neighborhood looks, mark it
 visited, keep notes and photos.
@@ -120,6 +120,12 @@ Local data files (a provider whose file isn't configured is skipped):
 The Florida hazard providers (sinkholes, contamination, impaired waters, evacuation zone)
 query FDEP and state ArcGIS services; wetlands (USFWS) and elevation (USGS 3DEP) are
 national. None needs a key.
+
+The property record (Florida) is the county property appraiser's tax roll entry for the
+parcel, from the Department of Revenue's statewide parcels on Florida GIO's ArcGIS
+service: year built, living area, lot, use, quality, just and taxable value, homestead and
+sales from this year and last. No key. It has no bed or bath counts; those come from the
+listing.
 
 Airports ship with the app (`app/data/airports.csv`, large and medium airports from
 OurAirports); refresh the list with `uv run python scripts/build_airports.py`.

@@ -94,6 +94,15 @@
   </form>
 </section>
 
+{% if view.parcel %}
+<section class="card-section">
+  <h2>Property record</h2>
+  {% if view.parcel_note %}<p class="dim small">{{ view.parcel_note }}</p>{% endif %}
+  {{ rows(view.parcel) }}
+  <p class="dim small">From the county property appraiser's tax roll, via the Florida Department of Revenue's statewide parcels. Recent sales cover only this year and last.</p>
+</section>
+{% endif %}
+
 {% if view.surroundings %}
 <section class="card-section">
   <h2>Location</h2>
