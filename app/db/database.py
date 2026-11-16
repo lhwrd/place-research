@@ -89,6 +89,24 @@ CREATE TABLE IF NOT EXISTS settings (
     key   TEXT PRIMARY KEY,
     value TEXT NOT NULL
 );
+
+-- One row per response from an external API (retries are separate rows), for usage
+-- dashboards. Written by app/integrations/usage.py.
+CREATE TABLE IF NOT EXISTS api_calls (
+    id          INTEGER PRIMARY KEY,
+    at          TEXT NOT NULL,     -- UTC, RFC 3339
+    service     TEXT NOT NULL,     -- the client's name, e.g. google_places, census
+    host        TEXT NOT NULL,
+    endpoint    TEXT NOT NULL,     -- URL path; never the query string, which can hold keys
+    method      TEXT NOT NULL,
+    status      INTEGER NOT NULL,  -- HTTP status
+    duration_ms INTEGER,           -- until the response headers arrived
+    -- For billed APIs: the product the request is charged as, and how many billable
+    -- units it used (Distance Matrix bills per destination). NULL sku = not billed.
+    sku         TEXT,
+    units       INTEGER NOT NULL DEFAULT 1
+);
+CREATE INDEX IF NOT EXISTS api_calls_at ON api_calls(at);
 """
 
 # Columns callers may set through create_property / update_property
@@ -331,6 +349,32 @@ class Database:
     def delete_location(self, location_id: int) -> bool:
         with self._connect() as conn:
             return conn.execute("DELETE FROM locations WHERE id = ?", (location_id,)).rowcount > 0
+
+    # API usage
+
+    def record_api_call(
+        self,
+        service: str,
+        host: str,
+        endpoint: str,
+        method: str,
+        status: int,
+        duration_ms: Optional[int] = None,
+        sku: Optional[str] = None,
+        units: int = 1,
+    ) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                "INSERT INTO api_calls"
+                " (at, service, host, endpoint, method, status, duration_ms, sku, units)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (_now(), service, host, endpoint, method, status, duration_ms, sku, units),
+            )
+
+    def list_api_calls(self) -> List[Dict[str, Any]]:
+        """Every recorded call, oldest first."""
+        with self._connect() as conn:
+            return [dict(r) for r in conn.execute("SELECT * FROM api_calls ORDER BY id")]
 
     # Settings (key/value)
 

@@ -14,6 +14,7 @@ from app.exceptions import (
     APIQuotaExceededError,
     ExternalAPIError,
 )
+from app.integrations.usage import usage_hooks
 
 logger = logging.getLogger(__name__)
 
@@ -121,6 +122,7 @@ class BaseAPIClient(ABC):
                 timeout=self.timeout,
                 follow_redirects=True,
                 headers={"User-Agent": USER_AGENT},
+                event_hooks=usage_hooks(self._get_service_name),
             )
         return self._client
 

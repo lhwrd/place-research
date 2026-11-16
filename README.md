@@ -143,6 +143,32 @@ intermittent but loud. The sources are combined as sound energy. It's a rough mo
 comparing homes; tune the levels there. The UI computes it at display time, so
 changing the model doesn't need a re-enrich.
 
+## API usage
+
+Every response from an external API is recorded in the `api_calls` table of the SQLite
+database (`app/integrations/usage.py`), one row per request, retries included:
+
+| Column        | Meaning                                                                  |
+|---------------|--------------------------------------------------------------------------|
+| `at`          | UTC time, RFC 3339                                                       |
+| `service`     | The client, e.g. `google_maps`, `google_places`, `census`, `walkscore`   |
+| `host`, `endpoint`, `method` | Where the request went (path only, never the query string) |
+| `status`      | HTTP status                                                              |
+| `duration_ms` | Time until the response headers arrived                                  |
+| `sku`         | For billed Google requests, the product charged; `NULL` if free          |
+| `units`       | Billable units: 1, or the number of destinations for Distance Matrix     |
+
+Requests that get no response (connection errors, timeouts) aren't recorded. To chart it,
+point Grafana's SQLite data source at the database file, read-only. Month-to-date billable
+units per Google product, to compare with each one's free monthly allowance:
+
+```sql
+SELECT sku, SUM(units) AS units
+FROM api_calls
+WHERE sku IS NOT NULL AND status = 200 AND at >= strftime('%Y-%m-01', 'now')
+GROUP BY sku;
+```
+
 ## Layout
 
 ```
