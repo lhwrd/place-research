@@ -40,10 +40,15 @@ class Settings(BaseSettings):
         description="ACS 5-year release to use (2024 = 2020-2024 estimates, out Dec 2025)",
     )
 
+    # FBI Crime Data Explorer, via api.data.gov (free: https://api.data.gov/signup/)
+    crime_data_api_key: Optional[str] = Field(None, alias="CRIME_DATA_API_KEY")
+
     # File paths for data sources
     raillines_path: Optional[Path] = Field(None, alias="RAILLINES_PATH")
     # Census TIGER primary/secondary roads, built by scripts/build_highways.py
     highways_path: Optional[Path] = Field(None, alias="HIGHWAYS_PATH")
+    # FCC broadband availability by census block, built by scripts/build_broadband.py
+    broadband_path: Optional[Path] = Field(None, alias="BROADBAND_PATH")
 
     # SQLite database holding properties, photos, locations and settings
     database_path: Path = Field(
@@ -52,7 +57,7 @@ class Settings(BaseSettings):
         description="SQLite file; its directory is created if missing",
     )
 
-    @field_validator("raillines_path", "highways_path", mode="before")
+    @field_validator("raillines_path", "highways_path", "broadband_path", mode="before")
     @classmethod
     def _blank_path_is_unset(cls, value):
         """`RAILLINES_PATH=` in .env means "not set", not the current directory."""

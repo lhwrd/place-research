@@ -44,6 +44,9 @@ class PropertyView:
     distributions: List[Distribution] = field(default_factory=list)
     acs_year: Optional[int] = None
     noise: Optional[NoiseEstimate] = None
+    hazards: Rows = field(default_factory=list)
+    safety: Rows = field(default_factory=list)
+    internet: List[Dict[str, Any]] = field(default_factory=list)
 
 
 def build_view(enrichment: Dict[str, Dict[str, Any]]) -> PropertyView:
@@ -67,6 +70,8 @@ def build_view(enrichment: Dict[str, Dict[str, Any]]) -> PropertyView:
         ),
         ("Noise", noise_text(view.noise)),
         ("Noise by source", noise_sources_text(view.noise)),
+        ("Fireworks", fireworks_text(data("local_noise_sources_provider"))),
+        ("Rocket launches", launch_text(data("local_noise_sources_provider"))),
         ("Flood zone", flood_zone_text(data("flood_zone_provider"))),
         (
             "Nearest highway",
@@ -99,6 +104,27 @@ def build_view(enrichment: Dict[str, Dict[str, Any]]) -> PropertyView:
         for p in data("places_nearby_provider").get("places_nearby", [])
         if p.get("name")
     ]
+
+    view.hazards = _rows(
+        ("Sinkhole geology", sinkhole_text(data("sinkhole_provider"))),
+        ("Sinkhole reports", sinkhole_reports_text(data("sinkhole_provider"))),
+        ("Elevation", elevation_text(data("elevation_provider"))),
+        ("Evacuation zone", evacuation_zone_text(data("evacuation_zone_provider"))),
+        ("Wetlands", wetlands_text(data("wetlands_provider"))),
+        ("Contamination sites", contamination_text(data("contamination_provider"))),
+        ("Impaired waters", impaired_waters_text(data("impaired_waters_provider"))),
+    )
+
+    crime = data("crime_provider")
+    broadband = data("broadband_provider")
+    view.safety = _rows(
+        ("Police agency", crime.get("agency")),
+        ("Violent crime", crime_rate_text(crime, "violent")),
+        ("Property crime", crime_rate_text(crime, "property")),
+        ("Crime data period", crime_period_text(crime)),
+        ("Internet", internet_summary_text(broadband)),
+    )
+    view.internet = internet_providers(broadband)
 
     census = data("census_provider")
     view.acs_year = census.get("acs_year")
@@ -191,6 +217,165 @@ def air_quality_text(data: Dict[str, Any]) -> Optional[str]:
     return " ".join(parts) or None
 
 
+def fireworks_text(data: Dict[str, Any]) -> Optional[str]:
+    """E.g. "EPCOT 3.6 mi, Disney's Hollywood Studios 4.2 mi"; None if none within range."""
+    venues = data.get("fireworks") or []
+    return ", ".join(f"{v['name']} {_miles(v['distance_m'])}" for v in venues[:3]) or None
+
+
+def launch_text(data: Dict[str, Any]) -> Optional[str]:
+    site = data.get("launch_site")
+    if not site:
+        return None
+    miles = float(site["distance_m"]) / METERS_PER_MILE
+    # Booster landing sonic booms rattle windows across Brevard; launches are heard further
+    effect = "sonic booms likely" if miles <= 30 else "launches audible"
+    return f"{miles:.0f} mi from the Cape · {effect}"
+
+
+def sinkhole_text(data: Dict[str, Any]) -> Optional[str]:
+    """E.g. "Most favorable to sinkhole formation"."""
+    favorability = data.get("favorability")
+    return f"{favorability} to sinkhole formation" if favorability else None
+
+
+def sinkhole_reports_text(data: Dict[str, Any]) -> Optional[str]:
+    """E.g. "3 within 1 mi (1 verified) · nearest 0.30 mi, 2008" or "None within 1 mi"."""
+    count = data.get("incidents_within_1mi")
+    if count is None:
+        return None
+    if count == 0:
+        return "None within 1 mi"
+    text = f"{count} within 1 mi"
+    if data.get("verified_within_1mi"):
+        text += f" ({data['verified_within_1mi']} verified)"
+    if data.get("nearest_incident_m") is not None:
+        text += f" · nearest {_miles(data['nearest_incident_m'])}"
+        if data.get("nearest_incident_year"):
+            text += f", {data['nearest_incident_year']}"
+    return text
+
+
+def elevation_text(data: Dict[str, Any]) -> Optional[str]:
+    """E.g. "82 ft · 3.5 ft below surrounding ground"."""
+    elevation = data.get("elevation_ft")
+    if elevation is None:
+        return None
+    text = f"{elevation:.0f} ft"
+    relative = data.get("relative_ft")
+    if relative is not None:
+        if abs(relative) < 1:
+            text += " · level with surroundings"
+        else:
+            side = "below" if relative < 0 else "above"
+            text += f" · {abs(relative):.1f} ft {side} surrounding ground"
+    return text
+
+
+def evacuation_zone_text(data: Dict[str, Any]) -> Optional[str]:
+    if "evacuation_zone" not in data:
+        return None
+    zone = data["evacuation_zone"]
+    if not zone:
+        return "None"
+    return f"Zone {zone}" + (" (evacuates first)" if zone == "A" else "")
+
+
+def wetlands_text(data: Dict[str, Any]) -> Optional[str]:
+    """E.g. "Freshwater Forested/Shrub Wetland 140 ft away"."""
+    if "in_wetland" not in data:
+        return None
+    if data["in_wetland"]:
+        return f"On a mapped wetland ({data.get('nearest_wetland_type')})"
+    if data.get("nearest_wetland_m") is None:
+        return "None within 500 m"
+    return f"{data['nearest_wetland_type']} {_feet_or_miles(data['nearest_wetland_m'])} away"
+
+
+def contamination_text(data: Dict[str, Any]) -> Optional[str]:
+    """E.g. "2 within ½ mi · nearest Fera Cleaners (dry cleaner), 640 ft"."""
+    count = data.get("sites_within_half_mi")
+    if count is None:
+        return None
+    if count == 0:
+        return "None within ½ mi"
+    sites = data.get("sites") or []
+    text = f"{count} open within ½ mi"
+    if sites:
+        nearest = sites[0]
+        text += (
+            f" · nearest {nearest.get('name') or 'unnamed'} ({nearest.get('category')}), "
+            f"{_feet_or_miles(nearest['distance_m'])}"
+        )
+    if data.get("superfund_within_half_mi"):
+        text += " · includes Superfund"
+    return text
+
+
+def impaired_waters_text(data: Dict[str, Any]) -> Optional[str]:
+    """E.g. "Lake Eola (nutrients)"."""
+    if "impaired_waters" not in data:
+        return None
+    waters = data["impaired_waters"]
+    if not waters:
+        return "None nearby"
+
+    def issues(parameters: List[str]) -> str:
+        # "Nutrients (Chlorophyll-a)" and "Nutrients (Total Phosphorus)" -> "nutrients"
+        names = []
+        for p in parameters:
+            name = re.sub(r"\s*\(.*\)", "", p).strip().lower()
+            if name and name not in names:
+                names.append(name)
+        return ", ".join(names)
+
+    return "; ".join(f"{w['name']} ({issues(w.get('parameters') or [])})" for w in waters[:3])
+
+
+def crime_rate_text(data: Dict[str, Any], kind: str) -> Optional[str]:
+    """E.g. "412 per 100k · 1.3× Florida"."""
+    if not data:
+        return None
+    if data.get("reporting") is False:
+        return "Agency not reporting to the FBI" if kind == "violent" else None
+    rate, state = data.get(f"{kind}_per_100k"), data.get(f"state_{kind}_per_100k")
+    if rate is None:
+        return None
+    text = f"{rate:,.0f} per 100k"
+    if state:
+        text += f" · {rate / state:.1f}× Florida"
+    return text
+
+
+def crime_period_text(data: Dict[str, Any]) -> Optional[str]:
+    if not data.get("reporting"):
+        return None
+    scope = "city" if data.get("jurisdiction") == "city" else "agency-wide (county)"
+    return f"{data['period_start']} to {data['period_end']} ({data['months']} mo) · {scope}"
+
+
+def internet_summary_text(data: Dict[str, Any]) -> Optional[str]:
+    """E.g. "Fiber available · 3 wired providers · up to 8,000 Mbps"."""
+    if "providers" not in data:
+        return None
+    if not data["providers"]:
+        return "No wired or fixed wireless providers listed"
+    parts = ["Fiber available" if data.get("fiber_available") else "No fiber"]
+    parts.append(f"{data.get('wired_providers', 0)} wired provider(s)")
+    if data.get("max_down_mbps"):
+        parts.append(f"up to {data['max_down_mbps']:,.0f} Mbps")
+    return " · ".join(parts)
+
+
+def internet_providers(data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Providers covering at least a quarter of the block, fastest first."""
+    return [
+        p
+        for p in data.get("providers") or []
+        if p.get("coverage_pct") is None or p["coverage_pct"] >= 25
+    ]
+
+
 def drive_times(data: Dict[str, Any]) -> List[DriveTime]:
     times = []
     for d in data.get("distances", []):
@@ -244,6 +429,18 @@ def _rows(*pairs: Tuple[str, Any]) -> Rows:
 
 def _miles_text(meters: Any) -> Optional[str]:
     return f"{float(meters) / METERS_PER_MILE:.2f} mi" if meters is not None else None
+
+
+def _miles(meters: Any) -> str:
+    return f"{float(meters) / METERS_PER_MILE:.1f} mi"
+
+
+def _feet_or_miles(meters: Any) -> str:
+    """Feet under a quarter mile ("640 ft"), miles past it ("0.4 mi")."""
+    meters = float(meters)
+    if meters < METERS_PER_MILE / 4:
+        return f"{meters * 3.28084:,.0f} ft"
+    return f"{meters / METERS_PER_MILE:.1f} mi"
 
 
 def _score_text(score: Any, description: Optional[str]) -> Optional[str]:

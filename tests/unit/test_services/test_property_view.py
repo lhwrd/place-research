@@ -226,3 +226,136 @@ def test_scores_without_descriptions():
     view = build_view({"walk_score_provider": {"walk_score": 47, "bike_score": 62}})
 
     assert view.surroundings == [("Walk score", "47"), ("Bike score", "62")]
+
+
+class TestHazardsAndSafety:
+    def test_build_view_sections(self):
+        view = build_view(
+            {
+                "sinkhole_provider": {
+                    "favorability": "Most favorable",
+                    "incidents_within_1mi": 3,
+                    "verified_within_1mi": 1,
+                    "nearest_incident_m": 483,
+                    "nearest_incident_year": 2008,
+                },
+                "elevation_provider": {"elevation_ft": 82.0, "relative_ft": -3.5},
+                "evacuation_zone_provider": {"evacuation_zone": None},
+                "wetlands_provider": {
+                    "in_wetland": False,
+                    "nearest_wetland_m": 44,
+                    "nearest_wetland_type": "Freshwater Forested/Shrub Wetland",
+                },
+                "contamination_provider": {
+                    "sites_within_half_mi": 2,
+                    "superfund_within_half_mi": 0,
+                    "sites": [{"name": "Fera Cleaners", "category": "PFAS", "distance_m": 196}],
+                },
+                "impaired_waters_provider": {
+                    "impaired_waters": [
+                        {
+                            "name": "Lake Eola",
+                            "parameters": [
+                                "Nutrients (Chlorophyll-a)",
+                                "Nutrients (Total Phosphorus)",
+                                "Mercury (in fish tissue)",
+                            ],
+                        }
+                    ]
+                },  # fmt: skip
+                "local_noise_sources_provider": {
+                    "fireworks": [{"name": "EPCOT", "distance_m": 5787}],
+                    "launch_site": {"name": "Cape Canaveral landing zones", "distance_m": 19521},
+                },
+                "crime_provider": {
+                    "agency": "Orange County Sheriff's Office",
+                    "jurisdiction": "county",
+                    "reporting": True,
+                    "period_start": "01-2025",
+                    "period_end": "09-2025",
+                    "months": 9,
+                    "violent_per_100k": 400.0,
+                    "state_violent_per_100k": 200.0,
+                    "property_per_100k": 1500.0,
+                    "state_property_per_100k": None,
+                },
+                "broadband_provider": {
+                    "providers": [
+                        {
+                            "name": "AT&T Fiber",
+                            "technology": "Fiber",
+                            "max_down_mbps": 5000.0,
+                            "max_up_mbps": 5000.0,
+                            "coverage_pct": 10,
+                        },
+                        {
+                            "name": "Spectrum",
+                            "technology": "Cable",
+                            "max_down_mbps": 1000.0,
+                            "max_up_mbps": 35.0,
+                            "coverage_pct": 100,
+                        },
+                    ],
+                    "fiber_available": True,
+                    "wired_providers": 2,
+                    "max_down_mbps": 5000.0,
+                },  # fmt: skip
+            }
+        )
+
+        assert dict(view.hazards) == {
+            "Sinkhole geology": "Most favorable to sinkhole formation",
+            "Sinkhole reports": "3 within 1 mi (1 verified) · nearest 0.3 mi, 2008",
+            "Elevation": "82 ft · 3.5 ft below surrounding ground",
+            "Evacuation zone": "None",
+            "Wetlands": "Freshwater Forested/Shrub Wetland 144 ft away",
+            "Contamination sites": "2 open within ½ mi · nearest Fera Cleaners (PFAS), 643 ft",
+            "Impaired waters": "Lake Eola (nutrients, mercury)",
+        }
+        surroundings = dict(view.surroundings)
+        assert surroundings["Fireworks"] == "EPCOT 3.6 mi"
+        assert surroundings["Rocket launches"] == "12 mi from the Cape · sonic booms likely"
+        assert dict(view.safety) == {
+            "Police agency": "Orange County Sheriff's Office",
+            "Violent crime": "400 per 100k · 2.0× Florida",
+            "Property crime": "1,500 per 100k",
+            "Crime data period": "01-2025 to 09-2025 (9 mo) · agency-wide (county)",
+            "Internet": "Fiber available · 2 wired provider(s) · up to 5,000 Mbps",
+        }
+        # Fiber reaches only 10% of the block: left out of the provider list
+        assert [p["name"] for p in view.internet] == ["Spectrum"]
+
+    def test_missing_providers_add_nothing(self):
+        view = build_view({})
+        assert view.hazards == [] and view.safety == [] and view.internet == []
+
+    def test_quiet_results(self):
+        view = build_view(
+            {
+                "sinkhole_provider": {"favorability": None, "incidents_within_1mi": 0},
+                "elevation_provider": {"elevation_ft": 100.2, "relative_ft": 0.4},
+                "evacuation_zone_provider": {"evacuation_zone": "A"},
+                "wetlands_provider": {
+                    "in_wetland": True,
+                    "nearest_wetland_type": "Freshwater Emergent Wetland",
+                },
+                "contamination_provider": {"sites_within_half_mi": 0},
+                "impaired_waters_provider": {"impaired_waters": []},
+                "crime_provider": {"agency": "Orlando Police Department", "reporting": False},
+                "broadband_provider": {"providers": []},
+            }
+        )
+
+        assert dict(view.hazards) == {
+            "Sinkhole reports": "None within 1 mi",
+            "Elevation": "100 ft · level with surroundings",
+            "Evacuation zone": "Zone A (evacuates first)",
+            "Wetlands": "On a mapped wetland (Freshwater Emergent Wetland)",
+            "Contamination sites": "None within ½ mi",
+            "Impaired waters": "None nearby",
+        }
+        assert dict(view.safety) == {
+            "Police agency": "Orlando Police Department",
+            "Violent crime": "Agency not reporting to the FBI",
+            "Internet": "No wired or fixed wireless providers listed",
+        }

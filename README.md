@@ -5,7 +5,11 @@ by typing an address or pasting a Zillow URL, or share a listing from your iPhon
 app then enriches it with walk/bike/transit scores, flood zone, distance to the nearest highway,
 railroad and airport, an estimate of noise pollution from all three, air quality, nearby places, drive times to the people and places you
 care about, and Census data (city and county population; age, race/ethnicity and education
-for the census tract). Look around in Street View, rate the home and how the neighborhood looks, mark it
+for the census tract). In Florida it also covers sinkhole geology and reported sinkholes,
+open contamination cleanups, impaired lakes, hurricane evacuation zone, theme park
+fireworks and Cape launches; anywhere, nearby wetlands, whether the house sits below
+the ground around it, FBI crime rates for the covering police agency, and FCC home internet
+providers. Look around in Street View, rate the home and how the neighborhood looks, mark it
 visited, keep notes and photos.
 
 ```
@@ -105,6 +109,23 @@ Local data files (a provider whose file isn't configured is skipped):
   states you're looking in (plus neighbors, for homes near a state line) with
   `--states FL GA AL`.
 
+- `BROADBAND_PATH`: home internet providers by census block, from the FCC National
+  Broadband Map. Download your state's Fixed Broadband availability CSVs (one per
+  technology) from https://broadbandmap.fcc.gov/data-download/nationwide-data, then
+  `uv run python scripts/build_broadband.py data/broadband.parquet ~/Downloads/bdc_12_*.zip`.
+  Satellite is skipped (it's available everywhere). Refresh after each FCC release
+  (twice a year).
+
+Crime needs `CRIME_DATA_API_KEY`, a free api.data.gov key for the FBI Crime Data
+Explorer; without it the provider is skipped. Rates are for the whole agency (the city
+police department inside city limits, otherwise the county sheriff), annualized over the
+latest 12 months it reported. Florida agencies report through NIBRS from 2025 and some,
+Orlando PD included, haven't reported yet; those show as not reporting.
+
+The Florida hazard providers (sinkholes, contamination, impaired waters, evacuation zone)
+query FDEP and state ArcGIS services; wetlands (USFWS) and elevation (USGS 3DEP) are
+national. None needs a key.
+
 Airports ship with the app (`app/data/airports.csv`, large and medium airports from
 OurAirports); refresh the list with `uv run python scripts/build_airports.py`.
 
@@ -131,7 +152,7 @@ app/services/             property_service.py (ingest + enrichment), property_vi
                           (formats provider data for display), zillow_listing.py, geocoding
 app/services/enrichment/  orchestrator + auto-discovered providers
 app/integrations/         external API clients
-scripts/                  build_highways.py, build_airports.py
+scripts/                  build_highways.py, build_airports.py, build_broadband.py
 tests/                    unit and endpoint tests (no network)
 ```
 

@@ -88,6 +88,28 @@
 </section>
 {% endif %}
 
+{% if view.hazards %}
+<section class="card-section">
+  <h2>Hazards &amp; environment</h2>
+  {{ rows(view.hazards) }}
+</section>
+{% endif %}
+
+{% if view.safety or view.internet %}
+<section class="card-section">
+  <h2>Safety &amp; internet</h2>
+  {{ rows(view.safety) }}
+  {% if view.internet %}
+  <dl class="rows">
+    {% for isp in view.internet %}
+      <div><dt>{{ isp.name }} <span class="dim small">{{ isp.technology }}</span></dt>
+      <dd>{{ isp.max_down_mbps|num }}/{{ isp.max_up_mbps|num }} Mbps{% if isp.coverage_pct is not none and isp.coverage_pct < 90 %} <span class="dim">· {{ isp.coverage_pct }}% of block</span>{% endif %}</dd></div>
+    {% endfor %}
+  </dl>
+  {% endif %}
+</section>
+{% endif %}
+
 {% if view.drive_times %}
 <section class="card-section">
   <h2>Drive times</h2>

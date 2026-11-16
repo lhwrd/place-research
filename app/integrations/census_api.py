@@ -219,6 +219,32 @@ class CensusAPIClient(BaseAPIClient):
 
         return {"state": state, "county": county, "tract": tract, "place": place}
 
+    async def get_block_geoid(self, latitude: float, longitude: float) -> Optional[str]:
+        """
+        The 15-digit 2020 census block GEOID containing a point, or None outside the US.
+
+        Raises:
+            ValueError: If the geocoder reports an error
+            httpx.HTTPError: If the geocoder can't be reached or returns an HTTP error
+        """
+        params = {
+            "x": longitude,
+            "y": latitude,
+            "benchmark": "Public_AR_Current",
+            "vintage": "Current_Current",
+            "layers": "2020 Census Blocks",
+            "format": "json",
+        }
+        response = await send_with_retry(
+            lambda: self.client.get(GEOCODER_URL, params=params), service="Census geocoder"
+        )
+        response.raise_for_status()
+        body = response.json()
+        if "errors" in body:
+            raise ValueError(f"Census geocoder failed: {'; '.join(body['errors'])}")
+        blocks = body.get("result", {}).get("geographies", {}).get("2020 Census Blocks") or []
+        return blocks[0].get("GEOID") if blocks else None
+
     async def _get_acs(
         self, variables: List[str], for_geo: str, in_geo: Optional[str] = None
     ) -> Dict[str, Optional[float]]:
