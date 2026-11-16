@@ -106,6 +106,7 @@ def build_view(
     local_noise = data("local_noise_sources_provider")
     flood = data("flood_zone_provider")
     air = data("air_quality_provider")
+    odors = data("odor_sources_provider")
     view.surroundings = _rows(
         (
             "Walk score",
@@ -149,6 +150,7 @@ def build_view(
             else None,
         ),
         ("Air quality", air_quality_text(air), ratings.air_quality(air)),
+        ("Odor sources", odor_sources_text(odors), ratings.odor_sources(odors)),
     )
 
     view.drive_times = drive_times(data("distance_provider"))
@@ -290,6 +292,21 @@ def air_quality_text(data: Dict[str, Any]) -> Optional[str]:
     if data.get("category"):
         parts.append(str(data["category"]))
     return " ".join(parts) or None
+
+
+def odor_sources_text(data: Dict[str, Any]) -> Optional[str]:
+    """E.g. "Iron Bridge WRF (wastewater treatment plant) 0.4 mi · +1 more"."""
+    if "sources" not in data:
+        return None
+    sources = data["sources"]
+    if not sources:
+        return "None in range"
+    shown = [
+        f"{s.get('name') or 'Unnamed'} ({s['type']}) {_feet_or_miles(s['distance_m'])}"
+        for s in sources[:3]
+    ]
+    more = (data.get("source_count") or len(sources)) - len(shown)
+    return " · ".join(shown + ([f"+{more} more"] if more > 0 else []))
 
 
 def fireworks_text(data: Dict[str, Any]) -> Optional[str]:

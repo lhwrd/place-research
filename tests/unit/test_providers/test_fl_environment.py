@@ -14,6 +14,12 @@ from app.services.enrichment.providers.impaired_waters import (
     group_by_waterbody,
 )
 from app.services.enrichment.providers.local_noise_sources import LocalNoiseSourcesProvider
+from app.services.enrichment.providers.odor_sources import (
+    AIR_LAYER,
+    SOLID_WASTE_LAYER,
+    WASTEWATER_LAYER,
+    OdorSourcesProvider,
+)
 from app.services.enrichment.providers.sinkholes import (
     SinkholeProvider,
     favorability_class,
@@ -130,6 +136,135 @@ class TestContamination:
         assert data["sites"][0]["category"] == "Hazardous waste / dry cleaner"
         assert data["sites"][0]["status"] == "Open"
         assert data["sites"][0]["distance_m"] == pytest.approx(150, abs=2)
+
+
+MILE_DEG = 1609.344 * M
+
+
+class TestOdorSources:
+    @staticmethod
+    def _provider(wastewater=(), solid_waste=(), air=()):
+        layers = {WASTEWATER_LAYER: wastewater, SOLID_WASTE_LAYER: solid_waste, AIR_LAYER: air}
+
+        async def query_near(layer, *args, **kwargs):
+            return list(layers[layer])
+
+        return _with_client(OdorSourcesProvider(), query_near=AsyncMock(side_effect=query_near))
+
+    @pytest.mark.asyncio
+    async def test_each_kind_counts_only_within_its_range(self):
+        def plant(name, miles, capacity):
+            return {"FACILITY_ID": name, "FACILITY_NAME": name, "FACILITY_TYPE": "DW",
+                    "DESIGN_CAPACITY": capacity, "geometry": Point(LON, LAT + miles * MILE_DEG)}  # fmt: skip
+
+        provider = self._provider(
+            wastewater=[
+                plant("City WRF", 0.8, 12.5),
+                plant("Far WRF", 1.2, 12.5),  # past the 1 mile a treatment plant carries
+                plant("Trailer Park WWTF", 0.5, 0.015),  # package plants: a quarter mile
+                plant("Next Door MHP", 0.1, None),
+                {
+                    "FACILITY_ID": "D1",
+                    "FACILITY_NAME": "Rucks Dairy",
+                    "FACILITY_TYPE": "CFO",
+                    "geometry": Point(LON, LAT + 2 * MILE_DEG),
+                },
+                {
+                    "FACILITY_ID": "X1",
+                    "FACILITY_NAME": "No location",
+                    "FACILITY_TYPE": "DW",
+                    "geometry": None,
+                },
+            ],  # fmt: skip
+            air=[
+                {
+                    "AIRS_ID": "1",
+                    "NAME": "PALATKA  MILL",
+                    "SIC": "2621",
+                    "FACILITY_TYPE": "PULP & PAPER PLANT",
+                    "geometry": Point(LON, LAT + 8 * MILE_DEG),
+                },
+                {
+                    "AIRS_ID": "2",
+                    "NAME": "BOX PLANT",
+                    "SIC": "2653",
+                    "FACILITY_TYPE": "PULP & PAPER PLANT",
+                    "geometry": Point(LON, LAT + 1 * MILE_DEG),
+                },
+                {
+                    "AIRS_ID": "3",
+                    "NAME": "RENDERER",
+                    "SIC": "2077",
+                    "FACILITY_TYPE": "OTHER FOOD PRODUCTION",
+                    "geometry": Point(LON, LAT + 2.5 * MILE_DEG),
+                },
+            ],  # fmt: skip
+        )
+
+        result = await provider.enrich(LAT, LON, "x")
+
+        assert result.api_calls_made == 3
+        assert result.data["source_count"] == 5
+        # Deepest inside its range first
+        assert [(s["name"], s["kind"]) for s in result.data["sources"]] == [
+            ("Next Door MHP", "small_wastewater_plant"),
+            ("Rucks Dairy", "animal_feeding"),
+            ("City WRF", "wastewater_plant"),
+            ("PALATKA MILL", "paper_mill"),
+            ("RENDERER", "rendering_plant"),
+        ]
+        mill = result.data["sources"][3]
+        assert mill["type"] == "pulp and paper mill"
+        assert mill["distance_m"] == pytest.approx(8 * 1609.344, rel=0.01)
+
+    @pytest.mark.asyncio
+    async def test_a_site_with_several_activities_is_listed_once(self):
+        def row(waste_class, name="ORANGE COUNTY LF", facility_id=21847):
+            return {"FACILITY_ID": facility_id, "FACILITY_NAME": name, "CLASS": waste_class,
+                    "geometry": Point(LON, LAT + 0.4 * MILE_DEG)}  # fmt: skip
+
+        provider = self._provider(
+            solid_waste=[
+                row("CLASS III LANDFILL"),
+                row("CLASS I LANDFILL"),
+                row("TRANSFER STATION"),
+                row("TRANSFER STATION", name="OTHER TS", facility_id=5),
+            ]
+        )
+
+        data = (await provider.enrich(LAT, LON, "x")).data
+
+        assert [(s["name"], s["kind"]) for s in data["sources"]] == [
+            ("ORANGE COUNTY LF", "landfill"),
+            ("OTHER TS", "transfer_station"),
+        ]
+
+    @pytest.mark.asyncio
+    async def test_queries_filter_to_operating_facilities(self):
+        provider = self._provider()
+
+        data = (await provider.enrich(LAT, LON, "x")).data
+
+        assert data == {"source_count": 0, "sources": []}
+        wheres = {
+            c.args[0]: c.kwargs["where"] for c in provider.api_client.query_near.call_args_list
+        }
+        assert "FACILITY_STATUS = 'A'" in wheres[WASTEWATER_LAYER]
+        assert "'CLASS I LANDFILL'" in wheres[SOLID_WASTE_LAYER]
+        assert "STATUS = 'ACTIVE'" in wheres[AIR_LAYER] and "SIC = '2077'" in wheres[AIR_LAYER]
+        # The air search reaches as far as a paper mill is smelled
+        radius = {c.args[0]: c.args[3] for c in provider.api_client.query_near.call_args_list}
+        assert radius[AIR_LAYER] == pytest.approx(10 * 1609.344)
+
+    @pytest.mark.asyncio
+    async def test_api_error_fails(self):
+        provider = _with_client(
+            OdorSourcesProvider(), query_near=AsyncMock(side_effect=httpx.ConnectError("down"))
+        )
+
+        result = await provider.enrich(LAT, LON, "x")
+
+        assert result.success is False and result.data == {}
 
 
 class TestWetlands:

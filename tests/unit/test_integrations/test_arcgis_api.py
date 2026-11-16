@@ -45,6 +45,17 @@ async def test_query_near_attributes():
 
 
 @pytest.mark.asyncio
+async def test_query_near_where_filter():
+    api, requests = make_client({"features": []}, {"features": []})
+
+    await api.query_near("Svc/MapServer/0", 28.5, -81.4, 800, where="STATUS = 'ACTIVE'")
+    await api.query_near("Svc/MapServer/0", 28.5, -81.4, 800)
+
+    assert requests[0].url.params["where"] == "STATUS = 'ACTIVE'"
+    assert "where" not in requests[1].url.params
+
+
+@pytest.mark.asyncio
 async def test_query_containing_point_has_no_distance():
     api, requests = make_client({"features": []})
 

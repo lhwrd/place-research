@@ -193,6 +193,31 @@ def test_air_quality_without_aqi():
     assert values(view.surroundings)["Air quality"] == "Moderate"
 
 
+def test_odor_sources():
+    def view(data):
+        return build_view({"odor_sources_provider": data}).surroundings
+
+    assert view({}) == []
+    assert pairs(view({"source_count": 0, "sources": []})) == [("Odor sources", "None in range")]
+
+    sources = [
+        {"name": "Iron Bridge WRF", "kind": "wastewater_plant",
+         "type": "wastewater treatment plant", "distance_m": 300},
+        {"name": "ORANGE COUNTY LF", "kind": "landfill", "type": "landfill", "distance_m": 3200},
+        {"name": None, "kind": "asphalt_plant", "type": "asphalt plant", "distance_m": 1500},
+        {"name": "Fourth", "kind": "landfill", "type": "landfill", "distance_m": 4500},
+    ]  # fmt: skip
+    rows = view({"source_count": 5, "sources": sources})
+    assert pairs(rows) == [
+        (
+            "Odor sources",
+            "Iron Bridge WRF (wastewater treatment plant) 984 ft · ORANGE COUNTY LF (landfill) "
+            "2.0 mi · Unnamed (asphalt plant) 0.9 mi · +2 more",
+        )
+    ]
+    assert rows[0].level == "poor"
+
+
 def test_flood_zone_text():
     assert flood_zone_text(
         {"flood_zone": "X", "flood_risk": "0.2 PCT ANNUAL CHANCE FLOOD HAZARD", "in_sfha": False}

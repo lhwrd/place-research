@@ -6,7 +6,7 @@ app then enriches it with flood zone, distance to the nearest highway,
 railroad and airport, an estimate of noise pollution from all three, air quality, nearby places, drive times to the people and places you
 care about, and Census data (city and county population; age, race/ethnicity and education
 for the census tract). In Florida it also covers sinkhole geology and reported sinkholes,
-open contamination cleanups, impaired lakes, hurricane evacuation zone, the property appraiser's record (year built, living area, value, recent sales), theme park
+open contamination cleanups, nearby odor sources (sewage plants, landfills, paper mills and the like), impaired lakes, hurricane evacuation zone, the property appraiser's record (year built, living area, value, recent sales), theme park
 fireworks and Cape launches; anywhere, nearby wetlands, whether the house sits below
 the ground around it, and FCC home internet providers. Look around in Street View, rate the home and how the neighborhood looks, mark it
 visited, keep notes and photos.
@@ -117,7 +117,8 @@ Local data files (a provider whose file isn't configured is skipped):
   Satellite is skipped (it's available everywhere). Refresh after each FCC release
   (twice a year).
 
-The Florida hazard providers (sinkholes, contamination, impaired waters, evacuation zone)
+The Florida hazard providers (sinkholes, contamination, odor sources, impaired waters,
+evacuation zone)
 query FDEP and state ArcGIS services; wetlands (USFWS) and elevation (USGS 3DEP) are
 national. None needs a key.
 

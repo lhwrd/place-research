@@ -98,6 +98,42 @@ def air_quality(data: Dict[str, Any]) -> Level:
     return GOOD if aqi <= 50 else FAIR if aqi <= 100 else POOR
 
 
+# Miles within which each kind of odor source (odor_sources provider) is rated poor rather
+# than fair: roughly where the smell goes from an occasional whiff to a regular nuisance
+ODOR_STRONG_WITHIN_MI = {
+    "paper_mill": 4,
+    "landfill": 1.5,
+    "rendering_plant": 1.5,
+    "fertilizer_plant": 1.5,
+    "sugar_mill": 1.5,
+    "animal_feeding": 1,
+    "biosolids": 0.5,
+    "wastewater_plant": 0.5,
+    "waste_to_energy": 0.5,
+    "composting": 0.5,
+    "debris_landfill": 0.5,
+    "asphalt_plant": 0.5,
+    "citrus_plant": 0.5,
+    "transfer_station": 0.25,
+    "petroleum_terminal": 0.25,
+    "small_wastewater_plant": 0.1,
+}
+
+
+def odor_sources(data: Dict[str, Any]) -> Level:
+    """Sources are only stored within the range their kind of smell carries."""
+    if "sources" not in data:
+        return None
+    sources = data["sources"]
+    if not sources:
+        return GOOD
+    strong = any(
+        float(s["distance_m"]) / METERS_PER_MILE < ODOR_STRONG_WITHIN_MI.get(s.get("kind"), 0)
+        for s in sources
+    )
+    return POOR if strong else FAIR
+
+
 # Hazards
 
 

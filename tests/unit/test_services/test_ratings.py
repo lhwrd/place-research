@@ -94,6 +94,32 @@ def test_contamination(data, level):
     assert ratings.contamination(data) == level
 
 
+@pytest.mark.parametrize(
+    "data,level",
+    [
+        ({}, None),
+        ({"sources": []}, GOOD),
+        ({"sources": [{"kind": "landfill", "distance_m": 2 * MILE}]}, FAIR),
+        ({"sources": [{"kind": "landfill", "distance_m": 1 * MILE}]}, POOR),
+        # A mile is close for a landfill but not for a paper mill, and vice versa at three
+        ({"sources": [{"kind": "paper_mill", "distance_m": 3 * MILE}]}, POOR),
+        ({"sources": [{"kind": "wastewater_plant", "distance_m": 0.8 * MILE}]}, FAIR),
+        (
+            {
+                "sources": [
+                    {"kind": "transfer_station", "distance_m": 0.4 * MILE},
+                    {"kind": "wastewater_plant", "distance_m": 0.3 * MILE},
+                ]
+            },
+            POOR,
+        ),
+        ({"sources": [{"kind": "something_new", "distance_m": 10}]}, FAIR),
+    ],
+)
+def test_odor_sources(data, level):
+    assert ratings.odor_sources(data) == level
+
+
 def test_fireworks_and_launches():
     assert ratings.fireworks({"fireworks": [{"distance_m": 2 * MILE}]}) == POOR
     assert ratings.fireworks({"fireworks": [{"distance_m": 5 * MILE}]}) == FAIR

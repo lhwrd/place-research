@@ -46,6 +46,7 @@ class ArcGISClient(BaseAPIClient):
         distance_m: float = 0,
         out_fields: Sequence[str] = ("*",),
         geometry: bool = False,
+        where: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """
         Features of a layer within distance_m of a point (0: features containing the point).
@@ -53,6 +54,7 @@ class ArcGISClient(BaseAPIClient):
         Args:
             layer: Layer path under the services root, e.g. "OpenData/FGS_SUBSIDENCE/MapServer/0"
             geometry: Also return each feature's geometry, in WGS84
+            where: SQL filter on the layer's fields, e.g. "STATUS = 'ACTIVE'"
 
         Returns:
             One dict per feature: its attributes, plus "geometry" (a shapely geometry) when
@@ -76,6 +78,8 @@ class ArcGISClient(BaseAPIClient):
             params.update(distance=distance_m, units="esriSRUnit_Meter")
         if geometry:
             params.update(outSR=4326, geometryPrecision=6)
+        if where:
+            params["where"] = where
 
         data = await self._get(f"{layer}/query", params)
         if geometry:
