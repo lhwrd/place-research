@@ -200,6 +200,17 @@ class TestDistanceMatrix:
         assert results[0]["status"] == "OK"
 
     @pytest.mark.asyncio
+    async def test_distance_matrix_does_not_request_traffic_by_default(
+        self, google_maps_api, mock_distance_matrix_response
+    ):
+        """A departure time switches billing to the Advanced rate, so it's opt-in."""
+        google_maps_api._make_request = AsyncMock(return_value=mock_distance_matrix_response)
+
+        await google_maps_api.distance_matrix((47.6062, -122.3321), [(47.6097, -122.3331)])
+
+        assert "departure_time" not in google_maps_api._make_request.call_args[1]["params"]
+
+    @pytest.mark.asyncio
     async def test_distance_matrix_with_departure_time(
         self, google_maps_api, mock_distance_matrix_response
     ):

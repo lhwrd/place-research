@@ -24,6 +24,7 @@ from app.services.property_service import (
     get_property_service,
 )
 from app.services.property_view import build_view
+from app.services.walk_score import live_walk_scores
 
 router = APIRouter(include_in_schema=False)
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
@@ -125,12 +126,17 @@ async def property_detail(
     service: PropertyService = Depends(get_property_service),
 ):
     prop = _get_property_or_404(service, property_id)
+    # Fetched for every view: Walk Score's terms don't allow keeping its scores
+    walk_scores = {}
+    if prop.get("latitude") is not None and prop.get("longitude") is not None:
+        walk_scores = await live_walk_scores(prop["latitude"], prop["longitude"], prop["address"])
     return templates.TemplateResponse(
         request,
         "property.html",
         {
             "p": prop,
-            "view": build_view(prop["enrichment"]),
+            "view": build_view(prop["enrichment"], walk_scores),
+            "walk": walk_scores,
             "photo_ids": service.db.photo_ids(property_id),
             "pending": prop["status"] in PropertyStatus.PENDING,
             "street_view_url": street_view_url(prop),
@@ -144,12 +150,15 @@ STREET_VIEW_EMBED = "https://www.google.com/maps/embed/v1/streetview"
 def street_view_url(prop) -> Optional[str]:
     """
     Maps Embed API URL for an interactive Street View of the property, or None if there's
-    no key, no location yet, or no coverage.
+    no embed key, no location yet, or no coverage.
+
+    The key ends up in the page, so only GOOGLE_MAPS_EMBED_KEY is used: never the server
+    key, which can run billed Places and Distance Matrix requests.
 
     Starts at the panorama found during enrichment, facing the house; properties enriched
     before that use the location and let Google pick the panorama and direction.
     """
-    key = settings.google_maps_embed_key or settings.google_maps_api_key
+    key = settings.google_maps_embed_key
     if not key or prop.get("latitude") is None:
         return None
     pano = (prop.get("enrichment") or {}).get("street_view_provider") or {}
@@ -223,10 +232,19 @@ async def save_facts(
 ):
     """Hand-edit listing facts (mostly for properties added by address)."""
     prop = _get_property_or_404(service, property_id)
+    new_address = address.strip() or prop["address"]
+    # A different address is a different place: forget where the old one was and what was
+    # found there, so the next enrichment geocodes again and runs every provider
+    moved = {} if new_address == prop["address"] else {
+        "latitude": None,
+        "longitude": None,
+        "enrichment_meta": {},
+    }  # fmt: skip
     service.db.update_property(
         property_id,
         {
-            "address": address.strip() or prop["address"],
+            "address": new_address,
+            **moved,
             "price": _int(price),
             "beds": _float(beds),
             "baths": _float(baths),
@@ -242,11 +260,16 @@ async def save_facts(
 async def reenrich(
     property_id: int,
     background_tasks: BackgroundTasks,
+    everything: str = Form(""),
     service: PropertyService = Depends(get_property_service),
 ):
+    """
+    Refresh what's missing, failed, out of date or affected by changed settings. With
+    `everything`, call every provider again (some are billed per call).
+    """
     _get_property_or_404(service, property_id)
     service.db.update_property(property_id, {"status": PropertyStatus.NEW})
-    background_tasks.add_task(service.enrich_safely, property_id, use_cached=False)
+    background_tasks.add_task(service.enrich_safely, property_id, use_cached=not everything)
     return _redirect(f"/properties/{property_id}")
 
 

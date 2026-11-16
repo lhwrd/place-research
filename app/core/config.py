@@ -31,7 +31,8 @@ class Settings(BaseSettings):
     walkscore_api_key: Optional[str] = Field(None, alias="WALKSCORE_API_KEY")
     google_maps_api_key: Optional[str] = Field(None, alias="GOOGLE_MAPS_API_KEY")
     # Sent to the browser for the Street View embed. Use a key restricted to the Maps Embed
-    # API (and your UI's address); falls back to GOOGLE_MAPS_API_KEY if unset.
+    # API (and your UI's address). Without it there is no embed: GOOGLE_MAPS_API_KEY is
+    # never sent to the browser.
     google_maps_embed_key: Optional[str] = Field(None, alias="GOOGLE_MAPS_EMBED_KEY")
     census_api_key: Optional[str] = Field(None, alias="CENSUS_API_KEY")
     census_acs_year: int = Field(
@@ -44,6 +45,8 @@ class Settings(BaseSettings):
     raillines_path: Optional[Path] = Field(None, alias="RAILLINES_PATH")
     # Census TIGER primary/secondary roads, built by scripts/build_highways.py
     highways_path: Optional[Path] = Field(None, alias="HIGHWAYS_PATH")
+    # FCC broadband availability by census block, built by scripts/build_broadband.py
+    broadband_path: Optional[Path] = Field(None, alias="BROADBAND_PATH")
 
     # SQLite database holding properties, photos, locations and settings
     database_path: Path = Field(
@@ -52,7 +55,7 @@ class Settings(BaseSettings):
         description="SQLite file; its directory is created if missing",
     )
 
-    @field_validator("raillines_path", "highways_path", mode="before")
+    @field_validator("raillines_path", "highways_path", "broadband_path", mode="before")
     @classmethod
     def _blank_path_is_unset(cls, value):
         """`RAILLINES_PATH=` in .env means "not set", not the current directory."""

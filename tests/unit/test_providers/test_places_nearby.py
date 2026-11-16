@@ -5,6 +5,9 @@ import pytest
 from app.services.enrichment.base_provider import ProviderCategory
 from app.services.enrichment.providers.places_nearby import PlacesNearbyProvider
 
+# Nearby Search only runs when amenity types are set
+AMENITIES = {"preferred_amenities": ["park"]}
+
 
 class TestPlacesNearbyProvider:
     @pytest.fixture
@@ -25,6 +28,12 @@ class TestPlacesNearbyProvider:
         assert metadata.enabled is True
         assert metadata.requires_api_key is True
 
+    def test_inputs_are_the_settings(self, provider):
+        preferences = {"preferred_amenities": ["park"], "preferred_places": ["Costco"]}
+
+        assert provider.inputs(preferences) == {"amenities": ["park"], "places": ["Costco"]}
+        assert provider.inputs(None) == {"amenities": [], "places": []}
+
     @pytest.mark.asyncio
     async def test_enrich_without_preferences(self, provider):
         provider.places_api.nearby_search = AsyncMock(return_value=[])
@@ -33,7 +42,10 @@ class TestPlacesNearbyProvider:
 
         assert result.success is True
         assert result.provider_name == "places_nearby_provider"
-        provider.places_api.nearby_search.assert_called_once()
+        # No amenity types: a search would return arbitrary places and still be billed
+        provider.places_api.nearby_search.assert_not_called()
+        assert result.api_calls_made == 0
+        assert result.data == {"places_nearby": []}
 
     @pytest.mark.asyncio
     async def test_enrich_with_preferences(self, provider):
@@ -85,6 +97,7 @@ class TestPlacesNearbyProvider:
         )
 
         assert provider.places_api.text_search.call_count == 2
+        provider.places_api.nearby_search.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_adds_drive_times_and_sorts_by_them(self, provider):
@@ -105,7 +118,10 @@ class TestPlacesNearbyProvider:
         )  # fmt: skip
 
         result = await provider.enrich(
-            40.0, -105.0, "x", user_preferences={"preferred_places": ["Costco"]}
+            40.0,
+            -105.0,
+            "x",
+            user_preferences={"preferred_amenities": ["park"], "preferred_places": ["Costco"]},
         )
 
         places = result.data["places_nearby"]
@@ -123,7 +139,7 @@ class TestPlacesNearbyProvider:
         provider.places_api.nearby_search = AsyncMock(return_value=[_place("a", 1)])
         provider.maps_api.distance_matrix = AsyncMock(side_effect=RuntimeError("quota"))
 
-        result = await provider.enrich(40.0, -105.0, "x")
+        result = await provider.enrich(40.0, -105.0, "x", user_preferences=AMENITIES)
 
         assert result.success
         assert [p["name"] for p in result.data["places_nearby"]] == ["a"]
@@ -142,7 +158,7 @@ class TestPlacesNearbyProvider:
 
         provider.maps_api.distance_matrix = AsyncMock(side_effect=matrix)
 
-        result = await provider.enrich(40.0, -105.0, "x")
+        result = await provider.enrich(40.0, -105.0, "x", user_preferences=AMENITIES)
 
         sizes = [
             len(c.kwargs["destinations"]) for c in provider.maps_api.distance_matrix.call_args_list

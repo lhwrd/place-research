@@ -271,3 +271,22 @@ async def test_validate_api_key(api):
 
     no_key, _, _ = make_client(api_key=None)
     assert await no_key.validate_api_key() is False
+
+
+@pytest.mark.asyncio
+async def test_block_geoid():
+    api, requests, responses = make_client()
+    responses["geocoder"] = _geocoder(**{"2020 Census Blocks": {"GEOID": "120950189021048"}})
+
+    assert await api.get_block_geoid(28.5383, -81.3792) == "120950189021048"
+    params = requests[0].url.params
+    assert params["layers"] == "2020 Census Blocks"
+    assert (params["x"], params["y"]) == ("-81.3792", "28.5383")
+
+
+@pytest.mark.asyncio
+async def test_block_geoid_outside_us():
+    api, _, responses = make_client()
+    responses["geocoder"] = {"result": {"geographies": {"2020 Census Blocks": []}}}
+
+    assert await api.get_block_geoid(0, 0) is None

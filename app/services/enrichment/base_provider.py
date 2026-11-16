@@ -19,6 +19,8 @@ class ProviderCategory(Enum):
     SAFETY = "safety"
     TRANSIT = "transit"
     DEMOGRAPHICS = "demographics"
+    CONNECTIVITY = "connectivity"
+    PROPERTY = "property"
 
 
 @dataclass
@@ -113,6 +115,14 @@ class BaseEnrichmentProvider(ABC):
 
         # Default:  always run if enabled
         return True
+
+    def inputs(self, user_preferences: Optional[Dict[str, Any]] = None) -> Any:
+        """
+        The settings this provider's result depends on besides the property's location, as
+        JSON-serializable data, or None if there are none. A stored result is reused only
+        while these are unchanged.
+        """
+        return None
 
     def get_cache_key(self, latitude: float, longitude: float, **kwargs) -> str:
         """

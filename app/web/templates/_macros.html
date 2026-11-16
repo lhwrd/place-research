@@ -7,10 +7,23 @@
   {%- if rating -%}<span class="stars" aria-label="{{ rating }} of 5">{{ '★' * rating }}<span class="dim">{{ '★' * (5 - rating) }}</span></span>{%- endif -%}
 {%- endmacro %}
 
-{% macro rows(items) -%}
+{#- A good/fair/poor marker. Each level has its own symbol, so it doesn't rely on color.
+    Unrated values get an empty spacer (when `spacer`) so markers line up in a column. -#}
+{% macro signal(level, spacer=true) -%}
+  {%- set names = {'good': 'Good', 'fair': 'Fair', 'poor': 'Poor'} -%}
+  {%- set glyphs = {'good': '✓', 'fair': '!', 'poor': '✕'} -%}
+  {%- if level in names -%}
+    <span class="signal signal-{{ level }}" role="img" aria-label="{{ names[level] }}" title="{{ names[level] }}">{{ glyphs[level] }}</span>
+  {%- elif spacer -%}
+    <span class="signal" aria-hidden="true"></span>
+  {%- endif -%}
+{%- endmacro %}
+
+{#- Label/value rows. `rated` reserves the marker column (off for sections never rated). -#}
+{% macro rows(items, rated=true) -%}
   <dl class="rows">
-    {% for label, value in items %}
-      <div><dt>{{ label }}</dt><dd>{{ value }}</dd></div>
+    {% for row in items %}
+      <div><dt>{{ row.label }}</dt><dd>{{ row.value }}{% if rated %}{{ signal(row.level) }}{% endif %}</dd></div>
     {% endfor %}
   </dl>
 {%- endmacro %}

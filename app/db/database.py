@@ -49,6 +49,9 @@ CREATE TABLE IF NOT EXISTS properties (
     -- JSON object: provider name -> that provider's latest successful data
     enrichment    TEXT NOT NULL DEFAULT '{}',
     enriched_at   TEXT,
+    -- JSON object: provider name -> {"at", "ok", "inputs"} for its latest run, which decides
+    -- whether a refresh needs to call it again
+    enrichment_meta TEXT NOT NULL DEFAULT '{}',
     -- Yours; enrichment never writes these
     notes         TEXT NOT NULL DEFAULT '',
     rating        INTEGER,
@@ -74,13 +77,36 @@ CREATE TABLE IF NOT EXISTS locations (
     address  TEXT NOT NULL,
     type     TEXT,
     active   INTEGER NOT NULL DEFAULT 1,
-    priority INTEGER NOT NULL DEFAULT 0
+    priority INTEGER NOT NULL DEFAULT 0,
+    -- Geocoded once from the address; cleared when the address changes
+    latitude  REAL,
+    longitude REAL,
+    city      TEXT,
+    state     TEXT
 );
 
 CREATE TABLE IF NOT EXISTS settings (
     key   TEXT PRIMARY KEY,
     value TEXT NOT NULL
 );
+
+-- One row per response from an external API (retries are separate rows), for usage
+-- dashboards. Written by app/integrations/usage.py.
+CREATE TABLE IF NOT EXISTS api_calls (
+    id          INTEGER PRIMARY KEY,
+    at          TEXT NOT NULL,     -- UTC, RFC 3339
+    service     TEXT NOT NULL,     -- the client's name, e.g. google_places, census
+    host        TEXT NOT NULL,
+    endpoint    TEXT NOT NULL,     -- URL path; never the query string, which can hold keys
+    method      TEXT NOT NULL,
+    status      INTEGER NOT NULL,  -- HTTP status
+    duration_ms INTEGER,           -- until the response headers arrived
+    -- For billed APIs: the product the request is charged as, and how many billable
+    -- units it used (Distance Matrix bills per destination). NULL sku = not billed.
+    sku         TEXT,
+    units       INTEGER NOT NULL DEFAULT 1
+);
+CREATE INDEX IF NOT EXISTS api_calls_at ON api_calls(at);
 """
 
 # Columns callers may set through create_property / update_property
@@ -104,6 +130,7 @@ PROPERTY_COLUMNS = frozenset(
         "longitude",
         "enrichment",
         "enriched_at",
+        "enrichment_meta",
         "notes",
         "rating",
         "neighborhood_rating",
@@ -116,8 +143,16 @@ PROPERTY_COLUMNS = frozenset(
 ADDED_COLUMNS = [
     ("properties", "neighborhood_rating", "INTEGER"),
     ("properties", "garage_spaces", "INTEGER"),
+    ("properties", "enrichment_meta", "TEXT NOT NULL DEFAULT '{}'"),
+    ("locations", "latitude", "REAL"),
+    ("locations", "longitude", "REAL"),
+    ("locations", "city", "TEXT"),
+    ("locations", "state", "TEXT"),
 ]
-LOCATION_COLUMNS = frozenset({"name", "address", "type", "active", "priority"})
+LOCATION_GEOCODE_COLUMNS = ("latitude", "longitude", "city", "state")
+LOCATION_COLUMNS = frozenset(
+    {"name", "address", "type", "active", "priority", *LOCATION_GEOCODE_COLUMNS}
+)
 LOCATION_TYPES = ("Family", "Friend", "Work", "Other")
 
 # Sortable columns on the property list: query value -> ORDER BY clause
@@ -153,6 +188,7 @@ class Database:
         with self._connect() as conn:
             conn.executescript(SCHEMA)
             _add_missing_columns(conn)
+            _remove_stored_walk_scores(conn)
 
     @contextmanager
     def _connect(self) -> Iterator[sqlite3.Connection]:
@@ -292,9 +328,18 @@ class Database:
             return int(cursor.lastrowid or 0)
 
     def update_location(self, location_id: int, values: Dict[str, Any]) -> bool:
+        """Update a location. A new address drops the stored coordinates of the old one."""
         _check_columns(values, LOCATION_COLUMNS)
-        assignments = ", ".join(f"{k} = ?" for k in values)
+        if not values:
+            return True
         with self._connect() as conn:
+            if "address" in values and "latitude" not in values:
+                row = conn.execute(
+                    "SELECT address FROM locations WHERE id = ?", (location_id,)
+                ).fetchone()
+                if row is not None and row["address"] != values["address"]:
+                    values = {**values, **dict.fromkeys(LOCATION_GEOCODE_COLUMNS)}
+            assignments = ", ".join(f"{k} = ?" for k in values)
             cursor = conn.execute(
                 f"UPDATE locations SET {assignments} WHERE id = ?",
                 [*values.values(), location_id],
@@ -304,6 +349,32 @@ class Database:
     def delete_location(self, location_id: int) -> bool:
         with self._connect() as conn:
             return conn.execute("DELETE FROM locations WHERE id = ?", (location_id,)).rowcount > 0
+
+    # API usage
+
+    def record_api_call(
+        self,
+        service: str,
+        host: str,
+        endpoint: str,
+        method: str,
+        status: int,
+        duration_ms: Optional[int] = None,
+        sku: Optional[str] = None,
+        units: int = 1,
+    ) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                "INSERT INTO api_calls"
+                " (at, service, host, endpoint, method, status, duration_ms, sku, units)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (_now(), service, host, endpoint, method, status, duration_ms, sku, units),
+            )
+
+    def list_api_calls(self) -> List[Dict[str, Any]]:
+        """Every recorded call, oldest first."""
+        with self._connect() as conn:
+            return [dict(r) for r in conn.execute("SELECT * FROM api_calls ORDER BY id")]
 
     # Settings (key/value)
 
@@ -325,8 +396,9 @@ class Database:
     @staticmethod
     def _encode(values: Dict[str, Any]) -> Dict[str, Any]:
         encoded = dict(values)
-        if "enrichment" in encoded and not isinstance(encoded["enrichment"], str):
-            encoded["enrichment"] = json.dumps(encoded["enrichment"])
+        for column in ("enrichment", "enrichment_meta"):
+            if column in encoded and not isinstance(encoded[column], str):
+                encoded[column] = json.dumps(encoded[column])
         if "visited" in encoded:
             encoded["visited"] = int(bool(encoded["visited"]))
         return encoded
@@ -335,8 +407,25 @@ class Database:
     def _decode(row: sqlite3.Row) -> Dict[str, Any]:
         record = dict(row)
         record["enrichment"] = json.loads(record.get("enrichment") or "{}")
+        record["enrichment_meta"] = json.loads(record.get("enrichment_meta") or "{}")
         record["visited"] = bool(record.get("visited"))
         return record
+
+
+def _remove_stored_walk_scores(conn: sqlite3.Connection) -> None:
+    """
+    Earlier versions saved Walk Score results with the other enrichment data. Its terms
+    don't allow storing them (they're now fetched per page view), so delete any that remain.
+    """
+    conn.execute(
+        """
+        UPDATE properties
+        SET enrichment = json_remove(enrichment, '$.walk_score_provider'),
+            enrichment_meta = json_remove(enrichment_meta, '$.walk_score_provider')
+        WHERE enrichment LIKE '%"walk_score_provider"%'
+           OR enrichment_meta LIKE '%"walk_score_provider"%'
+        """
+    )
 
 
 def _add_missing_columns(conn: sqlite3.Connection) -> None:

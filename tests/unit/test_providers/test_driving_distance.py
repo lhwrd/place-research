@@ -262,3 +262,18 @@ class TestValidateConfig:
         is_valid = await distance_provider.validate_config()
 
         assert is_valid is False
+
+
+def test_inputs_change_with_the_destinations():
+    with patch("app.services.enrichment.providers.driving_distance.GoogleMapsAPI"):
+        provider = DistanceProvider()
+    mom = CustomLocation(1, "Mom", "Family", "2 Home St", 29.1, -81.0, priority=5)
+    work = CustomLocation(2, "Work", None, "1 Office Rd", 29.2, -81.1)
+
+    both = provider.inputs({"custom_locations": [mom, work]})
+
+    assert provider.inputs(None) == []
+    assert both == provider.inputs({"custom_locations": [work, mom]})  # order doesn't matter
+    assert both != provider.inputs({"custom_locations": [mom]})
+    moved = CustomLocation(2, "Work", None, "9 New Rd", 29.3, -81.1)
+    assert both != provider.inputs({"custom_locations": [mom, moved]})

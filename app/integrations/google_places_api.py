@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 
 from app.core.config import settings
 from app.exceptions import GoogleMapsAPIError
-from app.integrations.base_client import BaseAPIClient, retry_on_failure
+from app.integrations.base_client import BaseAPIClient
 from app.utils.distance_calculator import haversine_distance
 
 logger = logging.getLogger(__name__)
@@ -71,7 +71,6 @@ class GooglePlacesAPI(BaseAPIClient):
             logger.warning("Google Places API key validation failed: %s", str(e))
             return False
 
-    @retry_on_failure(max_retries=3, backoff_factor=1.0)
     async def nearby_search(
         self,
         lat: float,
@@ -182,7 +181,6 @@ class GooglePlacesAPI(BaseAPIClient):
             )
             raise
 
-    @retry_on_failure(max_retries=3, backoff_factor=1.0)
     async def text_search(
         self,
         lat: float,
@@ -303,7 +301,6 @@ class GooglePlacesAPI(BaseAPIClient):
             )
             raise
 
-    @retry_on_failure(max_retries=3, backoff_factor=1.0)
     async def place_details(
         self, place_id: str, fields: Optional[List[str]] = None
     ) -> Dict[str, Any]:

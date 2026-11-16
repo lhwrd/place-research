@@ -1,5 +1,6 @@
 """Tests for property ingest and enrichment."""
 
+from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -53,7 +54,22 @@ def orchestrator():
     orchestrator.enrich = AsyncMock(
         return_value=_result(walk_score_provider=_ok({"walk_score": 45}))
     )
+    orchestrator.provider_info = Mock(
+        return_value={
+            "walk_score_provider": {"max_age_days": 90, "inputs": None},
+            "highway_provider": {"max_age_days": 30, "inputs": None},
+            "distance_provider": {"max_age_days": 30, "inputs": "locations-v1"},
+        }
+    )
     return orchestrator
+
+
+ALL_PROVIDERS = ["walk_score_provider", "highway_provider", "distance_provider"]
+
+
+def _ran(orchestrator):
+    """The providers the latest orchestrator call was asked to run."""
+    return orchestrator.enrich.call_args.kwargs["provider_filter"]
 
 
 @pytest.fixture
@@ -145,7 +161,8 @@ class TestEnrich:
         assert prop["enriched_at"]
         assert prop["error"] is None
         geocoder.geocode_address.assert_awaited_once_with("111 White Pl")
-        assert orchestrator.enrich.call_args.kwargs["use_cached"] is True
+        assert _ran(orchestrator) == ALL_PROVIDERS
+        assert prop["enrichment_meta"]["walk_score_provider"]["ok"] is True
 
     @pytest.mark.asyncio
     async def test_uses_listing_coordinates(self, service, db, geocoder):
@@ -158,12 +175,87 @@ class TestEnrich:
         assert db.get_property(property_id)["latitude"] == 29.5
 
     @pytest.mark.asyncio
-    async def test_bypass_cache(self, service, orchestrator):
+    async def test_second_run_only_calls_what_is_missing(self, service, orchestrator, geocoder):
         property_id, _ = service.create_from_input("1 Main")
+        await service.enrich(property_id)
+
+        await service.enrich(property_id)
+
+        # Walk Score succeeded and is recent; the other two returned nothing the first time
+        assert _ran(orchestrator) == ["highway_provider", "distance_provider"]
+        # The coordinates found the first time are reused
+        geocoder.geocode_address.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_nothing_to_run_makes_no_calls(self, service, db, orchestrator):
+        orchestrator.enrich.return_value = _result(**{n: _ok({"x": 1}) for n in ALL_PROVIDERS})
+        property_id, _ = service.create_from_input("1 Main")
+        await service.enrich(property_id)
+
+        await service.enrich(property_id)
+
+        orchestrator.enrich.assert_awaited_once()
+        assert db.get_property(property_id)["status"] == PropertyStatus.ENRICHED
+
+    @pytest.mark.asyncio
+    async def test_reruns_failed_expired_and_changed(self, service, db, orchestrator):
+        orchestrator.enrich.return_value = _result(**{n: _ok({"x": 1}) for n in ALL_PROVIDERS})
+        property_id, _ = service.create_from_input("1 Main")
+        await service.enrich(property_id)
+        runs = db.get_property(property_id)["enrichment_meta"]
+
+        # Highway data is older than its 30 days
+        old = (datetime.now(timezone.utc) - timedelta(days=31)).isoformat()
+        db.update_property(
+            property_id, {"enrichment_meta": {**runs, "highway_provider": {**runs["highway_provider"], "at": old}}}
+        )  # fmt: skip
+        await service.enrich(property_id)
+        assert _ran(orchestrator) == ["highway_provider"]
+
+        # A drive-time location was added on the Locations page
+        orchestrator.provider_info.return_value["distance_provider"]["inputs"] = "locations-v2"
+        await service.enrich(property_id)
+        assert _ran(orchestrator) == ["distance_provider"]
+
+        # Walk Score failed on that run, so the next one tries it again
+        db.update_property(
+            property_id,
+            {"enrichment_meta": {**db.get_property(property_id)["enrichment_meta"],
+                                 "walk_score_provider": {**runs["walk_score_provider"], "ok": False}}},
+        )  # fmt: skip
+        await service.enrich(property_id)
+        assert _ran(orchestrator) == ["walk_score_provider"]
+
+    @pytest.mark.asyncio
+    async def test_bypass_cache_runs_everything(self, service, orchestrator):
+        orchestrator.enrich.return_value = _result(**{n: _ok({"x": 1}) for n in ALL_PROVIDERS})
+        property_id, _ = service.create_from_input("1 Main")
+        await service.enrich(property_id)
 
         await service.enrich(property_id, use_cached=False)
 
+        assert _ran(orchestrator) == ALL_PROVIDERS
+        # The orchestrator's in-process cache is never consulted: it ignores settings
         assert orchestrator.enrich.call_args.kwargs["use_cached"] is False
+
+    @pytest.mark.asyncio
+    async def test_property_enriched_before_runs_were_recorded(self, service, db, orchestrator):
+        property_id, _ = service.create_from_input("1 Main")
+        db.update_property(
+            property_id,
+            {
+                "latitude": 29.1,
+                "longitude": -81.0,
+                "enriched_at": datetime.now(timezone.utc).isoformat(),
+                "error": "highway_provider: timeout",
+                "enrichment": {n: {"x": 1} for n in ALL_PROVIDERS},
+            },
+        )
+
+        await service.enrich(property_id)
+
+        # Highway failed last time; drive times depend on settings nobody recorded
+        assert _ran(orchestrator) == ["highway_provider", "distance_provider"]
 
     @pytest.mark.asyncio
     async def test_failed_provider_keeps_previous_data(self, service, db, orchestrator):
@@ -254,6 +346,30 @@ class TestLoadPreferences:
         assert [loc.name for loc in locations] == ["Mom", "Work"]
         assert locations[0].location_type == "Family"
         assert locations[0].latitude == 29.1
+        assert geocoder.geocode_address.await_count == 2
+
+    @pytest.mark.asyncio
+    async def test_locations_are_geocoded_once(self, service, db, geocoder):
+        location_id = db.create_location({"name": "Mom", "address": "2 Home St"})
+
+        await service.load_preferences()
+        preferences = await service.load_preferences()
+
+        geocoder.geocode_address.assert_awaited_once_with("2 Home St")
+        [mom] = preferences["custom_locations"]
+        assert (mom.latitude, mom.longitude, mom.city, mom.state) == (
+            29.1,
+            -81.0,
+            "Port Orange",
+            "FL",
+        )
+
+        # A new address is looked up again; other edits aren't
+        db.update_location(location_id, {"name": "Mum", "address": "2 Home St"})
+        await service.load_preferences()
+        assert geocoder.geocode_address.await_count == 1
+        db.update_location(location_id, {"address": "5 New Rd"})
+        await service.load_preferences()
         assert geocoder.geocode_address.await_count == 2
 
     @pytest.mark.asyncio

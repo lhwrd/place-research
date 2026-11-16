@@ -10,17 +10,29 @@ from app.services.property_view import (
 )
 
 
+def values(rows):
+    return {r.label: r.value for r in rows}
+
+
+def pairs(rows):
+    return [(r.label, r.value) for r in rows]
+
+
+def levels(rows):
+    return {r.label: r.level for r in rows}
+
+
 def test_build_view_formats_every_provider():
     view = build_view(
-        {
-            "walk_score_provider": {
-                "walk_score": 45,
-                "description": "Car-Dependent",
-                "bike_score": 60,
-                "bike_description": "Bikeable",
-                "transit_score": None,
-                "transit_description": None,
-            },
+        walk_scores={
+            "walk_score": 45,
+            "description": "Car-Dependent",
+            "bike_score": 60,
+            "bike_description": "Bikeable",
+            "transit_score": None,
+            "transit_description": None,
+        },
+        enrichment={
             "flood_zone_provider": {
                 "flood_zone": "AE",
                 "flood_risk": None,
@@ -70,10 +82,10 @@ def test_build_view_formats_every_provider():
                     {"type": "No name"},
                 ]
             },
-        }
+        },
     )
 
-    assert view.surroundings == [
+    assert pairs(view.surroundings) == [
         ("Walk score", "45 · Car-Dependent"),
         ("Bike score", "60 · Bikeable"),
         ("Noise", noise_text(view.noise)),
@@ -87,7 +99,21 @@ def test_build_view_formats_every_provider():
     ]
     assert view.noise.main_source == "rail"
     assert noise_text(view.noise).startswith("Moderate · ")
-    assert view.drive_times == [DriveTime("Mom", 15, 6.14), DriveTime("Work", None, None)]
+    assert view.drive_times == [
+        DriveTime("Mom", 15, 6.14, "good"),
+        DriveTime("Work", None, None, None),
+    ]
+    assert levels(view.surroundings) == {
+        "Walk score": "fair",
+        "Bike score": "fair",
+        "Noise": "fair",  # 56 dB
+        "Noise by source": None,
+        "Flood zone": "poor",
+        "Nearest highway": "good",
+        "Nearest railroad": "good",
+        "Nearest airport": None,
+        "Air quality": "good",
+    }
     assert not view.drive_times[1].available
     assert [p["name"] for p in view.nearby_places] == ["Publix", "Riverside Park"]
     assert (view.nearby_places[0]["minutes"], view.nearby_places[0]["miles"]) == (7, 2.4)
@@ -130,7 +156,7 @@ def test_census():
     )
 
     assert view.acs_year == 2024
-    assert dict(view.census) == {
+    assert values(view.census) == {
         "City": "Highlands Ranch (CDP)",
         "City population": "103,000",
         "County": "Douglas County, Colorado",
@@ -158,13 +184,13 @@ def test_census_outside_any_city():
         }  # fmt: skip
     )
 
-    assert "City" not in dict(view.census)
-    assert dict(view.census)["County population"] == "330,000"
+    assert "City" not in values(view.census)
+    assert values(view.census)["County population"] == "330,000"
 
 
 def test_air_quality_without_aqi():
     view = build_view({"air_quality_provider": {"category": "Moderate"}})
-    assert dict(view.surroundings)["Air quality"] == "Moderate"
+    assert values(view.surroundings)["Air quality"] == "Moderate"
 
 
 def test_flood_zone_text():
@@ -222,7 +248,245 @@ class TestNoiseEstimate:
 
 
 def test_scores_without_descriptions():
-    """Enriched before descriptions were stored: just the number."""
-    view = build_view({"walk_score_provider": {"walk_score": 47, "bike_score": 62}})
+    """Just the number where Walk Score sends no description."""
+    view = build_view({}, {"walk_score": 47, "bike_score": 62})
 
-    assert view.surroundings == [("Walk score", "47"), ("Bike score", "62")]
+    assert pairs(view.surroundings) == [("Walk score", "47"), ("Bike score", "62")]
+
+
+class TestHazardsAndInternet:
+    def test_build_view_sections(self):
+        view = build_view(
+            {
+                "sinkhole_provider": {
+                    "favorability": "Most favorable",
+                    "incidents_within_1mi": 3,
+                    "verified_within_1mi": 1,
+                    "nearest_incident_m": 483,
+                    "nearest_incident_year": 2008,
+                },
+                "elevation_provider": {"elevation_ft": 82.0, "relative_ft": -3.5},
+                "evacuation_zone_provider": {"evacuation_zone": None},
+                "wetlands_provider": {
+                    "in_wetland": False,
+                    "nearest_wetland_m": 44,
+                    "nearest_wetland_type": "Freshwater Forested/Shrub Wetland",
+                },
+                "contamination_provider": {
+                    "sites_within_half_mi": 2,
+                    "superfund_within_half_mi": 0,
+                    "sites": [{"name": "Fera Cleaners", "category": "PFAS", "distance_m": 196}],
+                },
+                "impaired_waters_provider": {
+                    "impaired_waters": [
+                        {
+                            "name": "Lake Eola",
+                            "parameters": [
+                                "Nutrients (Chlorophyll-a)",
+                                "Nutrients (Total Phosphorus)",
+                                "Mercury (in fish tissue)",
+                            ],
+                        }
+                    ]
+                },  # fmt: skip
+                "local_noise_sources_provider": {
+                    "fireworks": [{"name": "EPCOT", "distance_m": 5787}],
+                    "launch_site": {"name": "Cape Canaveral landing zones", "distance_m": 19521},
+                },
+                "broadband_provider": {
+                    "providers": [
+                        {
+                            "name": "AT&T Fiber",
+                            "technology": "Fiber",
+                            "max_down_mbps": 5000.0,
+                            "max_up_mbps": 5000.0,
+                            "coverage_pct": 10,
+                        },
+                        {
+                            "name": "Spectrum",
+                            "technology": "Cable",
+                            "max_down_mbps": 1000.0,
+                            "max_up_mbps": 35.0,
+                            "coverage_pct": 100,
+                        },
+                    ],
+                    "fiber_available": True,
+                    "wired_providers": 2,
+                    "max_down_mbps": 5000.0,
+                },  # fmt: skip
+            }
+        )
+
+        assert values(view.hazards) == {
+            "Sinkhole geology": "Most favorable to sinkhole formation",
+            "Sinkhole reports": "3 within 1 mi (1 verified) · nearest 0.3 mi, 2008",
+            "Elevation": "82 ft · 3.5 ft below surrounding ground",
+            "Evacuation zone": "None",
+            "Wetlands": "Freshwater Forested/Shrub Wetland 144 ft away",
+            "Contamination sites": "2 open within ½ mi · nearest Fera Cleaners (PFAS), 643 ft",
+            "Impaired waters": "Lake Eola (nutrients, mercury)",
+        }
+        surroundings = values(view.surroundings)
+        assert surroundings["Fireworks"] == "EPCOT 3.6 mi"
+        assert surroundings["Rocket launches"] == "12 mi from the Cape · sonic booms likely"
+        assert view.internet_summary.value == "No fiber · 1 wired provider · up to 1,000 Mbps"
+        assert [p["name"] for p in view.internet] == ["Spectrum"]
+
+    def test_levels_and_scorecard(self):
+        view = build_view(
+            {
+                "sinkhole_provider": {"favorability": "Most favorable", "incidents_within_1mi": 0},
+                "elevation_provider": {"elevation_ft": 82.0, "relative_ft": -1.5},
+                "evacuation_zone_provider": {"evacuation_zone": "A"},
+                "contamination_provider": {"sites_within_half_mi": 0},
+                "broadband_provider": {
+                    "providers": [
+                        {
+                            "name": "Spectrum",
+                            "technology": "Cable",
+                            "max_down_mbps": 1000.0,
+                            "max_up_mbps": 35.0,
+                            "coverage_pct": 100,
+                        }
+                    ],
+                },  # fmt: skip
+                "distance_provider": {
+                    "distances": [
+                        {
+                            "location_name": "Work",
+                            "status": "OK",
+                            "duration_minutes": 45,
+                            "distance_miles": 30,
+                        }
+                    ]
+                },  # fmt: skip
+                "places_nearby_provider": {
+                    "places_nearby": [{"name": "Publix", "drive_minutes": 4, "drive_miles": 1}]
+                },
+                "census_provider": {"county": {"name": "Orange County", "population": 1}},
+            }
+        )
+
+        assert levels(view.hazards) == {
+            "Sinkhole geology": "poor",
+            "Sinkhole reports": "good",
+            "Elevation": "fair",
+            "Evacuation zone": "poor",
+            "Contamination sites": "good",
+        }
+        assert view.internet_summary.level == "fair"  # fast cable, no fiber
+        assert all(r.level is None for r in view.census)  # demographics are never rated
+        # Rated, but left out of the scorecard
+        assert view.drive_times[0].level == "poor"
+        assert view.nearby_places[0]["level"] == "good"
+        assert view.scorecard() == {
+            "counts": {"good": 2, "fair": 2, "poor": 2},
+            "total": 6,
+            "poor": ["Sinkhole geology", "Evacuation zone"],
+        }
+
+    def test_missing_providers_add_nothing(self):
+        view = build_view({})
+        assert view.hazards == [] and view.internet_summary is None and view.internet == []
+
+    def test_quiet_results(self):
+        view = build_view(
+            {
+                "sinkhole_provider": {"favorability": None, "incidents_within_1mi": 0},
+                "elevation_provider": {"elevation_ft": 100.2, "relative_ft": 0.4},
+                "evacuation_zone_provider": {"evacuation_zone": "A"},
+                "wetlands_provider": {
+                    "in_wetland": True,
+                    "nearest_wetland_type": "Freshwater Emergent Wetland",
+                },
+                "contamination_provider": {"sites_within_half_mi": 0},
+                "impaired_waters_provider": {"impaired_waters": []},
+                "broadband_provider": {"providers": []},
+            }
+        )
+
+        assert values(view.hazards) == {
+            "Sinkhole reports": "None within 1 mi",
+            "Elevation": "100 ft · level with surroundings",
+            "Evacuation zone": "Zone A (evacuates first)",
+            "Wetlands": "On a mapped wetland (Freshwater Emergent Wetland)",
+            "Contamination sites": "None within ½ mi",
+            "Impaired waters": "None nearby",
+        }
+        assert view.internet_summary.value == "No wired or fixed wireless providers listed"
+
+
+def test_scores_saved_by_earlier_versions_are_not_shown():
+    """Walk Score's terms don't allow storing scores; only ones fetched for this view count."""
+    view = build_view({"walk_score_provider": {"walk_score": 47}})
+
+    assert view.surroundings == []
+
+
+class TestParcel:
+    RECORD = {
+        "found": True,
+        "match": "address",
+        "county": "Orange",
+        "parcel_id": "242229582203011",
+        "assessment_year": 2026,
+        "situs_address": "1216 VIRGINIA DR, Orlando",
+        "use": "Single family",
+        "year_built": 1955,
+        "effective_year_built": 1980,
+        "living_area_sqft": 2376,
+        "lot_sqft": 12333,
+        "lot_acres": 0.28,
+        "residential_units": 1,
+        "quality": "Average",
+        "just_value": 636740,
+        "land_value": 374400,
+        "taxable_value": 561740,
+        "homestead": True,
+        "recent_sales": [
+            {"year": 2025, "month": 11, "price": 100, "arms_length": False, "vacant_land": False},
+            {"year": 2025, "month": 3, "price": 410000, "arms_length": True, "vacant_land": False},
+        ],
+    }
+
+    def test_rows(self):
+        view = build_view({"parcel_provider": self.RECORD})
+        assert pairs(view.parcel) == [
+            ("Use", "Single family"),
+            ("Year built", "1955 (effective 1980, after updates)"),
+            ("Living area", "2,376 sqft"),
+            ("Lot", "0.28 ac (12,333 sqft)"),
+            ("Construction quality", "Average"),
+            ("Just (market) value", "$636,740 (land $374,400)"),
+            ("Taxable value", "$561,740"),
+            ("Homestead", "Yes, owner-occupied"),
+            ("Recent sales", "Nov 2025 · $100 (not arm's length); Mar 2025 · $410,000"),
+            ("Parcel", "Orange County, 242229582203011, 2026 roll"),
+        ]
+        assert view.parcel_note is None
+
+    def test_unrated_and_not_in_scorecard(self):
+        view = build_view({"parcel_provider": self.RECORD})
+        assert all(r.level is None for r in view.parcel)
+        assert view.scorecard()["total"] == 0
+
+    def test_vacant_lot_and_multiple_units(self):
+        record = {"found": True, "use": "Multi-family, under 10 units", "residential_units": 2,
+                  "year_built": 1950, "effective_year_built": 1950, "homestead": False}  # fmt: skip
+        assert pairs(build_view({"parcel_provider": record}).parcel) == [
+            ("Use", "Multi-family, under 10 units"),
+            ("Year built", "1950"),
+            ("Units", "2 residential units"),
+            ("Homestead", "No"),
+        ]
+
+    def test_nearest_parcel_is_flagged(self):
+        view = build_view({"parcel_provider": {**self.RECORD, "match": "nearest"}})
+        assert view.parcel_note == (
+            "No parcel matched this address, so this is the parcel nearest the map pin "
+            "(1216 VIRGINIA DR, Orlando)."
+        )
+
+    def test_not_found_or_missing(self):
+        assert build_view({"parcel_provider": {"found": False}}).parcel == []
+        assert build_view({}).parcel == []

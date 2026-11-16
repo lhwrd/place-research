@@ -1,6 +1,8 @@
 """Dynamic enrichment orchestrator using provider registry."""
 
 import asyncio
+import hashlib
+import json
 import logging
 from typing import Any, Dict, List, Optional
 
@@ -94,6 +96,26 @@ class EnrichmentOrchestrator:
         )
 
         return self._format_response(results)
+
+    def provider_info(
+        self, user_preferences: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Dict[str, Any]]:
+        """
+        What a caller needs to decide whether a provider's stored result is still good.
+
+        Returns:
+            Provider name -> {"max_age_days", "inputs"} for every provider that would run.
+            inputs is a fingerprint of the settings the result depends on (None if it
+            depends only on the location).
+        """
+        info = {}
+        for provider in self._get_applicable_providers(user_preferences=user_preferences):
+            inputs = provider.inputs(user_preferences)
+            info[provider.metadata.name] = {
+                "max_age_days": provider.metadata.cache_duration_days,
+                "inputs": None if inputs is None else _fingerprint(inputs),
+            }
+        return info
 
     def _get_applicable_providers(
         self,
@@ -303,3 +325,7 @@ class EnrichmentOrchestrator:
             }
 
         return response
+
+
+def _fingerprint(value: Any) -> str:
+    return hashlib.sha256(json.dumps(value, sort_keys=True, default=str).encode()).hexdigest()[:16]
