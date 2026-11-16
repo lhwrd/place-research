@@ -344,6 +344,8 @@ def crime_rate_text(data: Dict[str, Any], kind: str) -> Optional[str]:
     text = f"{rate:,.0f} per 100k"
     if state:
         text += f" · {rate / state:.1f}× Florida"
+    if data.get("likely_incomplete") and kind == "property":
+        text += " · reporting looks incomplete"
     return text
 
 
@@ -360,11 +362,20 @@ def internet_summary_text(data: Dict[str, Any]) -> Optional[str]:
         return None
     if not data["providers"]:
         return "No wired or fixed wireless providers listed"
-    parts = ["Fiber available" if data.get("fiber_available") else "No fiber"]
-    parts.append(f"{data.get('wired_providers', 0)} wired provider(s)")
-    if data.get("max_down_mbps"):
-        parts.append(f"up to {data['max_down_mbps']:,.0f} Mbps")
+    # Describe the providers that are listed, not ones reaching a sliver of the block
+    shown = internet_providers(data)
+    if not shown:
+        return "No provider serves most of this block"
+    wired = len({p["name"] for p in shown if p.get("technology") in WIRED_TECHNOLOGIES})
+    parts = [
+        "Fiber available" if any(p.get("technology") == "Fiber" for p in shown) else "No fiber",
+        f"{wired} wired provider{'' if wired == 1 else 's'}",
+        f"up to {max(p['max_down_mbps'] for p in shown):,.0f} Mbps",
+    ]
     return " · ".join(parts)
+
+
+WIRED_TECHNOLOGIES = {"Fiber", "Cable", "DSL"}
 
 
 def internet_providers(data: Dict[str, Any]) -> List[Dict[str, Any]]:

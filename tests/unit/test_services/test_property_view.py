@@ -274,6 +274,7 @@ class TestHazardsAndSafety:
                     "period_start": "01-2025",
                     "period_end": "09-2025",
                     "months": 9,
+                    "likely_incomplete": True,
                     "violent_per_100k": 400.0,
                     "state_violent_per_100k": 200.0,
                     "property_per_100k": 1500.0,
@@ -318,11 +319,11 @@ class TestHazardsAndSafety:
         assert dict(view.safety) == {
             "Police agency": "Orange County Sheriff's Office",
             "Violent crime": "400 per 100k · 2.0× Florida",
-            "Property crime": "1,500 per 100k",
+            "Property crime": "1,500 per 100k · reporting looks incomplete",
             "Crime data period": "01-2025 to 09-2025 (9 mo) · agency-wide (county)",
-            "Internet": "Fiber available · 2 wired provider(s) · up to 5,000 Mbps",
+            # Fiber reaches 10% of the block, so it's neither listed nor counted
+            "Internet": "No fiber · 1 wired provider · up to 1,000 Mbps",
         }
-        # Fiber reaches only 10% of the block: left out of the provider list
         assert [p["name"] for p in view.internet] == ["Spectrum"]
 
     def test_missing_providers_add_nothing(self):

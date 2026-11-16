@@ -30,6 +30,7 @@ AGENCIES = [
 ]  # fmt: skip
 
 SHERIFF = "Orange County Sheriff's Office"
+TODAY = date(2026, 11, 15)
 
 
 def _cde(name, actuals, rates, state_rates, population=955_709):
@@ -90,7 +91,7 @@ class TestSummarize:
             {"01-2025": 120.0, "02-2025": 110.0, "03-2025": 125.0},
         )
 
-        summary = summarize(SHERIFF, "Florida", violent, prop)
+        summary = summarize(SHERIFF, "Florida", violent, prop, TODAY)
 
         assert summary["reporting"] is True
         assert summary["months"] == 3
@@ -106,16 +107,37 @@ class TestSummarize:
         months = [f"{m:02d}-2025" for m in range(1, 13)] + ["01-2026", "02-2026"]
         body = _cde(SHERIFF, {m: 10 for m in months}, {m: 1.0 for m in months}, {})
 
-        summary = summarize(SHERIFF, "Florida", body, body)
+        summary = summarize(SHERIFF, "Florida", body, body, TODAY)
 
         assert summary["months"] == 12
         assert (summary["period_start"], summary["period_end"]) == ("03-2025", "02-2026")
         assert summary["state_violent_per_100k"] is None
 
+    def test_partial_and_current_months_left_out(self):
+        # A stray 1-offense month, three full months, and this month still coming in
+        actuals = {"05-2025": 1, "08-2026": 100, "09-2026": 120, "10-2026": 110, "11-2026": 3}
+        rates = {m: v / 10 for m, v in actuals.items()}
+        body = _cde(SHERIFF, actuals, rates, {})
+
+        summary = summarize(SHERIFF, "Florida", body, body, TODAY)
+
+        assert (summary["period_start"], summary["period_end"]) == ("08-2026", "10-2026")
+        assert summary["months"] == 3
+        assert summary["violent_per_100k"] == pytest.approx((10 + 12 + 11) * 4)
+
+    def test_flags_property_crime_too_low_for_violent(self):
+        months = ["08-2026", "09-2026"]
+        violent = _cde(SHERIFF, {m: 20 for m in months}, {m: 20.0 for m in months}, {})
+        prop = _cde(SHERIFF, {m: 25 for m in months}, {m: 25.0 for m in months}, {})
+        typical = _cde(SHERIFF, {m: 140 for m in months}, {m: 140.0 for m in months}, {})
+
+        assert summarize(SHERIFF, "Florida", violent, prop, TODAY)["likely_incomplete"] is True
+        assert summarize(SHERIFF, "Florida", violent, typical, TODAY)["likely_incomplete"] is False
+
     def test_agency_not_reporting(self):
         name = "Orlando Police Department"
         body = _cde(name, {"01-2025": 0, "02-2025": 0}, {"01-2025": 0}, {"01-2025": 16.0})
-        assert summarize(name, "Florida", body, body) == {"reporting": False}
+        assert summarize(name, "Florida", body, body, TODAY) == {"reporting": False}
 
 
 class TestProvider:

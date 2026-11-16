@@ -32,6 +32,14 @@ from ..base_provider import (
 LOOKBACK_MONTHS = 18
 WINDOW_MONTHS = 12
 
+# A month with less than this share of the agency's typical (median) offenses is a partial
+# report, e.g. 1 offense from a city of 90,000, and is left out
+PARTIAL_MONTH_SHARE = 0.25
+
+# Statewide, property crime runs ~7x violent crime. An agency reporting less than twice as
+# much property crime as violent is almost certainly sending only part of its offenses.
+MIN_PROPERTY_TO_VIOLENT = 2.0
+
 
 class CrimeProvider(BaseEnrichmentProvider):
     def __init__(self):
@@ -102,7 +110,9 @@ class CrimeProvider(BaseEnrichmentProvider):
             "agency": agency["agency_name"],
             "ori": agency["ori"],
             "jurisdiction": "city" if agency.get("agency_type_name") == "City" else "county",
-            **summarize(agency["agency_name"], geo["state"].get("NAME"), violent, prop),
+            **summarize(
+                agency["agency_name"], geo["state"].get("NAME"), violent, prop, date.today()
+            ),
         }
         return ProviderResult(
             provider_name=self.metadata.name, data=data, success=True, api_calls_made=calls
@@ -159,23 +169,33 @@ def summarize(
     state_name: Optional[str],
     violent: Dict[str, Any],
     prop: Dict[str, Any],
+    today: date,
 ) -> Dict[str, Any]:
-    """Annualized rates over the latest (up to) 12 months the agency reported."""
+    """
+    Annualized rates over the latest (up to) 12 complete months the agency fully reported.
+
+    The current month is still coming in, and months with a small fraction of the agency's
+    usual offenses are partial reports; both are left out.
+    """
 
     def series(body: Dict[str, Any], kind: str, name: Optional[str]) -> Dict[str, float]:
         return ((body.get("offenses") or {}).get(kind) or {}).get(f"{name} Offenses") or {}
 
     v_count, p_count = series(violent, "actuals", agency_name), series(prop, "actuals", agency_name)
+    this_month = (today.year, today.month)
+    totals = {
+        m: (v_count.get(m) or 0) + (p_count.get(m) or 0)
+        for m in set(v_count) | set(p_count)
+        if _month_key(m) < this_month
+    }
+    nonzero = sorted(t for t in totals.values() if t > 0)
+    if not nonzero:
+        return {"reporting": False}
+    typical = nonzero[len(nonzero) // 2]
     reported = sorted(
-        (
-            m
-            for m in set(v_count) | set(p_count)
-            if (v_count.get(m) or 0) + (p_count.get(m) or 0) > 0
-        ),
+        (m for m, total in totals.items() if total > 0 and total >= PARTIAL_MONTH_SHARE * typical),
         key=_month_key,
     )[-WINDOW_MONTHS:]
-    if not reported:
-        return {"reporting": False}
 
     def annual_rate(body: Dict[str, Any], name: Optional[str]) -> Optional[float]:
         rates = series(body, "rates", name)
@@ -187,13 +207,19 @@ def summarize(
         .get(agency_name, {})
         .get(reported[-1])
     )
+    violent_rate, property_rate = annual_rate(violent, agency_name), annual_rate(prop, agency_name)
     return {
         "reporting": True,
+        "likely_incomplete": bool(
+            violent_rate
+            and property_rate is not None
+            and property_rate < MIN_PROPERTY_TO_VIOLENT * violent_rate
+        ),
         "period_start": reported[0],
         "period_end": reported[-1],
         "months": len(reported),
-        "violent_per_100k": annual_rate(violent, agency_name),
-        "property_per_100k": annual_rate(prop, agency_name),
+        "violent_per_100k": violent_rate,
+        "property_per_100k": property_rate,
         "state_violent_per_100k": annual_rate(violent, state_name),
         "state_property_per_100k": annual_rate(prop, state_name),
         "population": population,
