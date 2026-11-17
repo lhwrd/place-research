@@ -261,6 +261,17 @@ def beach_minutes(minutes: Optional[float]) -> Level:
     return GOOD if minutes <= 30 else FAIR if minutes <= 60 else POOR
 
 
+def emergency_vet(data: Dict[str, Any]) -> Level:
+    """A blocked cat or a swallowed lily can't wait for morning: the nearest 24-hour vet
+    within a quarter hour is good; past half an hour, or none at all, is poor."""
+    if "vets" not in data:
+        return None
+    minutes = next((v["drive_minutes"] for v in data["vets"] if v.get("open_24_hours")), None)
+    if minutes is None:
+        return POOR
+    return GOOD if minutes <= 15 else FAIR if minutes <= 30 else POOR
+
+
 def nearby_minutes(minutes: Optional[float]) -> Level:
     """Errands (groceries, pharmacy, ...) should be closer than a commute."""
     if minutes is None:

@@ -242,6 +242,30 @@ def test_beach_parking():
     assert rows[0].level == "poor"
 
 
+def test_emergency_vet():
+    def row(vets):
+        rows = build_view(
+            {"emergency_vet_provider": {"vets": vets, "radius_m": 48280}}
+        ).surroundings
+        return rows[0].value, rows[0].level
+
+    all_night = {"name": "BluePearl Pet Hospital", "open_24_hours": True, "drive_minutes": 14,
+                 "drive_miles": 6.21}  # fmt: skip
+    nearer_er = {"name": "Pet ER", "open_24_hours": False, "drive_minutes": 6}
+    farther_er = {**nearer_er, "drive_minutes": 20}
+    assert row([all_night, farther_er]) == ("14 min · 6.2 mi (BluePearl Pet Hospital)", "good")
+    assert row([nearer_er, all_night]) == (
+        "14 min · 6.2 mi (BluePearl Pet Hospital) · closer but not overnight: Pet ER, 6 min",
+        "good",
+    )
+    assert row([nearer_er]) == (
+        "None within 30.0 mi · nearest ER with set hours: Pet ER, 6 min",
+        "poor",
+    )
+    assert row([]) == ("None within 30.0 mi", "poor")
+    assert build_view({}).surroundings == []
+
+
 def test_food_drink_road_and_crowds():
     def surroundings(**providers):
         return values(build_view({f"{k}_provider": v for k, v in providers.items()}).surroundings)

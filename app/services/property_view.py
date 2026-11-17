@@ -115,6 +115,7 @@ def build_view(
     odors = data("odor_sources_provider")
     beach = (data("beach_parking_provider").get("sites") or [None])[0]
     food = data("food_drink_provider")
+    vets = data("emergency_vet_provider")
     roads = data("road_traffic_provider")
     crowds = data("event_traffic_provider")
     view.surroundings = _rows(
@@ -174,6 +175,7 @@ def build_view(
             beach_parking_text(beach),
             ratings.beach_minutes(beach.get("drive_minutes")) if beach else None,
         ),
+        ("Emergency vet (24 hr)", emergency_vet_text(vets), ratings.emergency_vet(vets)),
     )
 
     view.drive_times = drive_times(data("distance_provider"))
@@ -337,14 +339,39 @@ def odor_sources_text(data: Dict[str, Any]) -> Optional[str]:
     return " · ".join(shown + ([f"+{more} more"] if more > 0 else []))
 
 
+def _drive_text(minutes: float, miles: Optional[float]) -> str:
+    hours, minutes = divmod(int(minutes), 60)
+    drive = f"{hours} hr {minutes} min" if hours else f"{minutes} min"
+    return drive if miles is None else f"{drive} · {float(miles):.1f} mi"
+
+
+def emergency_vet_text(data: Dict[str, Any]) -> Optional[str]:
+    """E.g. "14 min · 6.2 mi (BluePearl Pet Hospital) · closer but not overnight: Pet ER,
+    6 min"."""
+    if "vets" not in data:
+        return None
+    vets = data["vets"]
+    all_night = next((v for v in vets if v.get("open_24_hours")), None)
+    limited = next((v for v in vets if not v.get("open_24_hours")), None)
+    if all_night:
+        text = _drive_text(all_night["drive_minutes"], all_night.get("drive_miles"))
+        if all_night.get("name"):
+            text += f" ({all_night['name']})"
+    else:
+        text = f"None within {_miles(data.get('radius_m') or 0)}"
+    if limited and (not all_night or limited["drive_minutes"] < all_night["drive_minutes"]):
+        label = "closer but not overnight" if all_night else "nearest ER with set hours"
+        text += (
+            f" · {label}: {limited.get('name') or 'unnamed'}, {int(limited['drive_minutes'])} min"
+        )
+    return text
+
+
 def beach_parking_text(site: Optional[Dict[str, Any]]) -> Optional[str]:
     """E.g. "58 min · 52.3 mi (Lori Wilson Park, Cocoa Beach · Atlantic · 1.50/hr)"."""
     if not site or site.get("drive_minutes") is None:
         return None
-    hours, minutes = divmod(int(site["drive_minutes"]), 60)
-    drive = f"{hours} hr {minutes} min" if hours else f"{minutes} min"
-    if site.get("drive_miles") is not None:
-        drive += f" · {float(site['drive_miles']):.1f} mi"
+    drive = _drive_text(site["drive_minutes"], site.get("drive_miles"))
     place = ", ".join(dict.fromkeys(p for p in (site.get("name"), site.get("beach")) if p))
     # The fee is the posted rate ("1.50/hr") or just "yes"
     fee = site.get("fee") and ("paid parking" if site["fee"] == "yes" else f"parking {site['fee']}")

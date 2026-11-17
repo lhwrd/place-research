@@ -32,6 +32,7 @@ class GooglePlacesAPI(BaseAPIClient):
         "location",
         "primaryTypeDisplayName",
     ]
+    HOURS_FIELDS = ["businessStatus", "regularOpeningHours"]
 
     def __init__(self):
         """Initialize Google Maps API client."""
@@ -196,6 +197,9 @@ class GooglePlacesAPI(BaseAPIClient):
         text_query: str,
         radius_miles: float = 5.0,
         max_results: int = 3,
+        included_type: Optional[str] = None,
+        opening_hours: bool = False,
+        merge_departments: bool = True,
     ) -> List[Dict[str, Any]]:
         """
         Search for nearby places of a specific type.
@@ -207,6 +211,12 @@ class GooglePlacesAPI(BaseAPIClient):
             radius_miles: Search radius in miles
             keyword: Optional keyword filter
             max_results: Maximum number of results to return
+            included_type: Only places of this type (e.g. "veterinary_care")
+            opening_hours: Also fetch business status and regular opening hours, adding
+                "business_status" and "open_24_hours" to each result. Billed as the
+                Enterprise Text Search SKU rather than Pro.
+            merge_departments: Keep one result per spot (a store and its departments);
+                off where neighbors in one plaza are different businesses
 
         Returns:
             List of nearby places with details
@@ -250,8 +260,12 @@ class GooglePlacesAPI(BaseAPIClient):
             "rankPreference": "DISTANCE",
             "locationRestriction": {"rectangle": bounding_box(lat, lon, radius_meters)},
         }
+        if included_type:
+            data["includedType"] = included_type
+            data["strictTypeFiltering"] = True
+        fields = self.FIELDS + (self.HOURS_FIELDS if opening_hours else [])
         headers = {
-            "X-Goog-FieldMask": ",".join(["places." + field for field in self.FIELDS]),
+            "X-Goog-FieldMask": ",".join(["places." + field for field in fields]),
         }
 
         try:
@@ -281,7 +295,7 @@ class GooglePlacesAPI(BaseAPIClient):
                 ):
                     continue
                 # Departments ("Costco Bakery", "Publix Liquors") sit at their store
-                if any(
+                if merge_departments and any(
                     haversine_distance(
                         p["latitude"], p["longitude"], place["latitude"], place["longitude"]
                     )
@@ -370,7 +384,7 @@ class GooglePlacesAPI(BaseAPIClient):
 
     def _parse_place_result(self, place: Dict[str, Any]) -> Dict[str, Any]:
         """Parse place result and calculate distance."""
-        return {
+        parsed = {
             "name": place.get("displayName", {}).get("text"),
             "place_id": place.get("id"),
             "latitude": place.get("location", {}).get("latitude"),
@@ -378,6 +392,11 @@ class GooglePlacesAPI(BaseAPIClient):
             "address": place.get("formattedAddress"),
             "type": place.get("primaryTypeDisplayName", {}).get("text"),
         }
+        if "businessStatus" in place:
+            parsed["business_status"] = place["businessStatus"]
+        if "regularOpeningHours" in place:
+            parsed["open_24_hours"] = always_open(place["regularOpeningHours"])
+        return parsed
 
 
 METERS_PER_DEGREE_LAT = 111_320
@@ -393,3 +412,16 @@ def bounding_box(lat: float, lon: float, radius_meters: float) -> Dict[str, Dict
         "low": {"latitude": max(lat - dlat, -90.0), "longitude": lon - dlon},
         "high": {"latitude": min(lat + dlat, 90.0), "longitude": lon + dlon},
     }
+
+
+def always_open(hours: Dict[str, Any]) -> bool:
+    """True for a place open around the clock every day.
+
+    Google gives a 24/7 place one period that opens Sunday at midnight and never closes.
+    Some list each day as midnight to midnight instead; those read "Open 24 hours".
+    """
+    periods = hours.get("periods") or []
+    if periods and all("close" not in p for p in periods):
+        return True
+    days = hours.get("weekdayDescriptions") or []
+    return len(days) == 7 and all("open 24 hours" in d.lower() for d in days)

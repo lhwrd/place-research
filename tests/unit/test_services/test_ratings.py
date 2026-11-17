@@ -172,6 +172,20 @@ def test_beach_minutes():
     ]  # fmt: skip
 
 
+def test_emergency_vet():
+    def vets(*minutes_open):
+        return {"vets": [{"drive_minutes": m, "open_24_hours": o} for m, o in minutes_open]}
+
+    assert ratings.emergency_vet({}) is None
+    assert ratings.emergency_vet({"vets": []}) == POOR
+    assert ratings.emergency_vet(vets((15, True))) == GOOD
+    # A limited-hours ER doesn't count, however close
+    assert ratings.emergency_vet(vets((5, False), (16, True))) == FAIR
+    assert ratings.emergency_vet(vets((30, True))) == FAIR
+    assert ratings.emergency_vet(vets((31, True))) == POOR
+    assert ratings.emergency_vet(vets((5, False))) == POOR
+
+
 def test_fireworks_and_launches():
     assert ratings.fireworks({"fireworks": [{"distance_m": 2 * MILE}]}) == POOR
     assert ratings.fireworks({"fireworks": [{"distance_m": 5 * MILE}]}) == FAIR
