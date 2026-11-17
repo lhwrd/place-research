@@ -120,6 +120,12 @@ def test_odor_sources(data, level):
     assert ratings.odor_sources(data) == level
 
 
+def test_beach_minutes():
+    assert [ratings.beach_minutes(m) for m in (None, 30, 31, 60, 61)] == [
+        None, GOOD, FAIR, FAIR, POOR,
+    ]  # fmt: skip
+
+
 def test_fireworks_and_launches():
     assert ratings.fireworks({"fireworks": [{"distance_m": 2 * MILE}]}) == POOR
     assert ratings.fireworks({"fireworks": [{"distance_m": 5 * MILE}]}) == FAIR

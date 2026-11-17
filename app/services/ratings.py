@@ -215,6 +215,13 @@ def drive_minutes(minutes: Optional[float]) -> Level:
     return GOOD if minutes <= 15 else FAIR if minutes <= 30 else POOR
 
 
+def beach_minutes(minutes: Optional[float]) -> Level:
+    """A beach inside half an hour is an after-work trip; past an hour it's a day out."""
+    if minutes is None:
+        return None
+    return GOOD if minutes <= 30 else FAIR if minutes <= 60 else POOR
+
+
 def nearby_minutes(minutes: Optional[float]) -> Level:
     """Errands (groceries, pharmacy, ...) should be closer than a commute."""
     if minutes is None:

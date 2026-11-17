@@ -6,7 +6,7 @@ app then enriches it with flood zone, distance to the nearest highway,
 railroad and airport, an estimate of noise pollution from all three, air quality, nearby places, drive times to the people and places you
 care about, and Census data (city and county population; age, race/ethnicity and education
 for the census tract). In Florida it also covers sinkhole geology and reported sinkholes,
-open contamination cleanups, nearby odor sources (sewage plants, landfills, paper mills and the like), impaired lakes, hurricane evacuation zone, the property appraiser's record (year built, living area, value, recent sales), theme park
+open contamination cleanups, nearby odor sources (sewage plants, landfills, paper mills and the like), impaired lakes, hurricane evacuation zone, the drive to the nearest beach parking, the property appraiser's record (year built, living area, value, recent sales), theme park
 fireworks and Cape launches; anywhere, nearby wetlands, whether the house sits below
 the ground around it, and FCC home internet providers. Look around in Street View, rate the home and how the neighborhood looks, mark it
 visited, keep notes and photos.
@@ -129,7 +129,9 @@ sales from this year and last. No key. It has no bed or bath counts; those come 
 listing.
 
 Airports ship with the app (`app/data/airports.csv`, large and medium airports from
-OurAirports); refresh the list with `uv run python scripts/build_airports.py`.
+OurAirports); refresh the list with `uv run python scripts/build_airports.py`. Beach
+parking (`app/data/beach_parking.csv`, FDEP's Coastal Access Sites that have parking) is
+bundled the same way: `uv run python scripts/build_beach_parking.py`.
 
 Walk, bike and transit scores (`WALKSCORE_API_KEY`) are the exception to "enrich once and
 store": Walk Score's terms don't allow keeping its scores, so they are fetched each time a
@@ -186,7 +188,8 @@ app/services/             property_service.py (ingest + enrichment), property_vi
                           (formats provider data for display), zillow_listing.py, geocoding
 app/services/enrichment/  orchestrator + auto-discovered providers
 app/integrations/         external API clients
-scripts/                  build_highways.py, build_airports.py, build_broadband.py
+scripts/                  build_highways.py, build_airports.py, build_broadband.py,
+                          build_beach_parking.py
 tests/                    unit and endpoint tests (no network)
 ```
 

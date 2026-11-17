@@ -218,6 +218,30 @@ def test_odor_sources():
     assert rows[0].level == "poor"
 
 
+def test_beach_parking():
+    def view(sites):
+        return build_view({"beach_parking_provider": {"sites": sites}}).surroundings
+
+    assert view([]) == []
+    site = {"name": "Lori Wilson Park", "beach": "Cocoa Beach", "coast": "Atlantic",
+            "fee": "1.50/hr", "drive_minutes": 58, "drive_miles": 52.31}  # fmt: skip
+    rows = view([site, {"name": "Farther", "drive_minutes": 70}])
+    assert pairs(rows) == [
+        (
+            "Nearest beach parking",
+            "58 min · 52.3 mi (Lori Wilson Park, Cocoa Beach · Atlantic · parking 1.50/hr)",
+        )
+    ]
+    assert rows[0].level == "fair"
+
+    # A park named for its beach isn't repeated; "yes" is a fee of unknown size
+    site = {"name": "Siesta Beach", "beach": "Siesta Beach", "coast": "Gulf", "fee": "yes",
+            "drive_minutes": 135, "drive_miles": 131}  # fmt: skip
+    rows = view([site])
+    assert rows[0].value == "2 hr 15 min · 131.0 mi (Siesta Beach · Gulf · paid parking)"
+    assert rows[0].level == "poor"
+
+
 def test_flood_zone_text():
     assert flood_zone_text(
         {"flood_zone": "X", "flood_risk": "0.2 PCT ANNUAL CHANCE FLOOD HAZARD", "in_sfha": False}

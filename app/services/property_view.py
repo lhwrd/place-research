@@ -107,6 +107,7 @@ def build_view(
     flood = data("flood_zone_provider")
     air = data("air_quality_provider")
     odors = data("odor_sources_provider")
+    beach = (data("beach_parking_provider").get("sites") or [None])[0]
     view.surroundings = _rows(
         (
             "Walk score",
@@ -151,6 +152,11 @@ def build_view(
         ),
         ("Air quality", air_quality_text(air), ratings.air_quality(air)),
         ("Odor sources", odor_sources_text(odors), ratings.odor_sources(odors)),
+        (
+            "Nearest beach parking",
+            beach_parking_text(beach),
+            ratings.beach_minutes(beach.get("drive_minutes")) if beach else None,
+        ),
     )
 
     view.drive_times = drive_times(data("distance_provider"))
@@ -307,6 +313,20 @@ def odor_sources_text(data: Dict[str, Any]) -> Optional[str]:
     ]
     more = (data.get("source_count") or len(sources)) - len(shown)
     return " · ".join(shown + ([f"+{more} more"] if more > 0 else []))
+
+
+def beach_parking_text(site: Optional[Dict[str, Any]]) -> Optional[str]:
+    """E.g. "58 min · 52.3 mi (Lori Wilson Park, Cocoa Beach · Atlantic · 1.50/hr)"."""
+    if not site or site.get("drive_minutes") is None:
+        return None
+    hours, minutes = divmod(int(site["drive_minutes"]), 60)
+    drive = f"{hours} hr {minutes} min" if hours else f"{minutes} min"
+    if site.get("drive_miles") is not None:
+        drive += f" · {float(site['drive_miles']):.1f} mi"
+    place = ", ".join(dict.fromkeys(p for p in (site.get("name"), site.get("beach")) if p))
+    # The fee is the posted rate ("1.50/hr") or just "yes"
+    fee = site.get("fee") and ("paid parking" if site["fee"] == "yes" else f"parking {site['fee']}")
+    return f"{drive} ({' · '.join(p for p in (place, site.get('coast'), fee) if p)})"
 
 
 def fireworks_text(data: Dict[str, Any]) -> Optional[str]:
