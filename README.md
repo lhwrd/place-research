@@ -8,7 +8,7 @@ care about, and Census data (city and county population; age, race/ethnicity and
 for the census tract, plus its share of renters and of households without children, and
 its median rent to set against the asking rent). It counts the restaurants, bars and coffee
 shops within a walk, and names the electric utility with its average residential rate. In Florida it also covers sinkhole geology and reported sinkholes,
-open contamination cleanups, nearby odor sources (sewage plants, landfills, paper mills and the like), impaired lakes, hurricane evacuation zone, the drive to the nearest beach parking, traffic on the road out front, tourist and event crowds nearby, who owns the place, the property appraiser's record (year built, living area, value, recent sales), theme park
+open contamination cleanups, nearby odor sources (sewage plants, landfills, paper mills and the like), impaired lakes, hurricane evacuation zone, the drive to the nearest beach parking, the drive to the nearest healthy mall and any dying malls close by, traffic on the road out front, tourist and event crowds nearby, who owns the place, the property appraiser's record (year built, living area, value, recent sales), theme park
 fireworks and Cape launches; anywhere, nearby wetlands, whether the house sits below
 the ground around it, and FCC home internet providers. Look around in Street View, rate the home and how the neighborhood looks, mark it
 visited, keep notes and photos.
@@ -144,7 +144,11 @@ the listing.
 Airports ship with the app (`app/data/airports.csv`, large and medium airports from
 OurAirports); refresh the list with `uv run python scripts/build_airports.py`. Beach
 parking (`app/data/beach_parking.csv`, FDEP's Coastal Access Sites that have parking) is
-bundled the same way: `uv run python scripts/build_beach_parking.py`.
+bundled the same way: `uv run python scripts/build_beach_parking.py`. Malls
+(`app/data/malls.csv`) are kept by hand: each Florida mall or big shopping center is marked
+thriving, healthy, struggling, dead or redeveloping, with the reason in `note`. Edit the
+status as malls change; for a new row, leave the coordinates blank and run
+`uv run python scripts/locate_malls.py` to fill them in from Google Places.
 
 Walk, bike and transit scores (`WALKSCORE_API_KEY`) are the exception to "enrich once and
 store": Walk Score's terms don't allow keeping its scores, so they are fetched each time a
@@ -202,7 +206,7 @@ app/services/             property_service.py (ingest + enrichment), property_vi
 app/services/enrichment/  orchestrator + auto-discovered providers
 app/integrations/         external API clients
 scripts/                  build_highways.py, build_airports.py, build_broadband.py,
-                          build_beach_parking.py
+                          build_beach_parking.py, locate_malls.py
 tests/                    unit and endpoint tests (no network)
 ```
 

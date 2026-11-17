@@ -172,6 +172,26 @@ def test_beach_minutes():
     ]  # fmt: skip
 
 
+def test_mall_minutes():
+    assert [ratings.mall_minutes(m) for m in (None, 20, 21, 40, 41)] == [
+        None, GOOD, FAIR, FAIR, POOR,
+    ]  # fmt: skip
+
+
+def test_dying_malls():
+    def level(declining_mi, healthy_mi=()):
+        return ratings.dying_malls(
+            {"declining": [{"straight_line_m": d * MILE} for d in declining_mi],
+             "healthy": [{"straight_line_m": h * MILE} for h in healthy_mi]}
+        )  # fmt: skip
+
+    assert ratings.dying_malls({}) is None and level([]) is None
+    assert level([1]) == POOR
+    assert level([1], [3]) == POOR  # the dead mall is the one next door
+    assert level([1], [0.5]) == FAIR  # a healthy mall is closer still
+    assert level([2]) == FAIR
+
+
 def test_fireworks_and_launches():
     assert ratings.fireworks({"fireworks": [{"distance_m": 2 * MILE}]}) == POOR
     assert ratings.fireworks({"fireworks": [{"distance_m": 5 * MILE}]}) == FAIR

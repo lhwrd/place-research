@@ -1,0 +1,75 @@
+name,city,county,kind,status,note,latitude,longitude
+Altamonte Mall,Altamonte Springs,Seminole,enclosed,healthy,"Macy's, Dillard's and JCPenney open; steady tenant mix",28.666612,-81.377404
+The Mall at Millenia,Orlando,Orange,enclosed,thriving,Luxury anchors and a full roster of stores,28.485945,-81.431056
+The Florida Mall,Orlando,Orange,enclosed,thriving,"Largest mall in Central Florida, busy with locals and tourists",28.445924,-81.395509
+Orlando Fashion Square,Orlando,Orange,enclosed,dead,"Sears, JCPenney and Macy's gone; most of the inline space empty",28.555832,-81.340586
+Oviedo Mall,Oviedo,Seminole,enclosed,dead,Most anchors and stores gone; owners pitching a mixed-use rebuild,28.662473,-81.235600
+Marketplace at Seminole Towne Center,Sanford,Seminole,enclosed,redeveloping,Former Seminole Towne Center; the mall is being rebuilt as an open-air center,28.799782,-81.334505
+Waterford Lakes Town Center,Orlando,Orange,open-air,healthy,"Busy east Orlando center with Target, theater and restaurants",28.554548,-81.200310
+The Loop,Kissimmee,Osceola,open-air,healthy,"Kohl's, JCPenney, theater and restaurants",28.343405,-81.423431
+Plaza Del Sol,Kissimmee,Osceola,enclosed,struggling,"The former Osceola Square Mall; anchors gone, partly filled by local shops",28.306627,-81.442451
+Lake Square Mall,Leesburg,Lake,enclosed,dead,Largely vacant; sold for redevelopment,28.825111,-81.784512
+Volusia Mall,Daytona Beach,Volusia,enclosed,dead,"Sears gone, foot traffic thin and inline vacancies growing",29.196256,-81.063221
+ONE DAYTONA,Daytona Beach,Volusia,open-air,healthy,"Newer center across from the Speedway: Bass Pro, theater, restaurants",29.194128,-81.072323
+Paddock Mall,Ocala,Marion,enclosed,struggling,Sears gone and vacancies growing,29.159023,-82.172942
+Lakeland Square Mall,Lakeland,Polk,enclosed,struggling,Sears and Macy's gone; sold for redevelopment,28.093555,-81.977958
+Eagle Ridge Mall,Lake Wales,Polk,enclosed,dead,Anchors gone and the mall mostly empty,27.954397,-81.615153
+Lakeshore Mall,Sebring,Highlands,enclosed,dead,"Sears, JCPenney and Kmart gone",27.490069,-81.487221
+Melbourne Square,Melbourne,Brevard,enclosed,healthy,"Macy's, Dillard's and JCPenney open",28.081519,-80.649780
+Merritt Square Mall,Merritt Island,Brevard,enclosed,dead,"Macy's, Sears and JCPenney gone; the theater keeps the lot from being empty",28.354840,-80.685779
+The Avenue Viera,Viera,Brevard,open-air,healthy,"Lifestyle center with a theater, shops and restaurants",28.244430,-80.726206
+Indian River Mall,Vero Beach,Indian River,enclosed,struggling,Sears gone and many inline vacancies,27.642738,-80.459129
+Treasure Coast Square,Jensen Beach,Martin,enclosed,healthy,"Macy's, Dillard's and JCPenney open",27.241619,-80.274782
+International Plaza,Tampa,Hillsborough,enclosed,thriving,"Nordstrom, Neiman Marcus and Bay Street dining",27.964598,-82.520184
+WestShore Plaza,Tampa,Hillsborough,enclosed,struggling,Sears and Macy's gone; changed hands after loan trouble,27.947350,-82.527460
+Citrus Park Town Center,Tampa,Hillsborough,enclosed,healthy,"Dillard's, Macy's and JCPenney open; Sears box redeveloped",28.068808,-82.576718
+Westfield Brandon,Brandon,Hillsborough,enclosed,healthy,"Macy's, Dillard's and JCPenney open; busy",27.932135,-82.325824
+RITHM at Uptown,Tampa,Hillsborough,enclosed,redeveloping,Former University Mall being rebuilt as mixed use,28.056626,-82.433972
+The Shops at Wiregrass,Wesley Chapel,Pasco,open-air,healthy,"Dillard's, JCPenney and restaurants; growing area",28.189078,-82.349682
+Tampa Premium Outlets,Lutz,Pasco,outlet,thriving,Busy outlet center,28.190354,-82.390600
+Gulf View Square,Port Richey,Pasco,enclosed,dead,"Sears, Macy's and JCPenney gone",28.294543,-82.712120
+Tyrone Square,St. Petersburg,Pinellas,enclosed,struggling,"Sears gone, shrinking tenant list",27.793787,-82.733381
+Countryside Mall,Clearwater,Pinellas,enclosed,healthy,"Dillard's, Macy's and JCPenney open",28.017171,-82.733329
+University Town Center,Sarasota,Manatee,enclosed,thriving,"Saks, Macy's, Dillard's and a full store list",27.384456,-82.452627
+Crossings at Siesta Key,Sarasota,Sarasota,enclosed,redeveloping,"Former Westfield Southgate, rebranded in a redevelopment",27.300717,-82.528775
+Square South,Sarasota,Sarasota,enclosed,redeveloping,"Former Sarasota Square Mall; anchors gone, being redeveloped",27.229729,-82.493620
+DeSoto Square Mall,Bradenton,Manatee,enclosed,dead,Closed; slated for demolition and redevelopment,27.463635,-82.564653
+Port Charlotte Town Center,Port Charlotte,Charlotte,enclosed,struggling,Sears and Macy's gone,27.009081,-82.147055
+Edison Mall,Fort Myers,Lee,enclosed,healthy,"Macy's, Dillard's and JCPenney open",26.601995,-81.870401
+Coconut Point,Estero,Lee,open-air,thriving,"Dillard's, Target and many restaurants",26.403885,-81.807185
+Gulf Coast Town Center,Fort Myers,Lee,open-air,healthy,"Bass Pro, Target and a theater",26.486428,-81.788728
+Coastland Center,Naples,Collier,enclosed,healthy,"Macy's, Dillard's and JCPenney open",26.169829,-81.795970
+Waterside Shops,Naples,Collier,open-air,thriving,"Saks, Nordstrom and luxury stores",26.213308,-81.802606
+Crystal River Mall,Crystal River,Citrus,enclosed,dead,"Anchors gone, mostly vacant",28.910543,-82.603091
+St. Johns Town Center,Jacksonville,Duval,open-air,thriving,"Nordstrom, Dillard's and the area's busiest shops",30.256871,-81.525324
+The Avenues Mall,Jacksonville,Duval,enclosed,healthy,"Dillard's, Belk and JCPenney open",30.184439,-81.554024
+Orange Park Mall,Orange Park,Clay,enclosed,healthy,"Dillard's, Belk and JCPenney open",30.185016,-81.735113
+Regency Square Mall,Jacksonville,Duval,enclosed,dead,"Dillard's, Sears, JCPenney and Belk gone",30.322507,-81.547341
+River City Marketplace,Jacksonville,Duval,open-air,healthy,Big-box center with a theater and restaurants,30.480727,-81.638944
+The Oaks Mall,Gainesville,Alachua,enclosed,healthy,"Dillard's, Belk and JCPenney open",29.657006,-82.411181
+Governor's Square,Tallahassee,Leon,enclosed,healthy,"Dillard's, Macy's and JCPenney open",30.436585,-84.253701
+The Centre of Tallahassee,Tallahassee,Leon,enclosed,redeveloping,"Former Tallahassee Mall, mostly closed and being rebuilt as mixed use",30.475700,-84.290268
+Cordova Mall,Pensacola,Escambia,enclosed,healthy,"Dillard's, Belk and Ross open",30.475114,-87.207241
+University Town Plaza,Pensacola,Escambia,enclosed,struggling,Former University Mall; Sears and JCPenney gone,30.499607,-87.223453
+Santa Rosa Mall,Mary Esther,Okaloosa,enclosed,struggling,Sears and JCPenney gone,30.415095,-86.658654
+Destin Commons,Destin,Okaloosa,open-air,healthy,"Bass Pro, Belk and a theater",30.391855,-86.424889
+Pier Park,Panama City Beach,Bay,open-air,thriving,"Busy beachside center with Dillard's, JCPenney and restaurants",30.218112,-85.873440
+Aventura Mall,Aventura,Miami-Dade,enclosed,thriving,One of the top-grossing malls in the country,25.957064,-80.142739
+Dadeland Mall,Miami,Miami-Dade,enclosed,thriving,"Saks, Macy's, JCPenney and a full store list",25.690632,-80.312446
+Dolphin Mall,Miami,Miami-Dade,outlet,thriving,Busy outlet and value mall,25.787397,-80.380108
+Miami International Mall,Doral,Miami-Dade,enclosed,healthy,Macy's and JCPenney open,25.786671,-80.364960
+Brickell City Centre,Miami,Miami-Dade,open-air,thriving,Downtown center with Saks,25.767219,-80.192611
+Bal Harbour Shops,Bal Harbour,Miami-Dade,open-air,thriving,Luxury open-air center,25.887719,-80.125391
+Southland Mall,Cutler Bay,Miami-Dade,enclosed,healthy,Macy's and JCPenney open,25.574722,-80.369167
+The Falls,Miami,Miami-Dade,open-air,healthy,Open-air center with Macy's and a theater,25.644729,-80.338344
+Westland Mall,Hialeah,Miami-Dade,enclosed,struggling,"Sears gone, vacancies",25.868496,-80.318003
+Mall of the Americas,Miami,Miami-Dade,enclosed,struggling,Former enclosed mall mostly turned into big-box stores,25.773745,-80.322481
+Sawgrass Mills,Sunrise,Broward,outlet,thriving,Largest outlet mall in the country,26.151701,-80.320787
+Pembroke Lakes Mall,Pembroke Pines,Broward,enclosed,healthy,"Dillard's, Macy's and JCPenney open",26.010569,-80.304625
+Coral Square,Coral Springs,Broward,enclosed,healthy,"Dillard's, Macy's and JCPenney open",26.241039,-80.249208
+Broward Mall,Plantation,Broward,enclosed,struggling,Sears gone; sold off by Westfield,26.117683,-80.254806
+The Galleria at Fort Lauderdale,Fort Lauderdale,Broward,enclosed,struggling,Dillard's left; owners planning a rebuild,26.137201,-80.113769
+Town Center at Boca Raton,Boca Raton,Palm Beach,enclosed,thriving,"Nordstrom, Saks, Neiman Marcus",26.365014,-80.132754
+Boynton Beach Mall,Boynton Beach,Palm Beach,enclosed,struggling,Sears and Dillard's gone; redevelopment planned,26.535680,-80.095743
+The Mall at Wellington Green,Wellington,Palm Beach,enclosed,healthy,"Dillard's, Macy's and JCPenney open",26.645310,-80.207839
+The Gardens Mall,Palm Beach Gardens,Palm Beach,enclosed,thriving,"Nordstrom, Saks, Bloomingdale's",26.848449,-80.085575

@@ -123,6 +123,8 @@ def build_view(
     air = data("air_quality_provider")
     odors = data("odor_sources_provider")
     beach = (data("beach_parking_provider").get("sites") or [None])[0]
+    malls = data("malls_provider")
+    healthy_mall = (malls.get("healthy") or [None])[0]
     food = data("food_drink_provider")
     roads = data("road_traffic_provider")
     crowds = data("event_traffic_provider")
@@ -183,6 +185,12 @@ def build_view(
             beach_parking_text(beach),
             ratings.beach_minutes(beach.get("drive_minutes")) if beach else None,
         ),
+        (
+            "Nearest healthy mall",
+            healthy_mall_text(healthy_mall),
+            ratings.mall_minutes(healthy_mall.get("drive_minutes")) if healthy_mall else None,
+        ),
+        ("Dying malls nearby", dying_malls_text(malls), ratings.dying_malls(malls)),
     )
 
     view.drive_times = drive_times(data("distance_provider"))
@@ -358,6 +366,30 @@ def beach_parking_text(site: Optional[Dict[str, Any]]) -> Optional[str]:
     # The fee is the posted rate ("1.50/hr") or just "yes"
     fee = site.get("fee") and ("paid parking" if site["fee"] == "yes" else f"parking {site['fee']}")
     return f"{drive} ({' · '.join(p for p in (place, site.get('coast'), fee) if p)})"
+
+
+def healthy_mall_text(mall: Optional[Dict[str, Any]]) -> Optional[str]:
+    """E.g. "14 min · 8.2 mi (Altamonte Mall, Altamonte Springs · healthy)"."""
+    if not mall or mall.get("drive_minutes") is None:
+        return None
+    hours, minutes = divmod(int(mall["drive_minutes"]), 60)
+    drive = f"{hours} hr {minutes} min" if hours else f"{minutes} min"
+    if mall.get("drive_miles") is not None:
+        drive += f" · {float(mall['drive_miles']):.1f} mi"
+    place = ", ".join(p for p in (mall.get("name"), mall.get("city")) if p)
+    return f"{drive} ({' · '.join(p for p in (place, mall.get('status')) if p)})"
+
+
+def dying_malls_text(data: Dict[str, Any]) -> Optional[str]:
+    """E.g. "Volusia Mall 0.8 mi (dead: Sears gone ...)"; None if none in range."""
+    declining = data.get("declining") or []
+    if not declining:
+        return None
+    return " · ".join(
+        f"{m['name']} {_miles(m['straight_line_m'])} "
+        f"({m['status']}{': ' + m['note'] if m.get('note') else ''})"
+        for m in declining
+    )
 
 
 def food_drink_text(data: Dict[str, Any]) -> Optional[str]:

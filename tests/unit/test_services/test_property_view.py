@@ -422,6 +422,27 @@ class TestRenting:
         }
 
 
+def test_malls():
+    def view(data):
+        return build_view({"malls_provider": data}).surroundings
+
+    assert view({"healthy": [], "declining": []}) == []
+    healthy = {"name": "Altamonte Mall", "city": "Altamonte Springs", "status": "healthy",
+               "drive_minutes": 14, "drive_miles": 8.24, "straight_line_m": 11000}  # fmt: skip
+    dead = {"name": "Volusia Mall", "status": "dead", "note": "Sears gone",
+            "straight_line_m": 1300}  # fmt: skip
+    rows = view({"healthy": [healthy, {"name": "Farther", "drive_minutes": 30}],
+                 "declining": [dead]})  # fmt: skip
+    assert pairs(rows) == [
+        ("Nearest healthy mall", "14 min · 8.2 mi (Altamonte Mall, Altamonte Springs · healthy)"),
+        ("Dying malls nearby", "Volusia Mall 0.8 mi (dead: Sears gone)"),
+    ]
+    assert [r.level for r in rows] == ["good", "poor"]
+
+    rows = view({"healthy": [{**healthy, "drive_minutes": 65}], "declining": []})
+    assert rows[0].value.startswith("1 hr 5 min") and rows[0].level == "poor"
+
+
 def test_flood_zone_text():
     assert flood_zone_text(
         {"flood_zone": "X", "flood_risk": "0.2 PCT ANNUAL CHANCE FLOOD HAZARD", "in_sfha": False}

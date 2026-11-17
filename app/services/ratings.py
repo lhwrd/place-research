@@ -261,6 +261,31 @@ def beach_minutes(minutes: Optional[float]) -> Level:
     return GOOD if minutes <= 30 else FAIR if minutes <= 60 else POOR
 
 
+def mall_minutes(minutes: Optional[float]) -> Level:
+    """A healthy mall is an occasional trip, so a longer drive than errands is fine."""
+    if minutes is None:
+        return None
+    return GOOD if minutes <= 20 else FAIR if minutes <= 40 else POOR
+
+
+# A dying mall this close drags on the blocks around it
+DYING_MALL_POOR_MI = 1.5
+
+
+def dying_malls(data: Dict[str, Any]) -> Level:
+    """POOR when a struggling or dead mall within 1.5 mi is closer than any healthy one
+    (the neighborhood leans on it); FAIR for one farther out, or with a healthy mall nearer.
+    None when no dying mall is in range."""
+    declining = data.get("declining") or []
+    if not declining:
+        return None
+    nearest = min(m["straight_line_m"] for m in declining)
+    healthy = [m["straight_line_m"] for m in data.get("healthy") or [] if "straight_line_m" in m]
+    if nearest < DYING_MALL_POOR_MI * METERS_PER_MILE and (not healthy or min(healthy) > nearest):
+        return POOR
+    return FAIR
+
+
 def nearby_minutes(minutes: Optional[float]) -> Level:
     """Errands (groceries, pharmacy, ...) should be closer than a commute."""
     if minutes is None:
