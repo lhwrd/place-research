@@ -188,3 +188,7 @@ USGS_ELEVATION = "https://elevation.nationalmap.gov/arcgis/rest/services"
 FL_EVACUATION_ZONES = "https://services1.arcgis.com/CY1LXxl9zlJeBuRZ/ArcGIS/rest/services"
 # Florida GIO's ArcGIS Online org: the Department of Revenue's statewide parcels
 FL_GIO = "https://services9.arcgis.com/Gh9awoU677aKree0/arcgis/rest/services"
+# Esri's Living Atlas copy of the electric retail service territories, with EIA-861 rates
+ESRI_POLICY_MAPS = "https://services8.arcgis.com/peDZJliSvYims39Q/arcgis/rest/services"
+# FDOT Transportation Data and Analytics
+FDOT_TDA = "https://services1.arcgis.com/O1JpcwDW8sjYuddV/arcgis/rest/services"

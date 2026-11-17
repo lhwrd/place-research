@@ -5,8 +5,10 @@ by typing an address or pasting a Zillow URL, or share a listing from your iPhon
 app then enriches it with flood zone, distance to the nearest highway,
 railroad and airport, an estimate of noise pollution from all three, air quality, nearby places, drive times to the people and places you
 care about, and Census data (city and county population; age, race/ethnicity and education
-for the census tract). In Florida it also covers sinkhole geology and reported sinkholes,
-open contamination cleanups, nearby odor sources (sewage plants, landfills, paper mills and the like), impaired lakes, hurricane evacuation zone, the drive to the nearest beach parking, the property appraiser's record (year built, living area, value, recent sales), theme park
+for the census tract, plus its share of renters and of households without children, and
+its median rent to set against the asking rent). It counts the restaurants, bars and coffee
+shops within a walk, and names the electric utility with its average residential rate. In Florida it also covers sinkhole geology and reported sinkholes,
+open contamination cleanups, nearby odor sources (sewage plants, landfills, paper mills and the like), impaired lakes, hurricane evacuation zone, the drive to the nearest beach parking, traffic on the road out front, tourist and event crowds nearby, who owns the place, the property appraiser's record (year built, living area, value, recent sales), theme park
 fireworks and Cape launches; anywhere, nearby wetlands, whether the house sits below
 the ground around it, and FCC home internet providers. Look around in Street View, rate the home and how the neighborhood looks, mark it
 visited, keep notes and photos.

@@ -135,7 +135,7 @@ async def property_detail(
         "property.html",
         {
             "p": prop,
-            "view": build_view(prop["enrichment"], walk_scores),
+            "view": build_view(prop["enrichment"], walk_scores, listing=prop),
             "walk": walk_scores,
             "photo_ids": service.db.photo_ids(property_id),
             "pending": prop["status"] in PropertyStatus.PENDING,

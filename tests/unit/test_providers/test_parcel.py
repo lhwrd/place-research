@@ -11,6 +11,7 @@ from app.services.enrichment.providers.parcel import (
     ParcelProvider,
     choose_parcel,
     normalize,
+    owner_type,
     parcel_details,
     recent_sales,
     same_house,
@@ -155,7 +156,34 @@ class TestDetails:
             "school_taxable_value": 586740,
             "homestead": True,
             "recent_sales": [],
+            "owner_name": None,
+            "owner_type": None,
+            "owner_city": None,
+            "owner_state": None,
         }
+
+    def test_owner(self):
+        roll = {**ROLL, "OWN_NAME": "WP1  HOMES LLC ", "OWN_CITY": "SCOTTSDALE", "OWN_STATE_": "AZ"}
+        details = parcel_details(roll)
+        assert (details["owner_name"], details["owner_type"]) == ("WP1 HOMES LLC", "company")
+        assert (details["owner_city"], details["owner_state"]) == ("Scottsdale", "AZ")
+
+    @pytest.mark.parametrize(
+        "name,kind",
+        [
+            ("SMITH JOHN A", "individual"),
+            ("SMITH JOHN A + SMITH MARY", "individual"),
+            ("CFL RENTAL INVESTMENTS, L.L.C.", "company"),
+            ("654 VENTURES INC", "company"),
+            ("WILLIAMS FAMILY TRUST", "trust"),
+            ("BELL GLADYS F LIFE ESTATE", "trust"),
+            ("CITY OF ORLANDO", "government"),
+            ("ORANGE COUNTY BCC", "government"),
+            (None, None),
+        ],
+    )
+    def test_owner_type(self, name, kind):
+        assert owner_type(name) == kind
 
     def test_blank_fields_are_none(self):
         vacant = {**ROLL, "DOR_UC": "000", "ACT_YR_BLT": 0, "EFF_YR_BLT": 0, "TOT_LVG_AR": 0,

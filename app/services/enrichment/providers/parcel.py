@@ -43,7 +43,19 @@ FIELDS = (
     "IMP_QUAL", "JV", "LND_VAL", "TV_SD", "TV_NSD", "JV_HMSTD",
     "SALE_PRC1", "SALE_YR1", "SALE_MO1", "QUAL_CD1", "VI_CD1",
     "SALE_PRC2", "SALE_YR2", "SALE_MO2", "QUAL_CD2", "VI_CD2",
+    "OWN_NAME", "OWN_CITY", "OWN_STATE_",
 )  # fmt: skip
+
+# Words in an owner's name that mark it as something other than a person
+COMPANY_WORDS = re.compile(
+    r"\b(LLC|L L C|LLP|LP|LTD|INC|CORP|CORPORATION|COMPANY|CO|PARTNERS|PARTNERSHIP|HOLDINGS|"
+    r"PROPERTIES|PROPERTY|INVESTMENTS?|BORROWER|OWNER|HOMES|RENTALS?|REALTY|CAPITAL|FUND|"
+    r"GROUP|ASSOCIATION|ASSN|APARTMENTS|VENTURES?|ENTERPRISES?|MANAGEMENT|REIT|BANK)\b"
+)
+TRUST_WORDS = re.compile(r"\b(TRUST|TRUSTEE|TRUSTEES|TR|TTEE|ESTATE|EST)\b")
+GOVERNMENT_WORDS = re.compile(
+    r"\b(CITY OF|COUNTY|STATE OF|UNITED STATES|HOUSING AUTHORITY|SCHOOL BOARD|TIITF)\b"
+)
 
 # The Department's county numbers: alphabetical from 11, with Miami-Dade still filed
 # under its pre-1997 name, Dade
@@ -197,6 +209,31 @@ def choose_parcel(
     return nearest, "location" if rank(nearest)[0] == 0 else "nearest"
 
 
+def owner_details(p: Dict[str, Any]) -> Dict[str, Any]:
+    """Who the tax roll says owns the parcel, and where their tax bill is mailed."""
+    name = " ".join((p.get("OWN_NAME") or "").split()) or None
+    return {
+        "owner_name": name,
+        "owner_type": owner_type(name),
+        "owner_city": " ".join((p.get("OWN_CITY") or "").split()).title() or None,
+        "owner_state": (p.get("OWN_STATE_") or "").strip().upper() or None,
+    }
+
+
+def owner_type(name: Optional[str]) -> Optional[str]:
+    """company, trust, government or individual, going by the words in the name."""
+    if not name:
+        return None
+    upper = name.upper().replace(".", "").replace(",", " ")
+    if GOVERNMENT_WORDS.search(upper):
+        return "government"
+    if COMPANY_WORDS.search(upper):
+        return "company"
+    if TRUST_WORDS.search(upper):
+        return "trust"
+    return "individual"
+
+
 def parcel_details(p: Dict[str, Any]) -> Dict[str, Any]:
     """The parcel's attributes, renamed, with the NAL's blank-as-zero turned into None."""
     use_code = (p.get("DOR_UC") or "").strip() or None
@@ -224,6 +261,7 @@ def parcel_details(p: Dict[str, Any]) -> Dict[str, Any]:
         "school_taxable_value": _positive(p.get("TV_SD")),
         "homestead": bool(_positive(p.get("JV_HMSTD"))),
         "recent_sales": recent_sales(p),
+        **owner_details(p),
     }
 
 

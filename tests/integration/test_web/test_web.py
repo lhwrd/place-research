@@ -134,6 +134,34 @@ class TestPropertyDetail:
         assert "Mystery Spot" in html and "unavailable" in html
         assert "query=39.7,-104.9" in html
 
+    def test_renting_section_uses_the_listing_rent(self, web, db, enriched):
+        db.update_property(
+            enriched,
+            {
+                "price": 2600,
+                "beds": 2,
+                "enrichment": {
+                    **ENRICHMENT,
+                    "census_provider": {
+                        "acs_year": 2024,
+                        "tract": {"median_gross_rent_by_bedrooms": {"2": 1789}},
+                    },
+                    "electric_utility_provider": {
+                        "utilities": [{"name": "ORLANDO UTILITIES COMM", "type": "municipal"}]
+                    },
+                },
+            },
+        )
+
+        html = web.get(f"/properties/{enriched}").text
+
+        assert "<h2>Renting</h2>" in html
+        assert "$2,600 asking · 45% above the tract&#39;s 2-bedroom median of $1,789" in html
+        assert "Orlando Utilities Comm (municipal)" in html
+
+    def test_no_renting_section_without_its_data(self, web, enriched):
+        assert "<h2>Renting</h2>" not in web.get(f"/properties/{enriched}").text
+
     def test_unknown_property(self, web):
         assert web.get("/properties/999").status_code == 404
 

@@ -242,6 +242,133 @@ def test_beach_parking():
     assert rows[0].level == "poor"
 
 
+def test_food_drink_road_and_crowds():
+    def surroundings(**providers):
+        return values(build_view({f"{k}_provider": v for k, v in providers.items()}).surroundings)
+
+    place = {"name": "Prato", "type": "Italian Restaurant", "distance_m": 120}
+    far = {"name": "Far Diner", "type": "Diner", "distance_m": 1500}
+    sparse = {"places": [place, far], "walkable_count": 1, "capped": False, "radius_m": 2414}
+    assert surroundings(food_drink=sparse)["Food & drink"] == (
+        "1 within a 10-min walk · 2 within 1.5 mi (nearest Prato, 394 ft)"
+    )
+    dense = {"places": [place] * 19 + [{**place, "distance_m": 300}], "walkable_count": 20,
+             "capped": True, "radius_m": 2414}  # fmt: skip
+    assert surroundings(food_drink=dense)["Food & drink"] == (
+        "20+ within a 10-min walk · the closest 20 within 984 ft (nearest Prato, 394 ft)"
+    )
+    strip_malls = {"places": [far] * 20, "walkable_count": 0, "capped": True, "radius_m": 2414}
+    assert surroundings(food_drink=strip_malls)["Food & drink"] == (
+        "None within a 10-min walk · 20 within 0.9 mi (nearest Far Diner, 0.9 mi)"
+    )
+    none = {"places": [], "walkable_count": 0, "capped": False, "radius_m": 2414}
+    assert surroundings(food_drink=none)["Food & drink"] == "None within 1.5 mi"
+
+    quiet = {"from_street": "Orlando Ave", "to_street": "Park Ave", "vehicles_per_day": 3000,
+             "distance_m": 20}  # fmt: skip
+    busy = {"from_street": "SR-426/Fairbanks Ave", "to_street": None, "vehicles_per_day": 41000,
+            "distance_m": 45}  # fmt: skip
+    assert surroundings(road_traffic={"roads": [quiet, busy]})["Road traffic"] == (
+        "On a counted road: 41,000 vehicles a day (SR-426/Fairbanks Ave)"
+    )
+    assert surroundings(road_traffic={"roads": [{**quiet, "distance_m": 130}]})["Road traffic"] == (
+        "Nearest counted road 427 ft away: 3,000 vehicles a day (Orlando Ave to Park Ave)"
+    )
+    assert surroundings(road_traffic={"roads": []})["Road traffic"] == (
+        "No counted road within 650 ft (a local street)"
+    )
+
+    crowds = {"attractions": [], "venues": [{"name": "Kia Center", "distance_m": 1300},
+                                            {"name": "Inter&Co Stadium", "distance_m": 2300}]}  # fmt: skip
+    shown = surroundings(event_traffic=crowds)
+    assert shown == {"Event venues": "Kia Center 0.8 mi, Inter&Co Stadium 1.4 mi"}
+
+
+class TestRenting:
+    CENSUS = {
+        "acs_year": 2024,
+        "tract": {"median_gross_rent": 1430, "median_gross_rent_by_bedrooms": {"2": 1789}},
+    }
+
+    @staticmethod
+    def _renting(enrichment, listing=None):
+        return values(build_view(enrichment, listing=listing).renting)
+
+    def test_rent_against_the_tract(self):
+        def rent(price, beds, census=self.CENSUS):
+            return self._renting({"census_provider": census}, {"price": price, "beds": beds}).get(
+                "Rent vs area"
+            )
+
+        assert rent(2600, 2.0) == (
+            "$2,600 asking · 45% above the tract's 2-bedroom median of $1,789 "
+            "(ACS 2020–2024, rent plus utilities)"
+        )
+        # No estimate for 3 bedrooms in this tract: fall back to all rentals
+        assert rent(1287, 3) == (
+            "$1,287 asking · 10% below the tract's median of $1,430 "
+            "(ACS 2020–2024, rent plus utilities)"
+        )
+        assert rent(1430, None).startswith("$1,430 asking · level with the tract's median")
+        # A sale price, or no price: just the median
+        assert (
+            rent(450000, 2) == "Tract 2-bedroom median $1,789 (ACS 2020–2024, rent plus utilities)"
+        )
+        assert rent(None, None) == "Tract median $1,430 (ACS 2020–2024, rent plus utilities)"
+        assert rent(2600, 2, {"tract": {}}) is None
+
+    def test_owner(self):
+        def owner(**fields):
+            return self._renting({"parcel_provider": {"found": True, **fields}}).get("Owner")
+
+        assert owner(owner_name="WP1 HOMES LLC", owner_type="company", owner_city="Scottsdale",
+                     owner_state="AZ", homestead=False,
+                     recent_sales=[{"year": 2025, "month": 11, "arms_length": False},
+                                   {"year": 2025, "month": 3, "arms_length": True}]) == (
+            "WP1 Homes LLC · company · tax bill to Scottsdale, AZ · bought Mar 2025"
+        )  # fmt: skip
+        assert owner(owner_name="CITY OF ORLANDO", owner_type="government") == (
+            "City of Orlando · government"
+        )
+        assert owner(owner_name="DOE JANE", owner_type="individual", owner_city="Orlando",
+                     owner_state="FL", homestead=True) == (
+            "Doe Jane · individual · homesteaded (the owner's own home)"
+        )  # fmt: skip
+        assert owner(owner_name=None) is None
+        assert self._renting({"parcel_provider": {"found": False}}) == {}
+
+    def test_electricity(self):
+        def electricity(*utilities):
+            return self._renting({"electric_utility_provider": {"utilities": list(utilities)}}).get(
+                "Electricity"
+            )
+
+        ouc = {"name": "ORLANDO UTILITIES COMM", "type": "municipal",
+               "residential_cents_per_kwh": 13.2, "rate_year": 2025}  # fmt: skip
+        duke = {"name": "DUKE ENERGY FLORIDA, LLC", "type": "investor-owned",
+                "residential_cents_per_kwh": 18.4, "rate_year": 2025}  # fmt: skip
+        assert electricity(ouc, duke) == (
+            "Orlando Utilities Comm (municipal) · 13.2¢/kWh average residential, 2025 "
+            "· or Duke Energy Florida, LLC (18.4¢/kWh)"
+        )
+        assert electricity({"name": "SOME CO-OP", "type": None}) == "Some Co-Op"
+        assert electricity() is None
+
+    def test_renting_rows_are_unrated_and_census_gets_housing_rows(self):
+        census = {"tract": {"renter_pct": 26.5, "households_without_children_pct": 76.3,
+                            "median_household_income": 77596, "median_gross_rent": 1430}}  # fmt: skip
+        view = build_view({"census_provider": census}, listing={"price": 1500})
+
+        assert [r.level for r in view.renting] == [None]
+        assert view.scorecard()["total"] == 0
+        assert values(view.census) == {
+            "Tract homes rented": "26.5%",
+            "Tract households without children": "76.3%",
+            "Tract median household income": "$77,596",
+            "Tract median rent": "$1,430",
+        }
+
+
 def test_flood_zone_text():
     assert flood_zone_text(
         {"flood_zone": "X", "flood_risk": "0.2 PCT ANNUAL CHANCE FLOOD HAZARD", "in_sfha": False}

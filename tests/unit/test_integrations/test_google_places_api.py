@@ -95,6 +95,27 @@ class TestGooglePlacesAPI:
         assert results[0]["longitude"] == -118.243683
 
     @pytest.mark.asyncio
+    async def test_nearby_search_nearest_first_and_excluded_types(
+        self, google_places_api, sample_nearby_response
+    ):
+        google_places_api._make_request = AsyncMock(return_value=sample_nearby_response)
+
+        await google_places_api.nearby_search(34.0, -118.2, ["restaurant"])
+        plain = google_places_api._make_request.call_args[1]["json_data"]
+        await google_places_api.nearby_search(
+            34.0,
+            -118.2,
+            ["restaurant"],
+            excluded_types=["fast_food_restaurant"],
+            nearest_first=True,
+        )
+        body = google_places_api._make_request.call_args[1]["json_data"]
+
+        assert "rankPreference" not in plain and "excludedTypes" not in plain
+        assert body["rankPreference"] == "DISTANCE"
+        assert body["excludedTypes"] == ["fast_food_restaurant"]
+
+    @pytest.mark.asyncio
     async def test_nearby_search_empty_results(self, google_places_api):
         """Test nearby search with empty results."""
         google_places_api._make_request = AsyncMock(return_value={"places": []})

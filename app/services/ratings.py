@@ -134,6 +134,45 @@ def odor_sources(data: Dict[str, Any]) -> Level:
     return POOR if strong else FAIR
 
 
+def food_drink(data: Dict[str, Any]) -> Level:
+    """Good is a choice of places on foot; poor is a drive to anything."""
+    if "places" not in data:
+        return None
+    walkable = data.get("walkable_count") or 0
+    if walkable >= 8:
+        return GOOD
+    # Capped means at least 20 within the mile and a half searched
+    return FAIR if walkable >= 2 or data.get("capped") else POOR
+
+
+# A counted road within this many meters of the map pin is the one out front
+FRONTING_ROAD_M = 50
+
+
+def road_traffic(data: Dict[str, Any]) -> Level:
+    """Vehicles a day on the road out front; a busy road a block away is only fair."""
+    if "roads" not in data:
+        return None
+    roads = data["roads"]
+    fronting = [r for r in roads if r["distance_m"] <= FRONTING_ROAD_M]
+    if fronting:
+        busiest = max(r["vehicles_per_day"] for r in fronting)
+        return POOR if busiest >= 15_000 else FAIR if busiest >= 5_000 else GOOD
+    return FAIR if any(r["vehicles_per_day"] >= 25_000 for r in roads) else GOOD
+
+
+def attractions(data: Dict[str, Any]) -> Level:
+    """Attractions are only stored within 5 miles; within 2 the daily traffic is yours too."""
+    places = data.get("attractions") or []
+    return _distance(places[0]["distance_m"], 2, 5) if places else None
+
+
+def venues(data: Dict[str, Any]) -> Level:
+    """Venues are only stored within 3 miles; within half a mile event nights block you in."""
+    places = data.get("venues") or []
+    return _distance(places[0]["distance_m"], 0.5, 3) if places else None
+
+
 # Hazards
 
 
