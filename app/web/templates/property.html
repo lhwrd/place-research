@@ -103,6 +103,14 @@
 </section>
 {% endif %}
 
+{% if view.renting %}
+<section class="card-section">
+  <h2>Renting</h2>
+  {{ rows(view.renting, rated=false) }}
+  <p class="dim small">Area rents are Census survey medians that include utilities and trail today's asking rents by a few years. The owner is from the county tax roll. Electric territories overlap, so confirm the utility with the landlord; the rate is what its residential customers paid on average.</p>
+</section>
+{% endif %}
+
 {% if view.surroundings %}
 <section class="card-section">
   <h2>Location</h2>

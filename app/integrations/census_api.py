@@ -64,6 +64,26 @@ EDUCATION_TOTAL = "B15003_001E"
 BACHELORS_OR_HIGHER = ("Bachelor's", "Graduate / professional")
 
 
+# Housing and households, for "what does the rent buy here"
+OCCUPIED_HOMES = "B25003_001E"
+RENTER_OCCUPIED = "B25003_003E"
+HOUSEHOLDS = "B11005_001E"
+HOUSEHOLDS_WITH_CHILDREN = "B11005_002E"  # one or more people under 18
+MEDIAN_HOUSEHOLD_INCOME = "B19013_001E"
+MEDIAN_GROSS_RENT = "B25064_001E"  # rent plus utilities
+# B25031 (median gross rent by bedrooms): studio, 1, 2, 3, 4, 5 or more
+MEDIAN_GROSS_RENT_BY_BEDROOMS = {beds: f"B25031_{beds + 2:03d}E" for beds in range(6)}
+HOUSING_VARIABLES = [
+    OCCUPIED_HOMES,
+    RENTER_OCCUPIED,
+    HOUSEHOLDS,
+    HOUSEHOLDS_WITH_CHILDREN,
+    MEDIAN_HOUSEHOLD_INCOME,
+    MEDIAN_GROSS_RENT,
+    *MEDIAN_GROSS_RENT_BY_BEDROOMS.values(),
+]
+
+
 def _age_variables(offsets: Iterable[int]) -> List[str]:
     return [
         f"B01001_{start + i:03d}E"
@@ -85,6 +105,7 @@ TRACT_VARIABLES: List[str] = [
     *(v for _, v in RACE_ETHNICITY),
     EDUCATION_TOTAL,
     *(v for _, cols in EDUCATION for v in _education_variables(cols)),
+    *HOUSING_VARIABLES,
 ]
 
 
@@ -122,8 +143,11 @@ class CensusAPIClient(BaseAPIClient):
             incorporated or census-designated place. city and county are
             {"name", "geoid", "population"} (city also has "type"). tract is
             {"name", "geoid", "population", "median_age", "age_groups", "race_ethnicity",
-            "education", "bachelors_or_higher_pct"}, where the breakdowns map label to
-            percent (one decimal place).
+            "education", "bachelors_or_higher_pct", "renter_pct",
+            "households_without_children_pct", "median_household_income",
+            "median_gross_rent", "median_gross_rent_by_bedrooms"}, where the breakdowns map
+            label to percent (one decimal place) and rent by bedrooms maps "0"-"5" (5 is
+            five or more) to dollars, leaving out sizes with too few rentals to estimate.
 
         Raises:
             ValueError: If no key is set, the point isn't in a US county, or the API
@@ -337,4 +361,19 @@ def _tract_profile(values: Dict[str, Optional[float]]) -> Dict[str, Any]:
         "bachelors_or_higher_pct": breakdown([("all", bachelors_or_higher)], EDUCATION_TOTAL).get(
             "all"
         ),
+        "renter_pct": breakdown([("all", [RENTER_OCCUPIED])], OCCUPIED_HOMES).get("all"),
+        "households_without_children_pct": _complement(
+            breakdown([("all", [HOUSEHOLDS_WITH_CHILDREN])], HOUSEHOLDS).get("all")
+        ),
+        "median_household_income": values.get(MEDIAN_HOUSEHOLD_INCOME),
+        "median_gross_rent": values.get(MEDIAN_GROSS_RENT),
+        "median_gross_rent_by_bedrooms": {
+            str(beds): values[name]
+            for beds, name in MEDIAN_GROSS_RENT_BY_BEDROOMS.items()
+            if values.get(name) is not None
+        },
     }
+
+
+def _complement(percent: Optional[float]) -> Optional[float]:
+    return None if percent is None else round(100 - percent, 1)

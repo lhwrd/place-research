@@ -94,6 +94,84 @@ def test_contamination(data, level):
     assert ratings.contamination(data) == level
 
 
+@pytest.mark.parametrize(
+    "data,level",
+    [
+        ({}, None),
+        ({"sources": []}, GOOD),
+        ({"sources": [{"kind": "landfill", "distance_m": 2 * MILE}]}, FAIR),
+        ({"sources": [{"kind": "landfill", "distance_m": 1 * MILE}]}, POOR),
+        # A mile is close for a landfill but not for a paper mill, and vice versa at three
+        ({"sources": [{"kind": "paper_mill", "distance_m": 3 * MILE}]}, POOR),
+        ({"sources": [{"kind": "wastewater_plant", "distance_m": 0.8 * MILE}]}, FAIR),
+        (
+            {
+                "sources": [
+                    {"kind": "transfer_station", "distance_m": 0.4 * MILE},
+                    {"kind": "wastewater_plant", "distance_m": 0.3 * MILE},
+                ]
+            },
+            POOR,
+        ),
+        ({"sources": [{"kind": "something_new", "distance_m": 10}]}, FAIR),
+    ],
+)
+def test_odor_sources(data, level):
+    assert ratings.odor_sources(data) == level
+
+
+@pytest.mark.parametrize(
+    "data,level",
+    [
+        ({}, None),
+        ({"places": [], "walkable_count": 0, "capped": False}, POOR),
+        ({"places": [{}], "walkable_count": 1, "capped": False}, POOR),
+        ({"places": [{}], "walkable_count": 2, "capped": False}, FAIR),
+        ({"places": [{}], "walkable_count": 0, "capped": True}, FAIR),  # 20 a short drive away
+        ({"places": [{}], "walkable_count": 8, "capped": True}, GOOD),
+    ],
+)
+def test_food_drink(data, level):
+    assert ratings.food_drink(data) == level
+
+
+@pytest.mark.parametrize(
+    "roads,level",
+    [
+        (None, None),
+        ([], GOOD),  # no counted road: a local street
+        ([(20, 3000)], GOOD),
+        ([(20, 7800)], FAIR),
+        ([(20, 24000)], POOR),
+        ([(20, 3000), (45, 16000)], POOR),  # a corner lot: the busier road counts
+        ([(120, 24000)], GOOD),  # a block back from it
+        ([(120, 63000)], FAIR),
+    ],
+)
+def test_road_traffic(roads, level):
+    data = (
+        {}
+        if roads is None
+        else {"roads": [{"distance_m": d, "vehicles_per_day": v} for d, v in roads]}
+    )
+    assert ratings.road_traffic(data) == level
+
+
+def test_attractions_and_venues():
+    def at(key, miles):
+        return {key: [{"distance_m": miles * MILE}]}
+
+    assert [ratings.attractions(at("attractions", m)) for m in (1, 3)] == [POOR, FAIR]
+    assert [ratings.venues(at("venues", m)) for m in (0.3, 1)] == [POOR, FAIR]
+    assert ratings.attractions({"attractions": []}) is None and ratings.venues({}) is None
+
+
+def test_beach_minutes():
+    assert [ratings.beach_minutes(m) for m in (None, 30, 31, 60, 61)] == [
+        None, GOOD, FAIR, FAIR, POOR,
+    ]  # fmt: skip
+
+
 def test_fireworks_and_launches():
     assert ratings.fireworks({"fireworks": [{"distance_m": 2 * MILE}]}) == POOR
     assert ratings.fireworks({"fireworks": [{"distance_m": 5 * MILE}]}) == FAIR

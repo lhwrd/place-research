@@ -1,0 +1,1176 @@
+site_id,name,beach,county,address,coast,spaces,fee,latitude,longitude
+FL841,Crescent Drive,Biltmore Beach,Bay,"6105 Gulf Dr, Panama City, Florida 32408",Gulf,16,,30.148726,-85.764257
+FL873,Luff Street,Biltmore Beach,Bay,"5625 Gulf Dr, Panama City, Florida 32408",Gulf,1,,30.145432,-85.759622
+FL845,South Rick Seltzer Park,Gulf Lagoon Beach,Bay,"7451 Thomas Dr, Panama City, Florida 32408",Gulf,95,,30.159938,-85.777887
+FL774,Camp Helen State Park,Inlet Beach,Bay,"Camp Helen Rd, Panama City Beach, Florida 32413",Gulf,50,,30.275279,-85.990488
+FL883,37th Street Pier Canal Park,Mexico Beach,Bay,"116 E 37th St, Mexico Beach, Florida 32456",Gulf,74,,29.949534,-85.424184
+FL899,Mexico Beach Sunset Park,Mexico Beach,Bay,"1812 W Highway 98, Mexico Beach, Florida 32456",Gulf,25,,29.942692,-85.410655
+FL908,Wayside Park,Mexico Beach,Bay,"714 W Highway 98, Mexico Beach, Florida 32456",Gulf,28,,29.936195,-85.401763
+FL2169,Beach Access 53,Panama City Beach,Bay,"16010 Front Beach Rd, Panama City Beach, Florida 32413",Gulf,17,,30.214736,-85.875215
+FL2168,Beach Access 54,Panama City Beach,Bay,"16041 Front Beach Rd, Panama City Beach, Florida 32413",Gulf,17,,30.215263,-85.876198
+FL817,Beckrich Road east,Panama City Beach,Bay,"11137 Front Beach Rd, Panama City, FL 32407",Gulf,56,,30.182958,-85.818187
+FL856,Miller Pier Park,Panama City Beach,Bay,"12213 Front Beach Rd, Panama City Beach, FL 32407",Gulf,223,,30.190394,-85.831007
+FL2167,Beach Access 57,"Panama City Beach, Laguna Beach",Bay,"16053 Front Beach Rd, Panama City Beach, Florida 32413",Gulf,10,,30.216118,-85.877825
+FL847,Dan Russell City Pier Beach Park,"Panama City Beach, Laguna Beach",Bay,"16051 Front Beach Rd, Panama City Beach, Florida 32413",Gulf,35,,30.215748,-85.877092
+FL868,St. Andrews State Park,St. Andrews,Bay,"State Park Cir, Panama City, Florida 32408",Gulf,100,,30.135075,-85.742496
+FL874,Crooked Island (Tyndall AFB) - east,Tyndall AFB,Bay,"Crooked Island Beach Rd, Panama City, Florida 32403",Gulf,70,,29.959285,-85.456853
+FL1467,Adams Ave.,Cape Canaveral,Brevard,"632 Adams Ave, Cape Canaveral, Florida 32920",Atlantic,8,,28.390601,-80.596958
+FL1484,Arthur Ave.,Cape Canaveral,Brevard,"398 Arthur Ave, Cocoa Beach, Florida 32931",Atlantic,7,,28.37644,-80.600595
+FL1489,Barlow Ave.,Cape Canaveral,Brevard,"398 Barlow Ave, Cocoa Beach, Florida 32931",Atlantic,19,1.50/hr,28.370383,-80.602642
+FL1478,Buchanan Ave.,Cape Canaveral,Brevard,"498 Buchanan Ave, Cape Canaveral, Florida 32920",Atlantic,12,,28.381598,-80.599587
+FL1465,Cherie Down Park,Cape Canaveral,Brevard,,Atlantic,66,,28.392444,-80.596916
+FL1476,Fillmore Ave.,Cape Canaveral,Brevard,"598 Fillmore Ave, Cape Canaveral, Florida 32920",Atlantic,16,,28.383249,-80.59911
+FL1483,Garfield Ave.,Cape Canaveral,Brevard,"598 Garfield Ave, Cocoa Beach, Florida 32931",Atlantic,3,,28.377301,-80.600592
+FL1488,Harding Ave.,Cape Canaveral,Brevard,"420 Harding Ave, Cocoa Beach, Florida 32931",Atlantic,8,1.50/hr,28.371149,-80.602335
+FL1472,Harrison Ave.,Cape Canaveral,Brevard,"598 Harrison Ave, Cape Canaveral, Florida 32920",Atlantic,16,,28.386555,-80.598068
+FL1482,Hayes Ave.,Cape Canaveral,Brevard,"598 Hayes Ave, Cocoa Beach, Florida 32931",Atlantic,2,,28.378193,-80.600329
+FL1471,Jackson Ave.,Cape Canaveral,Brevard,"598 Jackson Ave, Cape Canaveral, Florida 32920",Atlantic,12,,28.387367,-80.597806
+FL1468,Jefferson Ave.,Cape Canaveral,Brevard,"612 Jefferson Ave, Cape Canaveral, Florida 32920",Atlantic,8,,28.38981,-80.597158
+FL1463,Jetty Maritime Park,Cape Canaveral,Brevard,"Jetty Park Dr, Cape Canaveral, Florida 32920",Atlantic,100,,28.407314,-80.591851
+FL1480,Johnson Ave.,Cape Canaveral,Brevard,"498 Johnson Ave, Cape Canaveral, Florida 32920",Atlantic,7,,28.379974,-80.60007
+FL1479,Lincoln Ave.,Cape Canaveral,Brevard,"498 Lincoln Ave, Cape Canaveral, Florida 32920",Atlantic,12,,28.380835,-80.599821
+FL1469,Madison Ave.,Cape Canaveral,Brevard,"617 Madison Ave, Cape Canaveral, Florida 32920",Atlantic,14,,28.388947,-80.597317
+FL1470,Monroe Ave.,Cape Canaveral,Brevard,"624 Monroe Ave, Cape Canaveral, Florida 32920",Atlantic,11,,28.388199,-80.5976
+FL1477,Pierce Ave.,Cape Canaveral,Brevard,"498 Pierce Ave, Cape Canaveral, Florida 32920",Atlantic,16,,28.382464,-80.599272
+FL1474,Polk Ave.,Cape Canaveral,Brevard,"598 Polk Ave, Cape Canaveral, Florida 32920",Atlantic,14,,28.384903,-80.598632
+FL1486,Taft Ave.,Cape Canaveral,Brevard,"498 Taft Ave, Cocoa Beach, Florida 32931",Atlantic,12,,28.372847,-80.60178
+FL1475,Taylor Ave.,Cape Canaveral,Brevard,"598 Taylor Ave, Cape Canaveral, Florida 32920",Atlantic,18,,28.384097,-80.598856
+FL1473,Tyler Ave.,Cape Canaveral,Brevard,"598 Tyler Ave, Cape Canaveral, Florida 32920",Atlantic,14,,28.3857,-80.59837
+FL1466,Washington Ave.,Cape Canaveral,Brevard,"615 Washington Ave, Cape Canaveral, Florida 32920",Atlantic,11,,28.391439,-80.596673
+FL1487,Wilson Ave.,Cape Canaveral,Brevard,"430 Wilson Ave, Cocoa Beach, Florida 32931",Atlantic,3,,28.372022,-80.601954
+FL1506,4th St. N,Cocoa Beach,Brevard,"55 4th St N, Cocoa Beach, Florida 32931",Atlantic,24,1.50/hr,28.325652,-80.60791
+FL1499,Alan Shepard Park,Cocoa Beach,Brevard,"288 Cocoa Beach Cswy E, Cocoa Beach, Florida 32931",Atlantic,,,28.357822,-80.604789
+FL1502,Flagler Lane,Cocoa Beach,Brevard,"199 Flagler Ln, Cocoa Beach, Florida 32931",Atlantic,20,1.50/hr,28.352232,-80.605383
+FL1498,Gasden Lane E,Cocoa Beach,Brevard,"198 Gadsden Ln E, Cocoa Beach, Florida 32931",Atlantic,22,1.50/hr,28.360564,-80.604161
+FL1491,Hendry Ave.,Cocoa Beach,Brevard,"98 Hendry Ave, Cocoa Beach, Florida 32931",Atlantic,8,1.50/hr,28.368701,-80.602601
+FL1496,Leon Lane E,Cocoa Beach,Brevard,"198 Leon Ln E, Cocoa Beach, Florida 32931",Atlantic,22,1.50/hr,28.363922,-80.603573
+FL1504,Lori Wilson Park,Cocoa Beach,Brevard,,Atlantic,130,,28.336973,-80.607773
+FL1500,Marion Lane,Cocoa Beach,Brevard,"198 Marion Ln, Cocoa Beach, Florida 32931",Atlantic,12,1.50/hr,28.355678,-80.605067
+FL1492,Meade Ave.,Cocoa Beach,Brevard,"380 Meade Ave, Cocoa Beach, Florida 32931",Atlantic,18,1.50/hr,28.367846,-80.602919
+FL1528,N 1st St.,Cocoa Beach,Brevard,"1 1st St N, Cocoa Beach, Florida 32931",Atlantic,16,1.50/hr,28.320226,-80.608225
+FL1529,N 2nd St.,Cocoa Beach,Brevard,"2nd St N, Cocoa Beach, Florida 32931",Atlantic,15,1.50/hr,28.321964,-80.608117
+FL1497,Osceola Lane E,Cocoa Beach,Brevard,"198 Osceola Ln E, Cocoa Beach, Florida 32931",Atlantic,19,1.50/hr,28.362344,-80.603946
+FL1501,Palm Lane,Cocoa Beach,Brevard,"298 Palm Ln, Cocoa Beach, Florida 32931",Atlantic,28,1.50/hr,28.353974,-80.605187
+FL1543,Patrick Air Force Base 1,Cocoa Beach,Brevard,,Atlantic,100,,28.266637,-80.605548
+FL1493,Pulsipher ave.,Cocoa Beach,Brevard,"398 Pulsipher Ave, Cocoa Beach, Florida 32931",Atlantic,35,1.50/hr,28.367024,-80.602742
+FL1511,Robert P Murkshe Park,Cocoa Beach,Brevard,"2 16th St S, Cocoa Beach, Florida 32931",Atlantic,28,,28.289813,-80.607567
+FL1517,S 10th St.,Cocoa Beach,Brevard,"1 10th St S, Cocoa Beach, Florida 32931",Atlantic,8,1.50/hr,28.300554,-80.607818
+FL1516,S 11th St.,Cocoa Beach,Brevard,"1 11th St S, Cocoa Beach, Florida 32931",Atlantic,16,1.50/hr,28.298759,-80.607863
+FL1515,S 12th St.,Cocoa Beach,Brevard,"1 12th St S, Cocoa Beach, Florida 32931",Atlantic,12,1.50/hr,28.296975,-80.607753
+FL1514,S 13th St.,Cocoa Beach,Brevard,"1 13th St S, Cocoa Beach, Florida 32931",Atlantic,14,1.50/hr,28.295183,-80.607764
+FL1513,S 14th St.,Cocoa Beach,Brevard,"1 14th St S, Cocoa Beach, Florida 32931",Atlantic,14,1.50/hr,28.293413,-80.607647
+FL1512,S 15th St.,Cocoa Beach,Brevard,"2 15th St S, Cocoa Beach, Florida 32931",Atlantic,18,1.50/hr,28.291574,-80.607591
+FL1526,S 1st St.,Cocoa Beach,Brevard,"1 1st St S, Cocoa Beach, Florida 32931",Atlantic,16,1.50/hr,28.316623,-80.608304
+FL1525,S 2nd St.,Cocoa Beach,Brevard,"1 2nd St S, Cocoa Beach, Florida 32931",Atlantic,14,1.50/hr,28.314843,-80.608234
+FL1524,S 3rd St.,Cocoa Beach,Brevard,"1 3rd St S, Cocoa Beach, Florida 32931",Atlantic,11,1.50/hr,28.313067,-80.608225
+FL1523,S 4th St.,Cocoa Beach,Brevard,"3 4th St S, Cocoa Beach, Florida 32931",Atlantic,16,1.50/hr,28.311269,-80.608284
+FL1522,S 5th St.,Cocoa Beach,Brevard,"1 5th St S, Cocoa Beach, Florida 32931",Atlantic,12,1.50/hr,28.309485,-80.608235
+FL1521,S 6th St.,Cocoa Beach,Brevard,"1 6th St S, Cocoa Beach, Florida 32931",Atlantic,9,1.50/hr,28.307703,-80.608138
+FL1520,S 7th St.,Cocoa Beach,Brevard,"1 7th St S, Cocoa Beach, Florida 32931",Atlantic,8,1.50/hr,28.305929,-80.608138
+FL1519,S 8th St.,Cocoa Beach,Brevard,"1 8th St S, Cocoa Beach, Florida 32931",Atlantic,8,1.50/hr,28.304136,-80.608004
+FL1518,S 9th St.,Cocoa Beach,Brevard,"1 9th St S, Cocoa Beach, Florida 32931",Atlantic,13,1.50/hr,28.302355,-80.608012
+FL1503,Sidney Fisher Park,Cocoa Beach,Brevard,"Fisher Dr, Cocoa Beach, Florida 32931",Atlantic,100,5.00,28.344899,-80.607269
+FL1507,Slater Way,Cocoa Beach,Brevard,"3rd St N, Cocoa Beach, Florida 32931",Atlantic,10,1.50/hr,28.323634,-80.608137
+FL1530,South Atlantic Avenue north of South 13th Street,Cocoa Beach,Brevard,"1281 S Atlantic Ave, Cocoa Beach, Florida 32931",Atlantic,11,,28.2955,-80.608268
+FL1508,Summer St.,Cocoa Beach,Brevard,"2 Summer St, Cocoa Beach, Florida 32931",Atlantic,2,,28.286113,-80.60727
+FL1505,Tulip Ave.,Cocoa Beach,Brevard,"1 Tulip Ave, Cocoa Beach, Florida 32931",Atlantic,84,1.50/hr,28.33295,-80.60746
+FL1494,Winslow Ave.,Cocoa Beach,Brevard,"398 Winslow Ave, Cocoa Beach, Florida 32931",Atlantic,22,1.50/hr,28.366247,-80.603186
+FL1490,Young Ave.,Cocoa Beach,Brevard,"298 Young Ave, Cocoa Beach, Florida 32931",Atlantic,7,1.50/hr,28.369552,-80.602303
+FL1586,Mark's Landing Pl.,Floridana Beach,Brevard,"6199 SR-A1A, Melbourne Beach, Florida 32951",Atlantic,4,,27.955421,-80.502034
+FL1612,#11,Indialantic,Brevard,"341 Wavecrest Ave, Indialantic, Florida 32903",Atlantic,20,1.00/ hr,28.090156,-80.565282
+FL1613,#12,Indialantic,Brevard,"409 Wavecrest Ave, Indialantic, Florida 32903",Atlantic,20,1.00/hr,28.089559,-80.565073
+FL1614,#13,Indialantic,Brevard,"471 Wavecrest Ave, Indialantic, Florida 32903",Atlantic,20,1.00/hr,28.089166,-80.564932
+FL1615,#14,Indialantic,Brevard,"612 Wavecrest Ave, Indialantic, Florida 32903",Atlantic,20,1.00/hr,28.088468,-80.564688
+FL1616,#15,Indialantic,Brevard,"699 Wavecrest Ave, Indialantic, Florida 32903",Atlantic,20,1.00/hr,28.087759,-80.56443
+FL1618,#6 Wavecrest Ave.,Indialantic,Brevard,"99 Wavecrest Ave, Indialantic, Florida 32903",Atlantic,,1.00/hr,28.091783,-80.565884
+FL1611,#9 Wavecrest Ave.,Indialantic,Brevard,"235 Wavecrest Ave, Indialantic, Florida 32903",Atlantic,20,1.00/hr,28.090829,-80.56552
+FL1574,Howard E Futch Memorial Park,Indialantic,Brevard,,Atlantic,170,,28.122878,-80.576288
+FL1619,James L Nance Park,Indialantic,Brevard,,Atlantic,,1.00/hr,28.092661,-80.566394
+FL1610,Ocean Terrace,Indialantic,Brevard,"1301 Miramar Ave S, Indialantic, Florida 32903",Atlantic,3,,28.083266,-80.563597
+FL1620,Sunrise Park,Indialantic,Brevard,"Watson Dr, Indialantic, Florida 32903",Atlantic,20,1.00/hr,28.095712,-80.567443
+FL1609,Tampa Ave.,Indialantic,Brevard,,Atlantic,7,1.00/hr,28.080967,-80.562038
+FL1565,Bicentennial Beach Park,Indian Harbour Beach,Brevard,"34 Ocean Dunes Dr, Indian Harbour Beach, Florida 32937",Atlantic,33,,28.153631,-80.584242
+FL1581,Canova Beach Park,Indian Harbour Beach,Brevard,,Atlantic,50,,28.138224,-80.580341
+FL1583,Millenium Park,Indian Harbour Beach,Brevard,,Atlantic,25,,28.142853,-80.581575
+FL1579,Radisson South Beach,Indian Harbour Beach,Brevard,,Atlantic,10,,28.135272,-80.579409
+FL1580,SR A1A 0.12 miles south of East Eau Gallie Blvd,Indian Harbour Beach,Brevard,,Atlantic,10,,28.137119,-80.579856
+FL1582,Wallace Ave.,Indian Harbour Beach,Brevard,"1098 Wallace Ave, Satellite Beach, Florida 32937",Atlantic,5,,28.139769,-80.58039
+FL1590,Coconut Point Sanctuary,Melborune Beach,Brevard,"4090 S Highway A1a, Melbourne Beach, Florida 32951",Atlantic,5,,28.00894,-80.529522
+FL1605,1st Ave.,Melbourne Beach,Brevard,,Atlantic,6,,28.067342,-80.55637
+FL1604,2nd Ave.,Melbourne Beach,Brevard,,Atlantic,4,,28.066429,-80.555948
+FL1603,3rd Ave.,Melbourne Beach,Brevard,,Atlantic,8,,28.065423,-80.555447
+FL1602,4th Ave.,Melbourne Beach,Brevard,,Atlantic,7,,28.06447,-80.555073
+FL1601,5th Ave.,Melbourne Beach,Brevard,,Atlantic,7,,28.063494,-80.554671
+FL1600,6th Ave.,Melbourne Beach,Brevard,,Atlantic,5,,28.062559,-80.554245
+FL1588,Atlantic Dr.,Melbourne Beach,Brevard,,Atlantic,5,,27.98328,-80.515883
+FL1607,Avenue A,Melbourne Beach,Brevard,"901 Atlantic St, Melbourne Beach, Florida 32951",Atlantic,7,,28.069476,-80.557359
+FL1608,Avenue B,Melbourne Beach,Brevard,,Atlantic,8,,28.070463,-80.557663
+FL1641,Barrier Island Sanctuary,Melbourne Beach,Brevard,,Atlantic,50,,27.903067,-80.47175
+FL1623,Bonsteel Park,Melbourne Beach,Brevard,,Atlantic,20,,27.901457,-80.470749
+FL1593,Coconut Point Park,Melbourne Beach,Brevard,"3559 SR-A1A, Melbourne Beach, Florida 32951",Atlantic,58,,28.022423,-80.535988
+FL1592,Juan Ponce De Leon Landing Park,Melbourne Beach,Brevard,"4011 SR-A1A, Melbourne Beach, Florida 32951",Atlantic,45,,28.010685,-80.530199
+FL1639,Marina Complex,Melbourne Beach,Brevard,"9500 S Highway A1a, Melbourne Beach, Florida 32951",Atlantic,30,,27.875828,-80.456558
+FL1606,Ocean Park,Melbourne Beach,Brevard,,Atlantic,50,,28.068732,-80.557313
+FL1624,River Oaks Rd.,Melbourne Beach,Brevard,,Atlantic,10,,27.886384,-80.461502
+FL1626,Sebastian Inlet State Park (central),Melbourne Beach,Brevard,,Atlantic,,,27.863336,-80.449136
+FL1625,Sebastian Inlet State Park (south),Melbourne Beach,Brevard,,Atlantic,,,27.861828,-80.448858
+FL1598,Sperssard Holland North Beach Park,Melbourne Beach,Brevard,"2519 Atlantic St, Melbourne Beach, Florida 32951",Atlantic,,,28.055188,-80.551208
+FL1596,Spressard Holland South Beach Park,Melbourne Beach,Brevard,"2563 SR-A1A, Melbourne Beach, Florida 32951",Atlantic,60,,28.047424,-80.54766
+FL1597,Tracking Station,Melbourne Beach,Brevard,,Atlantic,10,,28.050855,-80.549107
+FL1545,Patrick Air Force Base 3,Patrick Air Force Base,Brevard,"901 S Highway A1a, Patrick Air Force Base, Florida 32925",Atlantic,35,,28.252583,-80.603403
+FL1546,Patrick Air Force Base 4,Patrick Air Force Base,Brevard,"947 S Highway A1a, Patrick Air Force Base, Florida 32925",Atlantic,70,,28.242488,-80.601694
+FL1547,Patrick Air Force Base 5,Patrick Air Force Base,Brevard,,Atlantic,100,,28.232116,-80.600205
+FL1548,Patrick Air Force Base 6,Patrick Air Force Base,Brevard,,Atlantic,150,,28.230031,-80.599989
+FL1549,Patrick Air Force Base 7,Patrick Air Force Base,Brevard,,Atlantic,30,,28.214647,-80.597573
+FL1448,#1,Playalinda,Brevard,"Playalinda Beach Rd, Orlando, Florida 32815",Atlantic,100,,28.655256,-80.632246
+FL1458,#10,Playalinda,Brevard,,Atlantic,70,,28.688239,-80.656858
+FL1459,#11,Playalinda,Brevard,,Atlantic,45,,28.694009,-80.661256
+FL1460,#12,Playalinda,Brevard,,Atlantic,55,,28.697391,-80.663759
+FL1461,#13,Playalinda,Brevard,,Atlantic,50,,28.702107,-80.667212
+FL1449,#2,Playalinda,Brevard,"Playalinda Beach Rd, Orlando, Florida 32815",Atlantic,35,,28.657097,-80.633477
+FL1450,#3,Playalinda,Brevard,"Playalinda Beach Rd, Orlando, Florida 32815",Atlantic,75,,28.658809,-80.63474
+FL1451,#4,Playalinda,Brevard,"Playalinda Beach Rd, Orlando, Florida 32815",Atlantic,100,,28.660994,-80.636327
+FL1452,#5,Playalinda,Brevard,,Atlantic,80,,28.667327,-80.640834
+FL1453,#6,Playalinda,Brevard,,Atlantic,80,,28.669646,-80.642576
+FL1454,#7,Playalinda,Brevard,,Atlantic,82,,28.671528,-80.64394
+FL1456,#8,Playalinda,Brevard,,Atlantic,115,,28.678154,-80.648592
+FL1457,#9,Playalinda,Brevard,"Playalinda Beach Rd, Orlando, Florida 32815",Atlantic,75,,28.685532,-80.654684
+FL1455,Eddy's Creek,Playalinda,Brevard,"Playalinda Beach Rd, Orlando, Florida 32815",Atlantic,20,,28.675933,-80.647014
+FL1560,Desoto Pkwy.,Satellite Beach,Brevard,"609 Ocean St, Satellite Beach, Florida 32937",Atlantic,3,,28.164758,-80.58691
+FL1554,Grant Ave.,Satellite Beach,Brevard,"3 Grant Ave, Satellite Beach, Florida 32937",Atlantic,15,,28.181522,-80.591119
+FL1552,Hightower Park,Satellite Beach,Brevard,,Atlantic,30,,28.194121,-80.594336
+FL1561,Magellan Ave.,Satellite Beach,Brevard,"1 Magellan Ave, Satellite Beach, Florida 32937",Atlantic,12,,28.162926,-80.586383
+FL1559,Pelican Beach Park,Satellite Beach,Brevard,,Atlantic,160,,28.169159,-80.588234
+FL1564,Shell St.,Satellite Beach,Brevard,"780 Shell St, Satellite Beach, Florida 32937",Atlantic,10,,28.158725,-80.58527
+FL1562,Sunrise Ave.,Satellite Beach,Brevard,"39 Sunrise Ave, Satellite Beach, Florida 32937",Atlantic,10,,28.161166,-80.586008
+FL1563,Volunteer Way,Satellite Beach,Brevard,"797 Shell St, Satellite Beach, Florida 32937",Atlantic,2,,28.157651,-80.585029
+FL1531,Crescent Beach Dr.,South Cocoa Beach,Brevard,"Crescent Beach Dr, Cocoa Beach, Florida 32931",Atlantic,6,,28.283109,-80.607036
+FL1551,Berkeley St.,South Patrick Shores,Brevard,,Atlantic,15,,28.200763,-80.595505
+FL1550,Seagull Park,South Patrick Shores,Brevard,"281 SR-A1A, Satellite Beach, Florida 32937",Atlantic,16,,28.205627,-80.596469
+FL2144,Frank C. Adler Park,Dania Beach,Broward,"335 N Beach Rd, Hollywood, Florida 33004",Atlantic,,1.50/hour,26.055721,-80.112208
+FL2148,John U. Lloyd Beach State Park,Dania Beach,Broward,,Atlantic,70,,26.06733,-80.112728
+FL2145,John U. Lloyd Beach State Park - Jetty,Dania Beach,Broward,,Atlantic,55,,26.091021,-80.109427
+FL2147,John U. Lloyd Beach State Park - Osprey,Dania Beach,Broward,,Atlantic,,,26.08443,-80.110598
+FL2146,John U. Lloyd Beach State Park - Pelican and Seagrape,Dania Beach,Broward,,Atlantic,216,,26.087942,-80.110061
+FL2149,John U. Lloyd State Park - Manatee,Dania Beach,Broward,,Atlantic,300,,26.083133,-80.110576
+FL1883,City of Deerfield Beach,Deerfield Beach,Broward,"312 NE 21st Ave, Deerfield Beach, Florida 33441",Atlantic,24,3.00/hr,26.317623,-80.075804
+FL1892,Deerfield Beach Front Park,Deerfield Beach,Broward,"890 SE 21st Ave, Deerfield Beach, Florida 33441",Atlantic,50,1.50/hour,26.306549,-80.076514
+FL1884,International Fishing Pier,Deerfield Beach,Broward,"180 NE 21st Ave, Deerfield Beach, Florida 33441",Atlantic,27,3.00/hr,26.316402,-80.075519
+FL1885,Melrose Park - E Hillsboro Blvd.,Deerfield Beach,Broward,"11 NE 21st Ave, Deerfield Beach, Florida 33441",Atlantic,50,1.50/hour,26.314594,-80.075708
+FL1886,Melrose Park - SE 1st Street,Deerfield Beach,Broward,"71 SE 21st Ave, Deerfield Beach, Florida 33441",Atlantic,50,1.50/hour,26.313655,-80.075793
+FL1887,Melrose Park - SE 2nd St.,Deerfield Beach,Broward,"198 S Ocean Way, Deerfield Beach, Florida 33441",Atlantic,25,1.50/hour,26.312762,-80.075855
+FL1888,Melrose Park - SE 3rd St.,Deerfield Beach,Broward,"316 SE 21st Ave, Deerfield Beach, Florida 33441",Atlantic,40,1.50/hour,26.31186,-80.075963
+FL1893,SE 10th St.,Deerfield Beach,Broward,"984 SE 21st Ave, Deerfield Beach, Florida 33441",Atlantic,10,1.50/hour,26.305497,-80.076553
+FL1891,SE 7th St.,Deerfield Beach,Broward,"726 SE 21st Ave, Deerfield Beach, Florida 33441",Atlantic,40,1.50/hour,26.308368,-80.076291
+FL2166,Auramar St.,Fort Lauderdale,Broward,"619 N Fort Lauderdale Beach Blvd, Fort Lauderdale, Florida 33304",Atlantic,10,1.25/hour,26.131886,-80.103193
+FL2161,Bayshore Dr.,Fort Lauderdale,Broward,"398 N Atlantic Blvd, Fort Lauderdale, Florida 33304",Atlantic,14,1.25/hour,26.128,-80.103336
+FL2167,Bellmar St.,Fort Lauderdale,Broward,"625 N Fort Lauderdale Beach Blvd, Fort Lauderdale, Florida 33304",Atlantic,15,1.25/hour,26.132588,-80.103187
+FL2170,E Sunrise Blvd.,Fort Lauderdale,Broward,"1000 N Atlantic Blvd, Fort Lauderdale, Florida 33304",Atlantic,15,1.75/hour,26.139014,-80.102752
+FL2160,Granada St.,Fort Lauderdale,Broward,"300 N Atlantic Blvd, Fort Lauderdale, Florida 33304",Atlantic,6,1.25/hour,26.126574,-80.103438
+FL2152,Hall of Fame,Fort Lauderdale,Broward,"434 S Atlantic Blvd, Fort Lauderdale, Florida 33316",Atlantic,25,1.25/hour,26.116624,-80.104579
+FL2175,Hugh Taylor Birch State Park,Fort Lauderdale,Broward,,Atlantic,70,,26.140858,-80.102968
+FL2153,Las Olas Blvld.,Fort Lauderdale,Broward,"241 S Fort Lauderdale Beach Blvd, Fort Lauderdale, Florida 33316",Atlantic,240,1.25/hour,26.119314,-80.104522
+FL2173,N Atlantic Blvd.,Fort Lauderdale,Broward,"1151 N Fort Lauderdale Beach Blvd, Fort Lauderdale, Florida 33304",Atlantic,50,1.75/hour,26.144869,-80.101985
+FL2176,NE 14th Ct.,Fort Lauderdale,Broward,"1415 N Fort Lauderdale Beach Blvd, Fort Lauderdale, Florida 33304",Atlantic,25,1.75/hour,26.145736,-80.10172
+FL2178,NE 15th Ct.,Fort Lauderdale,Broward,"1525 N Fort Lauderdale Beach Blvd, Fort Lauderdale, Florida 33304",Atlantic,20,1.75/hour,26.147367,-80.101463
+FL2177,NE 15th St.,Fort Lauderdale,Broward,"1431 N Fort Lauderdale Beach Blvd, Fort Lauderdale, Florida 33304",Atlantic,25,1.75/hour,26.146504,-80.101615
+FL2180,NE 16th Ct.,Fort Lauderdale,Broward,"1617 N Fort Lauderdale Beach Blvd, Fort Lauderdale, Florida 33305",Atlantic,15,1.75/hour,26.148878,-80.101207
+FL2181,NE 16th Pl.,Fort Lauderdale,Broward,"1651 N Fort Lauderdale Beach Blvd, Fort Lauderdale, Florida 33305",Atlantic,20,1.75/hour,26.149705,-80.101014
+FL2179,NE 16th St.,Fort Lauderdale,Broward,"1601 N Fort Lauderdale Beach Blvd, Fort Lauderdale, Florida 33305",Atlantic,20,1.75/hour,26.148127,-80.101327
+FL2183,NE 17th Ct.,Fort Lauderdale,Broward,"1723 N Fort Lauderdale Beach Blvd, Fort Lauderdale, Florida 33305",Atlantic,15,1.75/hour,26.151298,-80.100864
+FL2182,NE 17th St.,Fort Lauderdale,Broward,"1701 N Fort Lauderdale Beach Blvd, Fort Lauderdale, Florida 33305",Atlantic,25,1.75/hour,26.150539,-80.100947
+FL2174,NE 18th St.,Fort Lauderdale,Broward,"1799 N Fort Lauderdale Beach Blvd, Fort Lauderdale, Florida 33305",Atlantic,50,1.75/hour,26.152097,-80.100831
+FL2184,NE 21st St.,Fort Lauderdale,Broward,"2030 N Atlantic Blvd, Fort Lauderdale, Florida 33305",Atlantic,15,1.25/hour,26.155099,-80.100589
+FL2185,NE 23rd St.,Fort Lauderdale,Broward,"2231 N Atlantic Blvd, Fort Lauderdale, Florida 33305",Atlantic,4,1.25/hour,26.157815,-80.100116
+FL2187,NE 27th St.,Fort Lauderdale,Broward,"3609 NE 27th St, Fort Lauderdale, Florida 33308",Atlantic,19,1.25/hour,26.161408,-80.099365
+FL2169,NE 9th St.,Fort Lauderdale,Broward,"853 N Fort Lauderdale Beach Blvd, Fort Lauderdale, Florida 33304",Atlantic,20,1.75/hour,26.136854,-80.102979
+FL2172,North Atlantic Blvd 0.20 miles north of Beach Gate Entrance to Birch State Park,Fort Lauderdale,Broward,"1120 N Atlantic Blvd, Fort Lauderdale, Florida 33304",Atlantic,50,1.75/hour,26.143333,-80.102236
+FL2171,North Atlantic Blvd across from Beach Gate Entrance to Birch State Park,Fort Lauderdale,Broward,"1046 N Atlantic Blvd, Fort Lauderdale, Florida 33304",Atlantic,10,1.75/hour,26.140575,-80.1026
+FL2163,Riomar St.,Fort Lauderdale,Broward,"435 N Atlantic Blvd, Fort Lauderdale, Florida 33304",Atlantic,25,1.25/hour,26.128973,-80.10331
+FL2159,Seville St.,Fort Lauderdale,Broward,"200 N Atlantic Blvd, Fort Lauderdale, Florida 33304",Atlantic,7,1.25/hour,26.125877,-80.103476
+FL2151,South Beach Park,Fort Lauderdale,Broward,"892 Seabreeze Blvd, Fort Lauderdale, Florida 33316",Atlantic,,1.75/hour,26.111502,-80.105465
+FL2164,Viramar St.,Fort Lauderdale,Broward,"521 N Fort Lauderdale Beach Blvd, Fort Lauderdale, Florida 33304",Atlantic,17,1.25/hour,26.129771,-80.103253
+FL2188,Vista Park,Fort Lauderdale,Broward,"2860 N Atlantic Blvd, Fort Lauderdale, Florida 33308",Atlantic,14,1.25/hour,26.163468,-80.099068
+FL2168,Vistamar St.,Fort Lauderdale,Broward,"725 N Fort Lauderdale Beach Blvd, Fort Lauderdale, Florida 33304",Atlantic,30,1.75/hour,26.133308,-80.103133
+FL2162,Windamar St.,Fort Lauderdale,Broward,"545 N Atlantic Blvd, Fort Lauderdale, Florida 33304",Atlantic,22,1.25/hour,26.130473,-80.103244
+FL2062,City of Hallendale Beach,Hallandale,Broward,,Atlantic,130,1.25/hour,25.983455,-80.119111
+FL2064,E Hallendale Beach Blvd.,Hallandale,Broward,"S Surf Rd, Hallandale, Florida 33009",Atlantic,,1.25/hour,25.986124,-80.118084
+FL2134,Allen St.,Hollywood,Broward,"5099 N Broadwalk, Hollywood, Florida 33019",Atlantic,27,1.50/hour,26.045736,-80.113357
+FL2092,Arizona St.,Hollywood,Broward,"298 Arizona St, Hollywood, Florida 33019",Atlantic,10,1.50/hour,26.014451,-80.115617
+FL2106,Arthur St.,Hollywood,Broward,"1801 N Surf Rd, Hollywood, Florida 33019",Atlantic,10,1.50/hour,26.022954,-80.115061
+FL2075,Bouganvilla Terr.,Hollywood,Broward,"1401 S Surf Rd, Hollywood, Florida 33019",Atlantic,50,1.50/hour,26.00363,-80.116509
+FL2129,Charleston St.,Hollywood,Broward,"4599 N Broadwalk, Hollywood, Florida 33019",Atlantic,15,1.50/hour,26.041782,-80.113976
+FL2107,Cleveland St.,Hollywood,Broward,"1907 N Surf Rd, Hollywood, Florida 33019",Atlantic,8,1.50/hour,26.023533,-80.115028
+FL2127,Cody St.,Hollywood,Broward,"4401 N Broadwalk, Hollywood, Florida 33019",Atlantic,15,1.50/hour,26.040228,-80.114152
+FL2105,Conneticut St.,Hollywood,Broward,"299 Connecticut St, Hollywood, Florida 33019",Atlantic,8,1.50/hour,26.022401,-80.115275
+FL2117,Coolidge St.,Hollywood,Broward,"201 Coolidge St, Hollywood, Florida 33019",Atlantic,12,1.50/hour,26.029195,-80.114667
+FL2074,Crocus Terr.,Hollywood,Broward,"1401 S Surf Rd, Hollywood, Florida 33019",Atlantic,10,1.50/hour,26.003082,-80.116581
+FL2132,Custer St.,Hollywood,Broward,"4901 N Broadwalk, Hollywood, Florida 33019",Atlantic,20,1.50/hour,26.044207,-80.11361
+FL2126,Douglas St.,Hollywood,Broward,"4301 N Broadwalk, Hollywood, Florida 33019",Atlantic,15,1.50/hour,26.039463,-80.114193
+FL2135,Evans St.,Hollywood,Broward,"5201 N Broadwalk, Hollywood, Florida 33019",Atlantic,30,1.50/hour,26.046535,-80.113237
+FL2095,Fillmore St.,Hollywood,Broward,"232 Fillmore St, Hollywood, Florida 33019",Atlantic,10,1.50/hour,26.016104,-80.115567
+FL2125,Forest St.,Hollywood,Broward,"4199 N Broadwalk, Hollywood, Florida 33019",Atlantic,14,1.50/hour,26.038624,-80.114271
+FL2104,Garfield St.,Hollywood,Broward,"200 Garfield St, Hollywood, Florida 33019",Atlantic,10,1.50/hour,26.021845,-80.11522
+FL2081,Georgia St.,Hollywood,Broward,"811 S Surf Rd, Hollywood, Florida 33019",Atlantic,20,1.50/hour,26.00719,-80.116195
+FL2102,Grant St.,Hollywood,Broward,"311 Grant St, Hollywood, Florida 33019",Atlantic,10,1.50/hour,26.020709,-80.115256
+FL2128,Greene St.,Hollywood,Broward,"4501 N Broadwalk, Hollywood, Florida 33019",Atlantic,15,1.50/hour,26.041011,-80.114075
+FL2116,Harding St.,Hollywood,Broward,"201 Harding St, Hollywood, Florida 33019",Atlantic,13,1.50/hour,26.028618,-80.114678
+FL2088,Harrison St.,Hollywood,Broward,"301 Harrison St, Hollywood, Florida 33019",Atlantic,15,1.50/hour,26.011035,-80.116022
+FL2076,Harry Berry Park,Hollywood,Broward,"305 Azalea Ter, Hollywood, Florida 33019",Atlantic,50,1.50/hour,26.004279,-80.116603
+FL2103,Hayes St.,Hollywood,Broward,"1416 N Broadwalk, Hollywood, Florida 33019",Atlantic,15,1.50/hour,26.021269,-80.115318
+FL2124,Hollywood North Beach Park,Hollywood,Broward,,Atlantic,,,26.03527,-80.114629
+FL2097,Indiana St.,Hollywood,Broward,"814 N Broadwalk, Hollywood, Florida 33019",Atlantic,10,1.50/hour,26.017181,-80.115456
+FL2085,Jackson St.,Hollywood,Broward,"441 S Surf Rd, Hollywood, Florida 33019",Atlantic,25,1.50/hour,26.009404,-80.116087
+FL2080,Jefferson St.,Hollywood,Broward,"999 S Surf Rd, Hollywood, Florida 33019",Atlantic,50,1.50/hour,26.006656,-80.116103
+FL2100,Johnson St.,Hollywood,Broward,"301 Johnson St, Hollywood, Florida 33019",Atlantic,50,1.50/hour,26.019501,-80.115498
+FL2066,Keating Park,Hollywood,Broward,"301 Magnolia Ter, Hollywood, Florida 33019",Atlantic,48,2.00/hour,25.997698,-80.117177
+FL2120,Lee St.,Hollywood,Broward,"200 Lee St, Hollywood, Florida 33019",Atlantic,20,1.50/hour,26.030897,-80.114541
+FL2082,Madison St.,Hollywood,Broward,"309 Madison St, Hollywood, Florida 33019",Atlantic,20,1.50/hour,26.007743,-80.116187
+FL2130,McClelland St.,Hollywood,Broward,"4701 N Broadwalk, Hollywood, Florida 33019",Atlantic,18,1.50/hour,26.042624,-80.11386
+FL2109,McKinley St.,Hollywood,Broward,"201 McKinley St, Hollywood, Florida 33019",Atlantic,8,1.50/hour,26.024678,-80.114964
+FL2133,Meade St.,Hollywood,Broward,"5001 N Broadwalk, Hollywood, Florida 33019",Atlantic,25,1.50/hour,26.044999,-80.113486
+FL2099,Michigan St.,Hollywood,Broward,"310 Michigan St, Hollywood, Florida 33019",Atlantic,20,1.50/hour,26.018296,-80.115596
+FL2101,Minnesota St.,Hollywood,Broward,"1214 N Broadwalk, Hollywood, Florida 33019",Atlantic,20,1.50,26.020139,-80.115251
+FL2118,Missouri St.,Hollywood,Broward,"200 Missouri St, Hollywood, Florida 33019",Atlantic,6,1.50/hour,26.029761,-80.114617
+FL2083,Monroe St.,Hollywood,Broward,"301 Monroe St, Hollywood, Florida 33019",Atlantic,15,1.50/hour,26.008294,-80.116167
+FL2110,Nebraska St.,Hollywood,Broward,"200 Nebraska St, Hollywood, Florida 33019",Atlantic,6,1.50/hour,26.025229,-80.114938
+FL2111,Nevada St.,Hollywood,Broward,"201 Nevada St, Hollywood, Florida 33019",Atlantic,3,1.50/hour,26.025805,-80.11489
+FL2121,New Hampshire St.,Hollywood,Broward,"200 New Hampshire St, Hollywood, Florida 33019",Atlantic,10,1.50/hour,26.031467,-80.1145
+FL2122,New Mexico St.,Hollywood,Broward,"201 New Mexico St, Hollywood, Florida 33019",Atlantic,12,1.50/hour,26.032029,-80.114446
+FL2094,New York St.,Hollywood,Broward,"311 New York St, Hollywood, Florida 33019",Atlantic,10,1.50/hour,26.015555,-80.115608
+FL2089,Oceanwalk Mall Access,Hollywood,Broward,"N Broadwalk, Hollywood, Florida 33019",Atlantic,,1.50/hour,26.012264,-80.115786
+FL2108,Oklahoma St.,Hollywood,Broward,"201 Oklahoma St, Hollywood, Florida 33019",Atlantic,10,1.50/hour,26.024107,-80.114999
+FL2136,Perry St.,Hollywood,Broward,"5299 N Broadwalk, Hollywood, Florida 33019",Atlantic,30,1.50/hour,26.047314,-80.113114
+FL2131,Pershing St.,Hollywood,Broward,"4801 N Broadwalk, Hollywood, Florida 33019",Atlantic,20,1.50/hour,26.043416,-80.113735
+FL2096,Pierce St.,Hollywood,Broward,"246 Pierce St, Hollywood, Florida 33019",Atlantic,15,1.50/hour,26.016649,-80.115539
+FL2091,Polk St.,Hollywood,Broward,"300 N Surf Rd, Hollywood, Florida 33019",Atlantic,20,1.50/hour,26.013906,-80.115734
+FL2112,Roosevelt St.,Hollywood,Broward,"2400 N Surf Rd, Hollywood, Florida 33019",Atlantic,8,1.50/hour,26.02638,-80.114869
+FL2079,S Surf Rd #1,Hollywood,Broward,"S Surf Rd, Hollywood, Florida 33019",Atlantic,25,1.50/hour,26.006135,-80.116169
+FL2077,S Surf Rd. #3,Hollywood,Broward,"S Surf Rd, Hollywood, Florida 33019",Atlantic,50,1.50/hour,26.004967,-80.116173
+FL2078,S Surf Street #2,Hollywood,Broward,"S Surf Rd, Hollywood, Florida 33019",Atlantic,50,1.50/hour,26.005569,-80.116136
+FL2119,Scott St.,Hollywood,Broward,"201 Scott St, Hollywood, Florida 33019",Atlantic,8,1.50/hour,26.030318,-80.114595
+FL2093,Taylor St.,Hollywood,Broward,"500 N Surf Rd, Hollywood, Florida 33019",Atlantic,20,1.50/hour,26.015004,-80.115662
+FL2123,Thomas St.,Hollywood,Broward,"3415 N Surf Rd, Hollywood, Florida 33019",Atlantic,22,1.50/hour,26.032578,-80.114376
+FL2090,Tyler St.,Hollywood,Broward,"201 Tyler St, Hollywood, Florida 33019",Atlantic,20,1.50/hour,26.01335,-80.115675
+FL2087,Van Buren St.,Hollywood,Broward,"201 Van Buren St, Hollywood, Florida 33019",Atlantic,25,1.50/hour,26.010481,-80.116027
+FL2086,Virginia St.,Hollywood,Broward,"401 S Surf Rd, Hollywood, Florida 33019",Atlantic,25,1.50/hour,26.009945,-80.116061
+FL2115,Wilson St.,Hollywood,Broward,"200 Wilson St, Hollywood, Florida 33019",Atlantic,12,1.50.hour,26.028058,-80.114738
+FL2071,Foxglove Terr.,"Hollywood, Driftwood Beach",Broward,"1711 S Surf Rd, Hollywood, Florida 33019",Atlantic,5,1.50/hour,26.001434,-80.116693
+FL2070,Greenbriar Terr.,"Hollywood, Driftwood Beach",Broward,"1901 S Surf Rd, Hollywood, Florida 33019",Atlantic,5,1.50/hour,26.000869,-80.116752
+FL2069,Hyacinth Terr.,"Hollywood, Driftwood Beach",Broward,"1915 S Surf Rd, Hollywood, Florida 33019",Atlantic,5,1.50/hour,26.000341,-80.116778
+FL2068,Iris Terr.,"Hollywood, Driftwood Beach",Broward,"2001 S Surf Rd, Hollywood, Florida 33019",Atlantic,5,1.50/hour,25.999791,-80.116835
+FL2067,Jasmine Terr.,"Hollywood, Driftwood Beach",Broward,"2101 S Surf Rd, Hollywood, Florida 33019",Atlantic,5,1.50/hour,25.999236,-80.116875
+FL1923,4344 El Mar Dr.,Lauderdale-by-the-Sea,Broward,,Atlantic,,1.25/hour,26.189197,-80.095278
+FL1924,Commercial Blvd.,Lauderdale-by-the-Sea,Broward,"2 Commercial Blvd, Lauderdale-by-the-Sea, Florida 33308",Atlantic,20,1.25/hour,26.189662,-80.095208
+FL1922,Datura Ave.,Lauderdale-by-the-Sea,Broward,"1 Datura Ave, Lauderdale-by-the-Sea, Florida 33308",Atlantic,10,1.25/hour,26.187466,-80.095464
+FL1925,El Prado,Lauderdale-by-the-Sea,Broward,"4500 El Mar Dr, Lauderdale-by-the-Sea, Florida 33308",Atlantic,,1.25/hour,26.192189,-80.095407
+FL1921,Hibiscus Ave.,Lauderdale-by-the-Sea,Broward,"23 Hibiscus Ave, Lauderdale-by-the-Sea, Florida 33308",Atlantic,7,1.25/hour,26.185717,-80.095787
+FL1918,Washington Ave.,Lauderdale-by-the-Sea,Broward,"4600 El Mar Dr, Lauderdale-by-the-Sea, Florida 33308",Atlantic,4,1.25/hour,26.194946,-80.095118
+FL1901,E Atlantic Blvd.,Pompano Beach,Broward,,Atlantic,65,1.00/hour,26.231818,-80.08948
+FL1894,Hillsboro Inlet Park,Pompano Beach,Broward,"N Riverside Dr, Pompano Beach, Florida 33062",Atlantic,25,1.00/hour,26.260546,-80.084054
+FL1898,NE 13th St.,Pompano Beach,Broward,"3499 NE 13th St, Pompano Beach, Florida 33062",Atlantic,4,1.00/hour,26.249352,-80.085551
+FL1896,North Ocean Park,Pompano Beach,Broward,"3424 NE 16th St, Pompano Beach, Florida 33062",Atlantic,25,1.00/hour,26.25212,-80.085072
+FL1905,Pompano Beach Fishing Pier,Pompano Beach,Broward,"222 N Pompano Beach Blvd, Pompano Beach, Florida 33062",Atlantic,,1.25/hour,26.235488,-80.089149
+FL1913,SE 12th St.,Pompano Beach,Broward,"3499 SE 12th St, Pompano Beach, Florida 33062",Atlantic,4,1.00/hour,26.222893,-80.090052
+FL1909,SE 2nd St.,Pompano Beach,Broward,"198 Briny Ave, Pompano Beach, Florida 33062",Atlantic,18,1.00/hour,26.230212,-80.089883
+FL1910,SE 4th St.,Pompano Beach,Broward,"316 Briny Ave, Pompano Beach, Florida 33062",Atlantic,4,1.00/hour,26.228773,-80.090013
+FL1911,SE 6th St.,Pompano Beach,Broward,"703 Briny Ave, Pompano Beach, Florida 33062",Atlantic,4,1.00/hour,26.227361,-80.090108
+FL1912,SE 8th St.,Pompano Beach,Broward,"720 Briny Ave, Pompano Beach, Florida 33062",Atlantic,4,1.00/hour,26.226329,-80.090118
+FL764,Englewood Beach Park,Englewood,Charlotte,"2066 N Beach Rd, Englewood, Florida 34223",Gulf,299,0.75/hr,26.925126,-82.360925
+FL769,Stump Pass Beach,Englewood,Charlotte,,Gulf,62,,26.9104,-82.35235
+FL763,Fort Island Beach,Crystal River,Citrus,"28.907864, -82.690881",Gulf,8,,28.907858,-82.690894
+FL756,Barefoot Beach Access Park,Barefoot Beach,Collier,"27715 Forester Ln, Bonita Springs, Florida 34134",Gulf,90,,26.335207,-81.84529
+FL751,Barefoot Beach Preserve (north),Barefoot Beach,Collier,,Gulf,221,,26.309526,-81.835572
+FL753,Barefoot Beach Preserve (south),Barefoot Beach,Collier,"401 Barefoot Beach Blvd, Bonita Springs, Florida 34134",Gulf,102,,26.300864,-81.833701
+FL757,Swallow Ave. Walkway,Marco Island,Collier,,Gulf,65,8.00 or Collier Couty Beach Pass,25.917358,-81.72762
+FL710,Tigertail Public Beach,Marco Island,Collier,,Gulf,120,8.00 or Collier Couty Beach Pass,25.954109,-81.743372
+FL738,10th Ave. South,Naples,Collier,,Gulf,9,1.50/hr meter,26.139974,-81.806877
+FL737,11th Ave. South,Naples,Collier,,Gulf,8,1.50/hr meter,26.138873,-81.806664
+FL735,12th Ave. South/ Naples City Pier,Naples,Collier,,Gulf,78,,26.136654,-81.806289
+FL734,13th Ave South,Naples,Collier,,Gulf,22,1.50/hr meter,26.135583,-81.806178
+FL733,14th Ave. South,Naples,Collier,,Gulf,16,1.50/hr meter,26.134479,-81.806017
+FL732,15th Ave. South,Naples,Collier,,Gulf,10,1.50/hr meter,26.133388,-81.805872
+FL713,16th Ave. South,Naples,Collier,,Gulf,16,1.50/hr meter,26.13229,-81.805735
+FL717,17th Ave. South,Naples,Collier,,Gulf,7,1.50/hr meter,26.131213,-81.805344
+FL718,18th Ave. South,Naples,Collier,,Gulf,12,1.50/hr meter,26.130109,-81.805359
+FL729,1st Ave. North,Naples,Collier,,Gulf,11,1.50/hr meter,26.15205,-81.808291
+FL727,1st Ave. South,Naples,Collier,,Gulf,3,1.50/hr meter,26.149862,-81.807989
+FL730,2nd Ave. North,Naples,Collier,,Gulf,12,1.50/hr meter,26.153136,-81.808354
+FL726,2nd Ave. South,Naples,Collier,,Gulf,7,1.50/hr meter,26.148709,-81.807961
+FL714,32nd Ave. South,Naples,Collier,,Gulf,8,1.50/hr meter,26.114663,-81.803499
+FL715,33rd Ave. South,Naples,Collier,,Gulf,10,1.50/hr meter,26.113791,-81.803487
+FL731,3rd Ave. North,Naples,Collier,,Gulf,10,1.50/hr meter,26.154245,-81.808599
+FL725,3rd Ave. South,Naples,Collier,,Gulf,8,1.50/hr meter,26.147629,-81.807993
+FL743,4th Ave. N,Naples,Collier,,Gulf,11,1.50/hr meter,26.155326,-81.808662
+FL724,4th Ave. South,Naples,Collier,,Gulf,8,1.50/hr meter,26.1465,-81.807689
+FL723,5th Ave. South,Naples,Collier,,Gulf,15,1.50/hr meter,26.145399,-81.807502
+FL745,6th Ave North,Naples,Collier,,Gulf,7,1.50/hr meter,26.157521,-81.809213
+FL742,6th Ave. South,Naples,Collier,,Gulf,4,1.50/hr meter,26.144325,-81.807389
+FL747,7th Ave. North,Naples,Collier,,Gulf,10,1.50/hr meter,26.159692,-81.809476
+FL741,7th Ave. South,Naples,Collier,,Gulf,7,1.50/hr meter,26.143256,-81.807291
+FL748,8th Ave. North,Naples,Collier,,Gulf,20,1.50/hr meter,26.160817,-81.809671
+FL740,8th Ave. South,Naples,Collier,,Gulf,6,1.50/hr meter,26.142217,-81.80682
+FL739,9th Ave. South,Naples,Collier,,Gulf,11,1.50/hr meter,26.141043,-81.807043
+FL736,Broad Ave. South,Naples,Collier,,Gulf,49,1.50/hr meter,26.137756,-81.806385
+FL728,Central Ave.,Naples,Collier,,Gulf,6,1.50/hr meter,26.150963,-81.807907
+FL721,Horizon Way,Naples,Collier,,Gulf,20,1.50/hr meter,26.194117,-81.815722
+FL749,Lowdermilk Public Park,Naples,Collier,"1900 Gulf Shore Blvd N, Naples, Florida 34102",Gulf,49,1.50/hr meter,26.167905,-81.810829
+FL746,N Lake Drive,Naples,Collier,,Gulf,19,1.50/hr meter,26.158586,-81.809344
+FL722,Vedado Way,Naples,Collier,,Gulf,25,1.50/hr meter,26.191418,-81.815423
+FL750,Via Miramar,Naples,Collier,,Gulf,29,1.50/hr meter,26.182936,-81.814944
+FL755,Bluebell Ave.,Vanderbilt,Collier,,Gulf,19,,26.277231,-81.828293
+FL720,Clam Pass,Vanderbilt,Collier,,Gulf,172,8.00/or Collier Ct Pass,26.221679,-81.818155
+FL754,Delnor Wiggins State Park,Vanderbilt,Collier,,Gulf,334,,26.285247,-81.830056
+FL752,Vanderbilt Beach,Vanderbilt,Collier,,Gulf,345,8.00/or Collier Ct Pass,26.258801,-81.823999
+FL703,Butler-Douglas Memorial Park,Horseshoe Beach,Dixie,"244 8th Ave W, Horseshoe Beach, FL 32648",Gulf,25,,29.439797,-83.293203
+FL2182,Shired Island Boat Ramp,Shired Island,Dixie,,Gulf,10,,29.397828,-83.207452
+FL1003,10th St.,Atlantic Beach,Duval,"376 9th St, Atlantic Beach, Florida 32233",Atlantic,5,,30.335395,-81.395904
+FL1002,11th St.,Atlantic Beach,Duval,"372 10th St, Atlantic Beach, Florida 32233",Atlantic,5,,30.336337,-81.396088
+FL1001,12th St.,Atlantic Beach,Duval,"388 11th St, Atlantic Beach, Florida 32233",Atlantic,2,,30.337193,-81.396744
+FL999,14th St.,Atlantic Beach,Duval,"1215 Seminole Rd, Atlantic Beach, Florida 32233",Atlantic,2,,30.339072,-81.396913
+FL998,15th St.,Atlantic Beach,Duval,,Atlantic,8,,30.340032,-81.396994
+FL995,18th St.,Atlantic Beach,Duval,"1728 Park Ter W, Atlantic Beach, Florida 32233",Atlantic,50,,30.346772,-81.397745
+FL993,19th St.,Atlantic Beach,Duval,"1817 Live Oak Ln, Atlantic Beach, Florida 32233",Atlantic,8,,30.349656,-81.397925
+FL1011,1st St.,Atlantic Beach,Duval,"500 Atlantic Blvd, Neptune Beach, Florida 32266",Atlantic,4,,30.326302,-81.39528
+FL994,20th St.,Atlantic Beach,Duval,"355 19th St, Atlantic Beach, Florida 32233",Atlantic,4,,30.352298,-81.398247
+FL1009,3rd St.,Atlantic Beach,Duval,,Atlantic,5,,30.328233,-81.395526
+FL1008,4th St.,Atlantic Beach,Duval,,Atlantic,2,,30.329177,-81.395784
+FL1007,5th St.,Atlantic Beach,Duval,"396 Sherry Dr, Atlantic Beach, Florida 32233",Atlantic,4,,30.330098,-81.395594
+FL1006,6th St.,Atlantic Beach,Duval,"481 Sherry Dr, Atlantic Beach, Florida 32233",Atlantic,4,,30.331034,-81.395695
+FL1005,7th St.,Atlantic Beach,Duval,"386 6th St, Atlantic Beach, Florida 32233",Atlantic,2,,30.331955,-81.395776
+FL1012,Ahern St.,Atlantic Beach,Duval,,Atlantic,2,,30.325514,-81.395163
+FL1013,Town Center,Atlantic Beach,Duval,,Atlantic,50,,30.324631,-81.395262
+FL985,Huguenot Park Beach,Huguenot Park,Duval,,Atlantic,,,30.406672,-81.408582
+FL980,"Black Rock Trail, Big Talbot Island State Park",Jacksonville,Duval,,Atlantic,20,,30.489317,-81.446997
+FL982,"Bluffs Scenic Trail, Big Talbot Island State Park",Jacksonville,Duval,,Atlantic,35,,30.500086,-81.456812
+FL992,Kathryn Abbey Hanna Park (1&2),Jacksonville,Duval,"874 England Ct E, Jacksonville, Florida 32227",Atlantic,200,,30.38147,-81.39871
+FL986,Kathryn Abbey Hanna Park (10 & 11),Jacksonville,Duval,,Atlantic,200,,30.362882,-81.399544
+FL991,Kathryn Abbey Hanna Park (3&4),Jacksonville,Duval,,Atlantic,100,,30.376228,-81.3996
+FL990,Kathryn Abbey Hanna Park (5),Jacksonville,Duval,,Atlantic,50,,30.372368,-81.399635
+FL989,Kathryn Abbey Hanna Park (6&7),Jacksonville,Duval,,Atlantic,100,,30.369979,-81.399531
+FL988,Kathryn Abbey Hanna Park (8),Jacksonville,Duval,,Atlantic,80,,30.366394,-81.399627
+FL987,Kathryn Abbey Hanna Park (9&10),Jacksonville,Duval,,Atlantic,100,,30.364358,-81.399612
+FL984,Little Talbot Island State Park,Jacksonville,Duval,,Atlantic,15,,30.454091,-81.418487
+FL983,"North Beach Pavillion, Little Talbot Island State Park",Jacksonville,Duval,,Atlantic,150,,30.456416,-81.418578
+FL981,"South Beach Pavillion, Little Talbot Island State Park",Jacksonville,Duval,,Atlantic,100,,30.430088,-81.415623
+FL1065,10th Ave. S,Jacksonville Beach,Duval,"1175 S 5th St, Jacksonville Beach, Florida 32250",Atlantic,26,,30.279304,-81.386882
+FL1046,11th Ave. N,Jacksonville Beach,Duval,"428 10th Ave N, Jacksonville Beach, Florida 32250",Atlantic,33,,30.299756,-81.390905
+FL1045,12th Ave. N,Jacksonville Beach,Duval,"1128 5th St N, Jacksonville Beach, Florida 32250",Atlantic,30,,30.300719,-81.39124
+FL1067,12th Ave. S,Jacksonville Beach,Duval,"505 13th Ave S, Jacksonville Beach, Florida 32250",Atlantic,18,,30.277448,-81.386476
+FL1044,13th Ave. N,Jacksonville Beach,Duval,"497 12th Ave N, Jacksonville Beach, Florida 32250",Atlantic,25,,30.301603,-81.391258
+FL1068,13th Ave. S,Jacksonville Beach,Duval,"1372 5th St S, Jacksonville Beach, Florida 32250",Atlantic,28,,30.276732,-81.386339
+FL1069,14th Ave. S,Jacksonville Beach,Duval,"487 15th Ave S, Jacksonville Beach, Florida 32250",Atlantic,22,,30.275627,-81.386062
+FL1070,15th Ave. S,Jacksonville Beach,Duval,"491 16th Ave S, Jacksonville Beach, Florida 32250",Atlantic,35,,30.274727,-81.385815
+FL1041,16th Ave. N,Jacksonville Beach,Duval,"505 15th Ave N, Jacksonville Beach, Florida 32250",Atlantic,30,,30.304463,-81.391749
+FL1071,16th Ave. S,Jacksonville Beach,Duval,,Atlantic,28,,30.273714,-81.386351
+FL1040,17th Ave. N,Jacksonville Beach,Duval,"429 16th Ave N, Jacksonville Beach, Florida 32250",Atlantic,14,,30.30537,-81.392021
+FL1039,18th Ave. N,Jacksonville Beach,Duval,"434 17th Ave N, Jacksonville Beach, Florida 32250",Atlantic,23,,30.30604,-81.392366
+FL1038,19th Ave. N,Jacksonville Beach,Duval,"502 18th Ave N, Jacksonville Beach, Florida 32250",Atlantic,15,,30.307201,-81.392624
+FL1057,1st Ave. S,Jacksonville Beach,Duval,"505 2nd Ave S, Jacksonville Beach, Florida 32250",Atlantic,19,,30.287651,-81.3886
+FL1074,20th Ave. S,Jacksonville Beach,Duval,,Atlantic,2,,30.27123,-81.385092
+FL1054,2nd Ave. N,Jacksonville Beach,Duval,"526 1st Ave N, Jacksonville Beach, Florida 32250",Atlantic,2,,30.291366,-81.389535
+FL1058,2nd Ave. S,Jacksonville Beach,Duval,"503 3rd Ave S, Jacksonville Beach, Florida 32250",Atlantic,30,,30.286705,-81.388424
+FL1053,3rd Ave. N,Jacksonville Beach,Duval,"324 5th St N, Jacksonville Beach, Florida 32250",Atlantic,6,,30.292338,-81.38955
+FL1059,3rd Ave. S,Jacksonville Beach,Duval,"487 4th Ave S, Jacksonville Beach, Florida 32250",Atlantic,27,,30.285779,-81.388225
+FL1060,4th Ave. S,Jacksonville Beach,Duval,"502 5th Ave S, Jacksonville Beach, Florida 32250",Atlantic,26,,30.284845,-81.388017
+FL1051,6th Ave. N,Jacksonville Beach,Duval,"434 5th Ave N, Jacksonville Beach, Florida 32250",Atlantic,16,,30.295078,-81.390053
+FL1050,7th Ave. N,Jacksonville Beach,Duval,"702 5th St N, Jacksonville Beach, Florida 32250",Atlantic,34,,30.296026,-81.390198
+FL1062,7th Ave. S,Jacksonville Beach,Duval,"485 S Lower 8th Ave, Jacksonville Beach, Florida 32250",Atlantic,27,,30.282073,-81.387551
+FL1049,8th Ave. N,Jacksonville Beach,Duval,"431 7th Ave N, Jacksonville Beach, Florida 32250",Atlantic,14,,30.296952,-81.390451
+FL1063,8th Ave. S,Jacksonville Beach,Duval,"455 9th Ave S, Jacksonville Beach, Florida 32250",Atlantic,8,,30.281114,-81.387367
+FL1048,9th Ave. N,Jacksonville Beach,Duval,"445 8th Ave N, Jacksonville Beach, Florida 32250",Atlantic,29,,30.297927,-81.390587
+FL1064,9th Ave. S.,Jacksonville Beach,Duval,"512 10th Ave S, Jacksonville Beach, Florida 32250",Atlantic,34,,30.280214,-81.387085
+FL1056,Beach Blvd.,Jacksonville Beach,Duval,"507 1st Ave S, Jacksonville Beach, Florida 32250",Atlantic,10,,30.288559,-81.388942
+FL1055,Latham Plaza,Jacksonville Beach,Duval,"528 Beach Blvd, Jacksonville Beach, Florida 32250",Atlantic,204,,30.290043,-81.389629
+FL1061,Oceanfront Park,Jacksonville Beach,Duval,"515 7th Ave S, Jacksonville Beach, Florida 32250",Atlantic,104,,30.283342,-81.387978
+FL1052,The Pier,Jacksonville Beach,Duval,"435 3rd Ave N, Jacksonville Beach, Florida 32250",Atlantic,206,5.00/car,30.293322,-81.389703
+FL1030,Bowles St.,Neptune Beach,Duval,"509 Lora St, Neptune Beach, Florida 32266",Atlantic,4,,30.312969,-81.393429
+FL1031,Davis St.,Neptune Beach,Duval,"511 Oleander St, Neptune Beach, Florida 32266",Atlantic,5,,30.312183,-81.393254
+FL1028,Florida Blvd.,Neptune Beach,Duval,"505 Bowles St, Neptune Beach, Florida 32266",Atlantic,3,,30.314441,-81.393586
+FL1036,Hopkins St.,Neptune Beach,Duval,,Atlantic,5,,30.308484,-81.3928
+FL1014,Lemon St.,Neptune Beach,Duval,,Atlantic,5,,30.32381,-81.394948
+FL1032,Lora St.,Neptune Beach,Duval,"509 Myra St, Neptune Beach, Florida 32266",Atlantic,4,,30.311395,-81.39321
+FL1018,Myrtle St.,Neptune Beach,Duval,,Atlantic,8,,30.32034,-81.394854
+FL1033,Oleander St.,Neptune Beach,Duval,"505 Margaret St, Neptune Beach, Florida 32266",Atlantic,3,,30.310666,-81.393101
+FL1021,Pine St.,Neptune Beach,Duval,"516 Bay St, Neptune Beach, Florida 32266",Atlantic,2,,30.317799,-81.394367
+FL1029,South St.,Neptune Beach,Duval,"505 Davis St, Neptune Beach, Florida 32266",Atlantic,4,,30.313743,-81.393489
+FL653,Big Lagoon State Park,Big Lagoon State Park,Escambia,"12301 Gulf Beach Highway, Pensacola, FL 32507",Gulf,50,,30.312681,-87.420738
+FL702,"Gulf Islands National Seashore, Santa Rosa area","Gulf Island National Seashore, Santa Rosa Island",Escambia,"30.364615, -86.966915",Gulf,350,,30.36461,-86.966926
+FL2156,"Gulf Islands National Seashore, parking area","Gulf Island National Seashore, Santa Rosa Island",Escambia,,Gulf,52,,30.359401,-86.992161
+FL2157,"Gulf Islands National Seashore, parking area 2","Gulf Island National Seashore, Santa Rosa Island",Escambia,"SR 399, Gulf Breeze, Florida 32561",Gulf,52,,30.357377,-87.005277
+FL659,"Gulf Islands National Seashore, Ft. Pickens","Gulf Islands National Seashore, West Santa Rosa Island, Ft. Pickens",Escambia,"1532 Fort Pickens Rd, Gulf Breeze, Florida 32561",Gulf,70,,30.318402,-87.259209
+FL660,"Gulf Islands National Seashore, West Santa Rosa Island",Pensacola Beach,Escambia,"1339 Fort Pickens Rd, Gulf Breeze, Florida 32561",Gulf,210,,30.3258,-87.179662
+FL664,"Pensacola Beach Gulf Pier; Pensacola Beach Park,",Pensacola Beach,Escambia,"43 Fort Pickens Rd, Pensacola Beach, FL 32561",Gulf,135,,30.331296,-87.142788
+FL661,Santa Rosa Island Authority (east),Pensacola Beach,Escambia,"382 Fort Pickens Rd, Gulf Breeze, Florida 32561",Gulf,2,,30.329278,-87.153049
+FL666,Santa Rosa Island Authority (west),Pensacola Beach,Escambia,"929 Fort Pickens Rd, Pensacola Beach, FL 32561",Gulf,3,,30.32743,-87.166207
+FL662,"Santa Rosa Island Authority, James P. Morgan Park",Pensacola Beach,Escambia,"554 Pensacola Beach Blvd, Gulf Breeze, Florida 32561",Gulf,8,,30.340286,-87.147181
+FL665,"Santa Rosa Island Authority, Quietwater Beach",Pensacola Beach,Escambia,"699 Quietwater Beach Rd, Gulf Breeze, Florida 32561",Gulf,72,,30.336075,-87.143806
+FL667,"Santa Rosa Island Authority, Sabine Dr.",Pensacola Beach,Escambia,"801 Fort Pickens Rd, Gulf Breeze, Florida 32561",Gulf,6,,30.328206,-87.160025
+FL2165,Santa Rosa Island Beach Authority West,Pensacola Beach,Escambia,"1303 Fort Pickens Rd, Gulf Breeze, Florida 32561",Gulf,20,,30.326424,-87.175216
+FL683,Avenida 14 Street End,"Pensacola Beach, Casino Beach",Escambia,"500 Avenida 14, Gulf Breeze, Florida 32561",Gulf,2,,30.335025,-87.121598
+FL682,Avenida 15 Street End,"Pensacola Beach, Casino Beach",Escambia,"700 Ariola Dr, Gulf Breeze, Florida 32561",Gulf,2,,30.335255,-87.120661
+FL680,Avenida 16 Street End,"Pensacola Beach, Casino Beach",Escambia,"801 Ariola Dr, Gulf Breeze, Florida 32561",Gulf,2,,30.335633,-87.117826
+FL698,Avenida 17 Street End,"Pensacola Beach, Casino Beach",Escambia,"901 Ariola Dr, Gulf Breeze, Florida 32561",Gulf,2,,30.336117,-87.115189
+FL696,Avenida 18 Street End,"Pensacola Beach, Casino Beach",Escambia,"1001 Ariola Dr, Gulf Breeze, Florida 32561",Gulf,2,,30.336804,-87.111614
+FL694,Avenida 19 Street End,"Pensacola Beach, Casino Beach",Escambia,"1101 Ariola Dr, Gulf Breeze, Florida 32561",Gulf,2,,30.337327,-87.108914
+FL692,Avenida 20 Street End,"Pensacola Beach, Casino Beach",Escambia,"1115 Ariola Dr, Gulf Breeze, Florida 32561",Gulf,2,,30.337853,-87.106209
+FL688,Avenida 22 Street End,"Pensacola Beach, Casino Beach",Escambia,"1315 Ariola Dr, Gulf Breeze, Florida 32561",Gulf,2,,30.338878,-87.100751
+FL699,Avenida 23 Street End,"Pensacola Beach, Casino Beach",Escambia,"1415 Ariola Dr, Gulf Breeze, Florida 32561",Gulf,2,,30.339404,-87.097998
+FL675,Avienda 10,"Pensacola Beach, Casino Beach",Escambia,"101 Ariola Dr, Gulf Breeze, Florida 32561",Gulf,2,,30.333389,-87.130926
+FL663,Casino Beach,"Pensacola Beach, Casino Beach",Escambia,"20 Casino Beach Blvd, Gulf Breeze, Florida 32561",Gulf,1000,,30.331857,-87.140435
+FL657,Escambia City Beach Access #2,"Perdido Key State Park, Pensacola",Escambia,"14260 Perdido Key Dr, Pensacola, Florida 32507",Gulf,18,,30.295293,-87.441702
+FL658,Escambia City Beach Access #3,"Perdido Key State Park, Pensacola",Escambia,"14775 Perdido Key Dr, Pensacola, Florida 32507",Gulf,27,,30.293926,-87.451447
+FL652,Perido Key State Park east - SR292,"Perdido Key State Park, Pensacola",Escambia,"15335 Perdido Key Dr, Pensacola, Florida 32507",Gulf,45,,30.291692,-87.465637
+FL649,Perido Key State Park west - SR292,"Perdido Key State Park, Pensacola",Escambia,"15619 Perdido Key Dr, Pensacola, FL 32507",Gulf,48,2.00,30.289235,-87.477768
+FL655,"Gulf Islands National Seashore, Perdido Key",Rosamond Johnson Beach,Escambia,"13300 Johnson Beach Rd, Pensacola, Florida 32507",Gulf,200,,30.300378,-87.414169
+FL656,Escambia City Beach Access #1,"Rosamond Johnson Beach, Pensacola",Escambia,"13569 Sandy Key Dr, Pensacola, Florida 32507",Gulf,42,,30.297481,-87.427179
+FL2158,Santa Rosa Island Beach Authority East 2,Santa Rosa Island,Escambia,,Gulf,300,,30.34765,-87.056282
+FL2159,Santa Rosa Island Beach Authority East 3,Santa Rosa Island,Escambia,,Gulf,125,,30.347155,-87.058438
+FL2160,Santa Rosa Island Beach Authority East 4,Santa Rosa Island,Escambia,"SR 399, Gulf Breeze, Florida 32561",Gulf,26,,30.345046,-87.069024
+FL2161,Santa Rosa Island Beach Authority East 5,Santa Rosa Island,Escambia,"2308 Via de Luna Dr, Gulf Breeze, Florida 32561",Gulf,26,,30.34283,-87.080865
+FL2162,Santa Rosa Island Beach Authority East 6,Santa Rosa Island,Escambia,"2032 Via de Luna Dr, Gulf Breeze, Florida 32561",Gulf,60,,30.342207,-87.085179
+FL2164,Santa Rosa Island Beach Authority East 8,Santa Rosa Island,Escambia,"8 Calle Hermosa, Gulf Breeze, Florida 32561",Gulf,5,,30.341065,-87.08996
+FL700,Santa Rosa Island Beach Authorty East,Santa Rosa Island,Escambia,"SR 399, Gulf Breeze, Florida 32561",Gulf,35,,30.346435,-87.061549
+FL701,University of West Florida parcel,Santa Rosa Island,Escambia,"SR 399, Gulf Breeze, Florida 32561",Gulf,380,,30.350541,-87.037824
+FL1218,N 23rd St.,Beverly Beach,Flagler,"2290 N Oceanshore Blvd, Flagler Beach, Florida 32136",Atlantic,10,,29.509017,-81.140965
+FL1217,North Ocean Shore Blvd 0.12 miles north of Ocean Marina Dr.,Beverly Beach,Flagler,"2453 N Oceanshore Blvd, Beverly Beach, Florida 32136",Atlantic,10,,29.510965,-81.141971
+FL1215,North Ocean Shore Blvd 0.23 miles south of Osprey Dr.,Beverly Beach,Flagler,"2532 N Oceanshore Blvd, Beverly Beach, Florida 32136",Atlantic,5,,29.513606,-81.14341
+FL1240,Flagler Beach Pier,Flagler Beach,Flagler,"200 S Oceanshore Blvd, Flagler Beach, Florida 32136",Atlantic,30,,29.480426,-81.126927
+FL1266,Gamble Rogers Memorial State Recreation Area (north),Flagler Beach,Flagler,,Atlantic,20,,29.43948,-81.108323
+FL1230,N 10th St.,Flagler Beach,Flagler,"1001 N Oceanshore Blvd, Flagler Beach, Florida 32136",Atlantic,5,,29.487755,-81.130611
+FL1229,N 11th St.,Flagler Beach,Flagler,"1101 N Oceanshore Blvd, Flagler Beach, Florida 32136",Atlantic,5,,29.488597,-81.131049
+FL1227,N 13th St.,Flagler Beach,Flagler,"1299 N Oceanshore Blvd, Flagler Beach, Florida 32136",Atlantic,10,,29.490326,-81.131928
+FL1225,N 15th St.,Flagler Beach,Flagler,"1501 N Oceanshore Blvd, Flagler Beach, Florida 32136",Atlantic,10,,29.494377,-81.133884
+FL1224,N 16th St.,Flagler Beach,Flagler,"1601 N Oceanshore Blvd, Flagler Beach, Florida 32136",Atlantic,10,,29.496027,-81.134642
+FL1223,N 17th St.,Flagler Beach,Flagler,"1701 N Oceanshore Blvd, Flagler Beach, Florida 32136",Atlantic,10,,29.497673,-81.135431
+FL1222,N 18th St.,Flagler Beach,Flagler,"1800 N Oceanshore Blvd, Flagler Beach, Florida 32136",Atlantic,10,,29.50125,-81.137132
+FL1219,N 22nd St.,Flagler Beach,Flagler,"2201 N Oceanshore Blvd, Flagler Beach, Florida 32136",Atlantic,10,,29.507345,-81.140115
+FL1238,N 2nd St.,Flagler Beach,Flagler,"105 N Oceanshore Blvd, Flagler Beach, Florida 32136",Atlantic,5,,29.481641,-81.127608
+FL1237,N 3rd St.,Flagler Beach,Flagler,"301 N Oceanshore Blvd, Flagler Beach, Florida 32136",Atlantic,5,,29.482268,-81.127924
+FL1234,N 6th St.,Flagler Beach,Flagler,"511 N Oceanshore Blvd, Flagler Beach, Florida 32136",Atlantic,2,,29.484169,-81.128843
+FL1233,N 7th St.,Flagler Beach,Flagler,"701 N Oceanshore Blvd, Flagler Beach, Florida 32136",Atlantic,10,,29.484781,-81.129134
+FL1231,N 9th St.,Flagler Beach,Flagler,"819 N Oceanshore Blvd, Flagler Beach, Florida 32136",Atlantic,5,,29.486783,-81.130113
+FL1246,S 10th St.,Flagler Beach,Flagler,"914 S Oceanshore Blvd, Flagler Beach, Florida 32136",Atlantic,10,,29.475296,-81.124525
+FL1247,S 11th St.,Flagler Beach,Flagler,"1104 S Oceanshore Blvd, Flagler Beach, Florida 32136",Atlantic,5,,29.474671,-81.12422
+FL1249,S 13th St.,Flagler Beach,Flagler,"1300 S Oceanshore Blvd, Flagler Beach, Florida 32136",Atlantic,5,,29.472286,-81.123084
+FL1250,S 14th St.,Flagler Beach,Flagler,"1400 S Oceanshore Blvd, Flagler Beach, Florida 32136",Atlantic,5,,29.470638,-81.122288
+FL1251,S 15th St.,Flagler Beach,Flagler,"1500 S Oceanshore Blvd, Flagler Beach, Florida 32136",Atlantic,10,,29.468963,-81.121527
+FL1253,S 17th St.,Flagler Beach,Flagler,"1644 S Oceanshore Blvd, Flagler Beach, Florida 32136",Atlantic,5,,29.465682,-81.119951
+FL1254,S 18th St.,Flagler Beach,Flagler,"101 S 18th St, Flagler Beach, Florida 32136",Atlantic,10,,29.464018,-81.119144
+FL1255,S 19th St.,Flagler Beach,Flagler,"1860 S Oceanshore Blvd, Flagler Beach, Florida 32136",Atlantic,5,,29.461815,-81.118113
+FL1259,S 23rd St.,Flagler Beach,Flagler,"2300 S Oceanshore Blvd, Flagler Beach, Florida 32136",Atlantic,2,,29.453654,-81.11444
+FL1262,S 27th St.,Flagler Beach,Flagler,"2704 S Oceanshore Blvd, Flagler Beach, Florida 32136",Atlantic,5,,29.445172,-81.110664
+FL1241,S 4th St.,Flagler Beach,Flagler,"400 S Oceanshore Blvd, Flagler Beach, Florida 32136",Atlantic,10,,29.479151,-81.126322
+FL1242,S 5th St.,Flagler Beach,Flagler,"500 S Oceanshore Blvd, Flagler Beach, Florida 32136",Atlantic,10,,29.478507,-81.126013
+FL1243,S 6th St.,Flagler Beach,Flagler,"600 S Oceanshore Blvd, Flagler Beach, Florida 32136",Atlantic,10,,29.477873,-81.125706
+FL1244,S 7th St.,Flagler Beach,Flagler,"700 S Oceanshore Blvd, Flagler Beach, Florida 32136",Atlantic,10,,29.477244,-81.125394
+FL1245,S 9th St.,Flagler Beach,Flagler,"904 S Oceanshore Blvd, Flagler Beach, Florida 32136",Atlantic,10,,29.475961,-81.124846
+FL1267,S Central Ave.,Flagler Beach,Flagler,"3412 S Oceanshore Blvd, Flagler Beach, Florida 32136",Atlantic,20,,29.435111,-81.106145
+FL1196,North Ocean Shores Blvd across from Whitney Dr.,Marineland,Flagler,"9638 N Oceanshore Blvd, Marineland, Florida 32137",Atlantic,100,,29.666094,-81.211834
+FL1210,Jungle Hut Park,Palm Coast,Flagler,"98 Jungle Hut Rd, Palm Coast, Florida 32137",Atlantic,75,,29.584416,-81.17742
+FL1207,Malacompra Park,Palm Coast,Flagler,,Atlantic,50,,29.6169,-81.190834
+FL1208,Malacompra Rd.,Palm Coast,Flagler,"199 Mala Compra Dr, Palm Coast, Florida 32137",Atlantic,3,,29.616409,-81.190204
+FL1209,Old Salts Park,Palm Coast,Flagler,,Atlantic,50,,29.604869,-81.186091
+FL1212,Varn Park,Palm Coast,Flagler,"3641 N Oceanshore Blvd, Palm Coast, Florida 32137",Atlantic,50,,29.549777,-81.161627
+FL1200,Washington Oaks Gardens State Park,Palm Coast,Flagler,,Atlantic,30,,29.63636,-81.199415
+FL587,Bald Point State Park,Bald Point,Franklin,"836 Bald Point Rd, Panacea, Florida 32346",Gulf,70,,29.940585,-84.338133
+FL623,Carrabelle Beach Wayside Park,Carrabelle Beach,Franklin,"1859 Highway 98 W, Carrabelle, Florida 32322",Gulf,38,,29.829334,-84.692443
+FL565,Leonard's Landing,St Teresa,Franklin,"Big Bend Scenic Bywy, Sopchoppy, Florida 32358",Gulf,6,,29.923744,-84.413976
+FL598,Bob Sikes Cut,St. George Island,Franklin,"2315 Leisure Ln, Eastpoint, Florida 32328",Gulf,3,,29.616772,-84.957793
+FL608,St. George Island Public Beach,St. George Island,Franklin,"2 E Gulf Beach Dr, Eastpoint, FL 32328",Gulf,25,,29.662848,-84.862534
+FL616,St. George Island State Park,St. George Island,Franklin,"E Gulf Beach Dr, Eastpoint, Florida 32328",Gulf,200,,29.684808,-84.795235
+FL545,County Line Park,Beacon Hill,Gulf,"9436 W Highway 98, Port St Joe, Florida 32456",Gulf,2,,29.924731,-85.388246
+FL535,Salinas Park Rd. (Cape San Blas County Beach Park),Cape San Blas,Gulf,"Salinas Park Rd, Port Saint Joe, Florida 32456",Gulf,5,,29.683898,-85.310538
+FL541,Highland View Beach,Highland View,Gulf,"1553 W Highway 98, Port St Joe, Florida 32456",Gulf,3,,29.835107,-85.315307
+FL544,Frank Pate Park,Port St. Joe,Gulf,"699 5th St, Port St Joe, Florida 32456",Gulf,38,,29.811121,-85.305125
+FL542,Jetty Park,Port St. Joe,Gulf,"599 Marina Dr, Port St Joe, Florida 32456",Gulf,100,,29.815799,-85.311662
+FL543,Maddox Cove,Port St. Joe,Gulf,"310 Baltzell Ave, Port St Joe, Florida 32456",Gulf,4,,29.813442,-85.305123
+FL537,"St. Joseph Point, St. Joseph Peninsula State Park",Port St. Joe,Gulf,"9601 Cape San Blas Rd, Port St Joe, Florida 32456",Gulf,2,,29.763581,-85.403381
+FL540,Windmark Beach Access Park,St. Joe Beach,Gulf,"29.889190, -85.355015",Gulf,50,,29.888531,-85.354773
+FL533,Troy Deal Public Beach Access - Cape San Blas Beach Wayside Park,St. Joseph Peninsula,Gulf,"3549 Cape San Blas Rd, Port St Joe, Florida 32456",Gulf,6,,29.681114,-85.366482
+FL555,East End of Indian Pass Road,St. Joseph Peninsula East,Gulf,"2850 Indian Pass Rd, Port St Joe, Florida 32456",Gulf,2,,29.683279,-85.222351
+FL539,Cape Palms Park,"St. Joseph Peninsula, Cape San Blas",Gulf,"190 Lafayette Dr, Port St Joe, Florida 32456",Gulf,35,,29.716589,-85.385947
+FL531,Alfred McKeathan Pine Island Park,Pine Island,Hernando,"10800 Pine Island Dr, Spring Hill, FL 34607",Gulf,132,5.00,28.568372,-82.655969
+FL532,Bayport Park,Spring Hill,Hernando,"4101 Cortez Blvd, Spring Hill, FL 34607",Gulf,70,5.00,28.534164,-82.650061
+FL3006,E.G. Simmons Park,,Hillsborough,,Gulf,500,,27.747865,-82.47239
+FL3007,Apollo Beach Nature Park,Apollo Beach,Hillsborough,,Gulf,25,,27.792052,-82.419453
+FL1643,Seagrape Trail,Indian River Shores,Indian River,,Atlantic,20,,27.74447,-80.386437
+FL1644,Turtle Trail,Indian River Shores,Indian River,,Atlantic,30,,27.733949,-80.381918
+FL1628,"Sebastian Inlet State Park, South Jetty",Melbourne Beach,Indian River,"SR-A1A, Indian River Shores, Florida 32963",Atlantic,100,,27.859222,-80.447715
+FL1634,Sebastian Inlet State Recreation Area #1,Melbourne Beach,Indian River,"13138 SR-A1A, Vero Beach, Florida 32963",Atlantic,10,,27.845677,-80.440828
+FL1633,Sebastian Inlet State Recreation Area #2,Melbourne Beach,Indian River,"13056 SR-A1A, Vero Beach, Florida 32963",Atlantic,4,,27.840962,-80.438333
+FL1635,Sebastian Inlet State Recreation Area #6,Melbourne Beach,Indian River,,Atlantic,80,,27.851871,-80.443741
+FL1636,Sebastian Inlet State Recreation Area #7,Melbourne Beach,Indian River,"SR-A1A, Indian River Shores, Florida 32963",Atlantic,4,,27.853221,-80.444724
+FL1637,Sebastian Inlet State Recreation Area #8,Melbourne Beach,Indian River,"SR-A1A, Indian River Shores, Florida 32963",Atlantic,5,,27.854679,-80.445463
+FL1630,Golden Sands,Orchid Island,Indian River,,Atlantic,103,,27.78209,-80.407019
+FL1631,Treasure Shores Park,Orchid Island,Indian River,"11132 SR-A1A, Vero Beach, Florida 32963",Atlantic,70,,27.797942,-80.416388
+FL1632,Ambersand Beach,Vero Beach,Indian River,,Atlantic,20,,27.822391,-80.428111
+FL1669,Beachland Blvd.,Vero Beach,Indian River,"1050 Sexton Plz, Vero Beach, Florida 32963",Atlantic,50,,27.653383,-80.355453
+FL1670,Humiston Park,Vero Beach,Indian River,,Atlantic,118,,27.649998,-80.354951
+FL1649,Jaycee Park,Vero Beach,Indian River,"Mango Rd, Vero Beach, Florida 32963",Atlantic,120,,27.664979,-80.359285
+FL1655,Ocean Dr. # 6,Vero Beach,Indian River,"4102 Ocean Dr, Vero Beach, Florida 32963",Atlantic,10,,27.662479,-80.358287
+FL1650,Ocean Dr. #1,Vero Beach,Indian River,"4200 Ocean Dr, Vero Beach, Florida 32963",Atlantic,10,,27.664665,-80.358795
+FL1651,Ocean Dr. #2,Vero Beach,Indian River,"4200 Ocean Dr, Vero Beach, Florida 32963",Atlantic,5,,27.66421,-80.358693
+FL1652,Ocean Dr. #3,Vero Beach,Indian River,"4180 Ocean Dr, Vero Beach, Florida 32963",Atlantic,10,,27.663812,-80.3586
+FL1653,Ocean Dr. #4,Vero Beach,Indian River,"4160 Ocean Dr, Vero Beach, Florida 32963",Atlantic,10,,27.663481,-80.358513
+FL1654,Ocean Dr. #5,Vero Beach,Indian River,"4136 Ocean Dr, Vero Beach, Florida 32963",Atlantic,10,,27.663064,-80.35842
+FL1656,Ocean Dr. #7,Vero Beach,Indian River,"4054 Ocean Dr, Vero Beach, Florida 32963",Atlantic,10,,27.66193,-80.358142
+FL1657,Ocean Dr. #8,Vero Beach,Indian River,"3998 Ocean Dr, Vero Beach, Florida 32963",Atlantic,10,,27.661382,-80.358038
+FL1642,Ocean Dr. #9,Vero Beach,Indian River,"3960 Ocean Dr, Vero Beach, Florida 32963",Atlantic,10,,27.661075,-80.357963
+FL1663,Riomar Dr.,Vero Beach,Indian River,,Atlantic,5,,27.645011,-80.353413
+FL1674,Round Island Oceanside Park,Vero Beach,Indian River,,Atlantic,61,,27.561372,-80.323326
+FL1665,South Beach Park,Vero Beach,Indian River,,Atlantic,260,,27.632743,-80.352265
+FL1647,Tracking Station Park,Vero Beach,Indian River,,Atlantic,72,,27.676626,-80.362865
+FL1629,Wabasso Beach,Wabasso Beach,Indian River,"1809 Wabasso Beach Rd, Vero Beach, Florida 32963",Atlantic,70,,27.763431,-80.397326
+FL460,10th St.,Boca Grande,Lee,"1000 10th St W, Boca Grande, Florida 33921",Gulf,9,,26.756103,-82.264592
+FL451,11th St.,Boca Grande,Lee,,Gulf,16,,26.7569,-82.264758
+FL448,12th St.,Boca Grande,Lee,,Gulf,16,,26.757739,-82.264922
+FL447,13th St.,Boca Grande,Lee,,Gulf,12,,26.758528,-82.265036
+FL450,17th St.,Boca Grande,Lee,,Gulf,5,,26.761808,-82.265514
+FL454,1st St.,Boca Grande,Lee,"1st St W, Boca Grande, Florida 33921",Gulf,11,,26.746297,-82.264222
+FL456,3rd St. W,Boca Grande,Lee,"301 3rd St W, Boca Grande, Florida 33921",Gulf,18,,26.7491,-82.264297
+FL457,4th St.,Boca Grande,Lee,"400 4th St W, Boca Grande, Florida 33921",Gulf,17,,26.750497,-82.264358
+FL458,5th St. W,Boca Grande,Lee,,Gulf,45,,26.751811,-82.2642
+FL459,7th St. W,Boca Grande,Lee,"701 7th St W, Boca Grande, Florida 33921",Gulf,45,,26.753664,-82.264472
+FL452,9th St.,Boca Grande,Lee,"800 8th St W, Boca Grande, Florida 33921",Gulf,6,,26.755292,-82.264514
+FL455,Banyan St.,Boca Grande,Lee,"211 Banyan St, Boca Grande, Florida 33921",Gulf,19,,26.747686,-82.264283
+FL453,Gasparilla Island State Park - North Unit,Boca Grande,Lee,"190 Gulf Blvd, Boca Grande, Florida 33921",Gulf,31,,26.742669,-82.263544
+FL442,Gasparilla Island State Park-middle unit,Boca Grande,Lee,,Gulf,28,,26.724789,-82.263125
+FL444,Gasparilla Island State Park-south unit,Boca Grande,Lee,"928 Gulf Blvd, Boca Grande, Florida 33921",Gulf,114,,26.719112,-82.261514
+FL528,Bonita Beach Access #1,Bonita Beach,Lee,,Gulf,21,2/hr,26.332156,-81.846167
+FL482,Bonita Beach Access #10,Bonita Beach,Lee,,Gulf,33,2/hr,26.35855,-81.859269
+FL527,Bonita Beach Access #2,Bonita Beach,Lee,"27730 Hickory Blvd, Bonita Springs, Florida 34134",Gulf,8,,26.334825,-81.846928
+FL526,Bonita Beach Access #3,Bonita Beach,Lee,"27500 Hickory Blvd, Bonita Springs, Florida 34134",Gulf,3,,26.338417,-81.848439
+FL483,Bonita Beach Access #4,Bonita Beach,Lee,"27270 Hickory Blvd, Bonita Springs, Florida 34134",Gulf,4,,26.341439,-81.849947
+FL484,Bonita Beach Access #5,Bonita Beach,Lee,,Gulf,5,,26.344514,-81.851403
+FL485,Bonita Beach Access #6,Bonita Beach,Lee,"26796 Hickory Blvd, Bonita Springs, Florida 34134",Gulf,6,,26.347572,-81.852675
+FL486,Bonita Beach Access #7,Bonita Beach,Lee,"26589 Hickory Blvd, Bonita Springs, Florida 34134",Gulf,3,,26.350606,-81.854178
+FL487,Bonita Beach Access #8,Bonita Beach,Lee,"26412 Hickory Blvd, Bonita Springs, Florida 34134",Gulf,4,,26.353476,-81.85582
+FL488,Bonita Beach Access #9,Bonita Beach,Lee,"26218 Hickory Blvd, Bonita Springs, Florida 34134",Gulf,6,,26.356342,-81.857736
+FL529,Bonita Beach Park,Bonita Beach,Lee,,Gulf,88,2/hr,26.331083,-81.84566
+FL433,Andy Rosse Lane,Captiva,Lee,"11546 Andy Rosse Ln, Captiva, Florida 33924",Gulf,2,,26.522142,-82.193161
+FL436,Turner Beach,Captiva,Lee,"17200 Captiva Dr, Captiva, Florida 33924",Gulf,22,,26.483037,-82.183365
+FL524,"Aberdeen Ave., Access 14",Ft. Meyers Beach,Lee,"50 Aberdeen Ave, Fort Myers Beach, Florida 33931",Gulf,5,2/hr,26.427703,-81.910953
+FL498,Ave E Access 32,Ft. Meyers Beach,Lee,"80 Avenue E, Fort Myers Beach, Florida 33931",Gulf,1,,26.450642,-81.949222
+FL478,Bowditch Park,Ft. Meyers Beach,Lee,,Gulf,65,2/hr,26.463678,-81.967042
+FL512,Canbana Rd.,Ft. Meyers Beach,Lee,"3950 Estero Blvd, Fort Myers Beach, Florida 33931",Gulf,2,,26.439839,-81.926483
+FL514,"Coconut Drive, Access 20",Ft. Meyers Beach,Lee,"4198 Estero Blvd, Fort Myers Beach, Florida 33931",Gulf,8,2/hr,26.438836,-81.924956
+FL510,Conneticut St. Access 22,Ft. Meyers Beach,Lee,"3598 Estero Blvd, Fort Myers Beach, Florida 33931",Gulf,12,2/hr,26.442422,-81.931247
+FL522,"Dakota Ave., Beach Access 16",Ft. Meyers Beach,Lee,,Gulf,8,2/hr,26.431297,-81.91475
+FL502,Delmar Ave. Access 28,Ft. Meyers Beach,Lee,"63 Delmar Ave, Fort Myers Beach, Florida 33931",Gulf,4,2/hr,26.449186,-81.945497
+FL491,"Flamingo St., Access 11",Ft. Meyers Beach,Lee,"65 Flamingo St, Fort Myers Beach, Florida 33931",Gulf,5,2/hr,26.423856,-81.906875
+FL480,"Gulf Drive, Access 12",Ft. Meyers Beach,Lee,"103 Gulf Dr, Fort Myers Beach, Florida 33931",Gulf,3,2/hr,26.425111,-81.908281
+FL513,"Hercules Drive, Access 21",Ft. Meyers Beach,Lee,"4100 Estero Blvd, Fort Myers Beach, Florida 33931",Gulf,8,2/hr,26.439242,-81.925578
+FL525,"Lanark Ave., Access 13",Ft. Meyers Beach,Lee,"5890 Estero Blvd, Fort Myers Beach, Florida 33931",Gulf,2,2/hr,26.426442,-81.909631
+FL479,Lynn Hall Memorial Park,Ft. Meyers Beach,Lee,,Gulf,107,2/hr,26.453694,-81.957344
+FL503,Mango St. Access 27,Ft. Meyers Beach,Lee,"2426 Cottage Ave, Fort Myers Beach, Florida 33931",Gulf,5,2/hr,26.448542,-81.944267
+FL500,Palm St. Access 30,Ft. Meyers Beach,Lee,"175 Palm Ave, Fort Myers Beach, Florida 33931",Gulf,18,2/hr,26.449964,-81.947536
+FL501,Pearl St. Access 29,Ft. Meyers Beach,Lee,"71 Pearl St, Fort Myers Beach, Florida 33931",Gulf,1,2/hr,26.449381,-81.946103
+FL506,Pompano St. Access 24,Ft. Meyers Beach,Lee,"53 Pompano St, Fort Myers Beach, Florida 33931",Gulf,2,2/hr meter,26.4468,-81.939794
+FL507,"Seaview Drive, Access 23",Ft. Meyers Beach,Lee,"2800 Seaview St, Fort Myers Beach, Florida 33931",Gulf,3,2/hr meter,26.446478,-81.939089
+FL517,"Strandview Ave., Access 17",Ft. Meyers Beach,Lee,"Strandview Ave, Fort Myers Beach, Florida 33931",Gulf,15,2/hr,26.436969,-81.92235
+FL481,Lover's Key State Park,Lovers Key,Lee,,Gulf,219,,26.393883,-81.882317
+FL2185,Bunche Beach Preserve,San Carlos Bay,Lee,"18201 John Morris Rd, Fort Myers, Florida 33908",Gulf,44,2/hr,26.476297,-81.967274
+FL463,Bowman's Beach,Sanibel,Lee,,Gulf,125,2/hr,26.462657,-82.162251
+FL475,Buttonwood Ln.,Sanibel,Lee,"1059 Buttonwood Ln, Sanibel, Florida 33957",Gulf,3,,26.448017,-82.022472
+FL469,Gulfside City Park,Sanibel,Lee,"Algiers Ln, Sanibel, Florida 33957",Gulf,39,2/hr,26.425489,-82.066055
+FL477,Lighthouse Park,Sanibel,Lee,"178 Periwinkle Way, Sanibel, Florida 33957",Gulf,140,2/hr,26.451614,-82.015308
+FL438,Turner Beach - East,Sanibel,Lee,"6489 Captiva Dr, Sanibel, Florida 33957",Gulf,22,,26.482095,-82.181553
+FL427,Sand Spit Park,Cedar Key,Levy,"873 1st St, Cedar Key, Florida 32625",Gulf,12,,29.134431,-83.035874
+FL428,Cedar Key City Beach,Cedar Key City Beach,Levy,"8050 A St, Cedar Key, Florida 32625",Gulf,15,,29.136986,-83.029802
+FL430,Vassey Creek Park,Yankeetown Park,Levy,"8194 CR 40, Yankeetown, Florida 34498",Gulf,2,,29.001427,-82.761338
+FL381,Alamanda Rd.,Anna Maria,Manatee,"875 N Shore Dr, Anna Maria, Florida 34216",Gulf,16,,27.537456,-82.740029
+FL391,23rd St.,Bradenton Beach,Manatee,"2218 Gulf Dr N, Bradenton Beach, Florida 34217",Gulf,7,,27.479002,-82.704019
+FL395,26th St.,Bradenton Beach,Manatee,"2600 Gulf Dr N, Bradenton Beach, Florida 34217",Gulf,3,,27.483372,-82.705212
+FL396,27th St.,Bradenton Beach,Manatee,"2707 Gulf Dr N, Bradenton Beach, Florida 34217",Gulf,2,,27.484846,-82.705651
+FL411,Bridge St.,Bradenton Beach,Manatee,"200 Gulf Dr S, Bradenton Beach, Florida 34217",Gulf,5,,27.464954,-82.698603
+FL408,Coquina Beach,Bradenton Beach,Manatee,"601 Gulf Dr S, Bradenton Beach, Florida 34217",Gulf,100,,27.462454,-82.697864
+FL407,Coquina Park,Bradenton Beach,Manatee,"Gulf Dr S, Bradenton Beach, Florida 34217",Gulf,100,,27.451334,-82.692001
+FL397,28th St.,Holmes Beach,Manatee,"2728 Avenue E, Holmes Beach, Florida 34217",Gulf,2,,27.48617,-82.706788
+FL399,30th St.,Holmes Beach,Manatee,"103 30th St, Holmes Beach, Florida 34217",Gulf,4,,27.489025,-82.708032
+FL416,31st St.,Holmes Beach,Manatee,"3020 Avenue F, Holmes Beach, Florida 34217",Gulf,3,,27.490398,-82.708743
+FL417,33rd St.,Holmes Beach,Manatee,"114 33rd St, Holmes Beach, Florida 34217",Gulf,7,,27.492283,-82.709666
+FL419,35th St.,Holmes Beach,Manatee,"3404 4th Ave, Holmes Beach, Florida 34217",Gulf,2,,27.493644,-82.710148
+FL420,36th St.,Holmes Beach,Manatee,"100 36th St, Holmes Beach, Florida 34217",Gulf,5,,27.494308,-82.710784
+FL421,37th St.,Holmes Beach,Manatee,"100 37th St, Holmes Beach, Florida 34217",Gulf,6,,27.495009,-82.710915
+FL389,45th St.,Holmes Beach,Manatee,"4501 3rd Ave, Holmes Beach, Florida 34217",Gulf,4,,27.500431,-82.714175
+FL425,46th St.,Holmes Beach,Manatee,"106 46th St, Holmes Beach, Florida 34217",Gulf,4,,27.501124,-82.714271
+FL386,50th St.,Holmes Beach,Manatee,"103 50th St, Holmes Beach, Florida 34217",Gulf,3,,27.503849,-82.715914
+FL352,52nd St.,Holmes Beach,Manatee,"95 52nd St, Holmes Beach, Florida 34217",Gulf,2,,27.505192,-82.717229
+FL355,65th St.,Holmes Beach,Manatee,"110 65th St, Holmes Beach, Florida 34217",Gulf,5,,27.511205,-82.721811
+FL357,67th St.,Holmes Beach,Manatee,"101 67th St, Holmes Beach, Florida 34217",Gulf,3,,27.512325,-82.722734
+FL358,68th St.,Holmes Beach,Manatee,"102 68th St, Holmes Beach, Florida 34217",Gulf,6,,27.512824,-82.723265
+FL359,69th St.,Holmes Beach,Manatee,"101 69th St, Holmes Beach, Florida 34217",Gulf,5,,27.513356,-82.723676
+FL360,70th St.,Holmes Beach,Manatee,"100 70th St, Holmes Beach, Florida 34217",Gulf,1,,27.513927,-82.724195
+FL361,71st St.,Holmes Beach,Manatee,"7100 Gulf Drive, Holmes Beach, FL 34217",Gulf,6,,27.514507,-82.724614
+FL362,72nd St.,Holmes Beach,Manatee,"102 72nd St, Holmes Beach, Florida 34217",Gulf,2,,27.514989,-82.725149
+FL351,73rd St.,Holmes Beach,Manatee,"101 73rd St, Holmes Beach, Florida 34217",Gulf,1,,27.515529,-82.725645
+FL363,74th St.,Holmes Beach,Manatee,"108 74th St, Holmes Beach, Florida 34217",Gulf,2,,27.516187,-82.72586
+FL367,77th St.,Holmes Beach,Manatee,"100 77th St, Holmes Beach, Florida 34217",Gulf,7,,27.517071,-82.727119
+FL353,Gulf Drive,Holmes Beach,Manatee,"5384 Gulf Dr, Holmes Beach, Florida 34217",Gulf,3,,27.505822,-82.717195
+FL423,Manatee County Park,Holmes Beach,Manatee,"4000 Gulf Dr, Holmes Beach, FL 34217",Gulf,380,,27.497517,-82.712111
+FL403,Broadway St.,Longboat Key,Manatee,"399 Broadway St, Longboat Key, Florida 34228",Gulf,17,,27.434667,-82.686453
+FL405,N. Shore Road,Longboat Key,Manatee,"100 N Shore Rd, Longboat Key, Florida 34228",Gulf,5,,27.436336,-82.689449
+FL1709,Beachwalk Pasley,Jensen Beach,Martin,,Atlantic,20,,27.239641,-80.188593
+FL1708,Bob Graham Beach,Jensen Beach,Martin,,Atlantic,75,,27.244064,-80.190934
+FL1710,Bryn Mawr Beach,Jensen Beach,Martin,,Atlantic,20,,27.237486,-80.187287
+FL1706,Glascock Beach,Jensen Beach,Martin,,Atlantic,30,,27.262822,-80.200376
+FL1707,Jensen Beach Park,Jensen Beach,Martin,"Jensen Beach Cswy, Jensen Beach, Florida 34957",Atlantic,,,27.255659,-80.197261
+FL1722,Blowing Rocks Preserve,Jupiter Island,Martin,"569 S Beach Rd, Jupiter Island, Florida 33455",Atlantic,15,,26.978791,-80.084063
+FL1721,Hobe Sound Beach Park,Jupiter Island,Martin,,Atlantic,96,,27.066399,-80.115656
+FL1720,Hobe Sound National Wildlife Refuge,Jupiter Island,Martin,,Atlantic,80,,27.089048,-80.127017
+FL1719,Bathtub Reef Park,Stuart,Martin,"1559 SE MacArthur Blvd, Stuart, Florida 34996",Atlantic,50,,27.1863,-80.16057
+FL1718,Chastain Beach,Stuart,Martin,"1307 SE MacArthur Blvd, Stuart, Florida 34996",Atlantic,20,,27.189879,-80.160964
+FL1716,Fletcher Beach,Stuart,Martin,"221 SE MacArthur Blvd, Stuart, Florida 34996",Atlantic,5,,27.205514,-80.169068
+FL1717,Ross Witham Beach,Stuart,Martin,"599 SE MacArthur Blvd, Stuart, Florida 34996",Atlantic,10,,27.200102,-80.165856
+FL1715,Saint Lucea,Stuart,Martin,"139 SE MacArthur Blvd, Stuart, Florida 34996",Atlantic,37,,27.206415,-80.17018
+FL1714,Stuart Beach Park,Stuart,Martin,,Atlantic,70,,27.214586,-80.175233
+FL1713,Tiger Shores,Stuart,Martin,,Atlantic,25,,27.22107,-80.178443
+FL1712,Virginia Forest Beach,Stuart,Martin,,Atlantic,15,,27.228995,-80.182766
+FL2011,Bal Harbour Access,Bal Harbour,Miami-Dade,"Collins Ave, Miami Beach, Florida 33154",Atlantic,160,1.00/hour,25.899258,-80.124383
+FL2025,Kennedy Park,Coconut Grove,Miami-Dade,"2180 S Bayshore Dr, Miami, Florida 33133",Atlantic,27,,25.735974,-80.228383
+FL2026,Kennedy Park II,Coconut Grove,Miami-Dade,"2470 S Bayshore Dr, Miami, Florida 33133",Atlantic,47,,25.733798,-80.231171
+FL2028,Peacock Park,Coconut Grove,Miami-Dade,"McFarlane Rd, Miami, Florida 33133",Atlantic,20,1.50/hour,25.725974,-80.240031
+FL2029,Matheson Hammock County Park,Coral Gables,Miami-Dade,,Atlantic,50,,25.677395,-80.259814
+FL2031,Matheson Hammock County Park - Atoll,Coral Gables,Miami-Dade,,Atlantic,,,25.679752,-80.256907
+FL2030,Matheson Hammock County Park - Boat Launch,Coral Gables,Miami-Dade,,Atlantic,30,,25.678952,-80.260524
+FL2009,Haulover Beach Park - Access # 4,Haulover Beach,Miami-Dade,"13128 Collins Ave, Miami Beach, Florida 33154",Atlantic,,,25.914727,-80.122877
+FL2007,Haulover Beach Park - Access # 5,Haulover Beach,Miami-Dade,,Atlantic,325,,25.919374,-80.12352
+FL2010,Haulover Beach Park - Access #1,Haulover Beach,Miami-Dade,,Atlantic,,,25.907885,-80.123182
+FL2005,Haulover Beach Park - Access #2,Haulover Beach,Miami-Dade,"11276 SR-A1A, Miami Beach, Florida 33154",Atlantic,,,25.912177,-80.123013
+FL2001,Haulover Beach Park - Jetty,Haulover Beach,Miami-Dade,,Atlantic,40,,25.900763,-80.125136
+FL2003,Haulover Beach Park I,Haulover Beach,Miami-Dade,,Atlantic,150,,25.903337,-80.123219
+FL2002,Haulover Beach Park II,Haulover Beach,Miami-Dade,,Atlantic,,,25.901803,-80.122862
+FL2006,Haulover Beach Park- Access #3,Haulover Beach,Miami-Dade,,Atlantic,,,25.913445,-80.123057
+FL2008,Haulover Beach Park- Public Boat Launch,Haulover Beach,Miami-Dade,,Atlantic,25,,25.916718,-80.123751
+FL2041,Biscayne National Park - Convoy Point,Homestead,Miami-Dade,,Atlantic,80,,25.464206,-80.335123
+FL2039,Homestead Bayfront Park,Homestead,Miami-Dade,,Atlantic,,,25.461058,-80.336978
+FL2019,Bill Baggs Cape Florida State Park (Access #'s 4-5),Key Biscayne,Miami-Dade,,Atlantic,90,,25.671156,-80.154824
+FL2017,Bill Baggs Cape Florida State Park (Access #'s 6-7),Key Biscayne,Miami-Dade,,Atlantic,200,,25.667989,-80.156551
+FL2020,Bill Baggs Cape Florida State Park (Accesses #'s 1-3),Key Biscayne,Miami-Dade,,Atlantic,200,,25.677767,-80.156369
+FL2018,Bill Baggs Cape Florida State Park - Fishing Seawall,Key Biscayne,Miami-Dade,,Atlantic,100,,25.667206,-80.15924
+FL2023,Biscayne Nature Center,Key Biscayne,Miami-Dade,,Atlantic,,,25.71478,-80.151897
+FL2022,Crandon Park - North Beach,Key Biscayne,Miami-Dade,,Atlantic,,,25.711465,-80.153425
+FL2021,Crandon Park - South Beach,Key Biscayne,Miami-Dade,,Atlantic,,,25.708034,-80.154793
+FL2016,Crandon Park Marina,Key Biscayne,Miami-Dade,,Atlantic,150,$10/day,25.723928,-80.154347
+FL2038,Black Point Marina,Miami,Miami-Dade,,Atlantic,,,25.538592,-80.327938
+FL2037,Black Point Park,Miami,Miami-Dade,,Atlantic,130,,25.540186,-80.327746
+FL2012,Hobie Island Beach Park,Miami,Miami-Dade,,Atlantic,170,,25.745917,-80.192003
+FL1974,Miamarina Bayfront Park,Miami,Miami-Dade,,Atlantic,60,1.75/hour,25.774399,-80.185819
+FL2024,Rickenbacker Causeway,Miami,Miami-Dade,"3914 Rickenbacker Cswy, Key Biscayne, Florida 33149",Atlantic,160,1.50/car,25.738221,-80.167874
+FL1975,Watson Island Park,Miami,Miami-Dade,,Atlantic,50,,25.784797,-80.177922
+FL1940,10th St.,Miami Beach,Miami-Dade,"1001 Ocean Dr, Miami Beach, Florida 33139",Atlantic,25,1.75/hour,25.780491,-80.130523
+FL1941,11th St.,Miami Beach,Miami-Dade,"1101 Ocean Dr, Miami Beach, Florida 33139",Atlantic,25,1.75/hour,25.78157,-80.130292
+FL1942,12th St.,Miami Beach,Miami-Dade,"1200 Ocean Dr, Miami Beach, Florida 33139",Atlantic,25,1.75/hour,25.782688,-80.130046
+FL1943,13th St.,Miami Beach,Miami-Dade,"1300 Ocean Dr, Miami Beach, Florida 33139",Atlantic,25,1.75/hour,25.783951,-80.129867
+FL1944,14th St.,Miami Beach,Miami-Dade,"1400 Ocean Dr, Miami Beach, Florida 33139",Atlantic,25,1.75/hour,25.785155,-80.129684
+FL1949,17th St.,Miami Beach,Miami-Dade,"126 17th St, Miami Beach, Florida 33139",Atlantic,20,1.75/hour,25.792364,-80.128508
+FL1950,18th St.,Miami Beach,Miami-Dade,"165 18th St, Miami Beach, Florida 33139",Atlantic,20,1.75/hour,25.793939,-80.128831
+FL1951,20th St.,Miami Beach,Miami-Dade,"101 20th St, Miami Beach, Florida 33139",Atlantic,5,1.75/hour,25.79524,-80.128019
+FL1953,22nd St.,Miami Beach,Miami-Dade,"22nd St, Miami Beach, Florida 33139",Atlantic,15,1.75/hour,25.797144,-80.127063
+FL1955,24th St.,Miami Beach,Miami-Dade,"1 24th St, Miami Beach, Florida 33140",Atlantic,10,1.75/hour,25.799725,-80.126174
+FL1956,25th St.,Miami Beach,Miami-Dade,"2 25th St, Miami Beach, Florida 33140",Atlantic,5,1.75/hour,25.801071,-80.125656
+FL1957,26th St.,Miami Beach,Miami-Dade,"101 26th St, Miami Beach, Florida 33140",Atlantic,13,1.75/hour,25.802132,-80.125288
+FL1958,27th St.,Miami Beach,Miami-Dade,"104 27th St, Miami Beach, Florida 33140",Atlantic,10,1.75/hour,25.803453,-80.124865
+FL1959,29th St.,Miami Beach,Miami-Dade,"29th St, Miami Beach, Florida 33140",Atlantic,15,1.75/hour,25.80456,-80.124179
+FL1960,30th St.,Miami Beach,Miami-Dade,"48 30th St, Miami Beach, Florida 33140",Atlantic,15,1.75/hour,25.80559,-80.123736
+FL1961,31st St.,Miami Beach,Miami-Dade,"32 31st St, Miami Beach, Florida 33140",Atlantic,10,1.75/hour,25.806279,-80.123643
+FL1962,32nd St.,Miami Beach,Miami-Dade,"2 32nd St, Miami Beach, Florida 33140",Atlantic,14,1.75/hour,25.806932,-80.12336
+FL1963,34th St.,Miami Beach,Miami-Dade,"2 34th St, Miami Beach, Florida 33140",Atlantic,40,1.75/hour,25.808168,-80.122886
+FL1964,35th St.,Miami Beach,Miami-Dade,"61 35th St, Miami Beach, Florida 33140",Atlantic,103,1.75/hour,25.809108,-80.122885
+FL1965,36th St.,Miami Beach,Miami-Dade,"2 36th St, Miami Beach, Florida 33140",Atlantic,10,1.75/hour,25.809574,-80.122704
+FL1966,37th St.,Miami Beach,Miami-Dade,"100 37th St, Miami Beach, Florida 33140",Atlantic,7,1.75/hour,25.810259,-80.122654
+FL1967,38th St.,Miami Beach,Miami-Dade,"31 38th St, Miami Beach, Florida 33140",Atlantic,10,1.75/hour,25.810933,-80.122488
+FL1968,39th St.,Miami Beach,Miami-Dade,"1 39th St, Miami Beach, Florida 33140",Atlantic,12,1.75/hour,25.811652,-80.122381
+FL1969,40th St.,Miami Beach,Miami-Dade,"1 40th St, Miami Beach, Florida 33140",Atlantic,12,1.75/hour,25.812307,-80.122286
+FL1971,42nd St.,Miami Beach,Miami-Dade,"14 42nd St, Miami Beach, Florida 33140",Atlantic,12,1.75/hour,25.813657,-80.122084
+FL1972,43rd St.,Miami Beach,Miami-Dade,"115 43rd St, Miami Beach, Florida 33140",Atlantic,14,1.75/hour,25.814369,-80.122127
+FL1935,5th St.,Miami Beach,Miami-Dade,"510 Ocean Dr, Miami Beach, Florida 33139",Atlantic,7,1.75/hour,25.774687,-80.131804
+FL1936,6th St.,Miami Beach,Miami-Dade,"599 Ocean Dr, Miami Beach, Florida 33139",Atlantic,25,1.75/hour,25.775537,-80.131631
+FL1981,71st St.,Miami Beach,Miami-Dade,"1 71st St, Miami Beach, Florida 33141",Atlantic,12,1.00/hour,25.856145,-80.11978
+FL1983,73rd St.,Miami Beach,Miami-Dade,"7300 Ocean Ter, Miami Beach, Florida 33141",Atlantic,20,1.00/hour,25.858585,-80.119543
+FL1984,74th St.,Miami Beach,Miami-Dade,"7400 Ocean Ter, Miami Beach, Florida 33141",Atlantic,20,1.00/hour,25.859576,-80.119667
+FL1985,75th St.,Miami Beach,Miami-Dade,"1 75th St, Miami Beach, Florida 33141",Atlantic,100,1.00/hour,25.860988,-80.119786
+FL1937,7th St.,Miami Beach,Miami-Dade,"660 Ocean Dr, Miami Beach, Florida 33139",Atlantic,25,1.75/hour,25.776723,-80.131366
+FL1993,87th Terr.,Miami Beach,Miami-Dade,"297 87th Ter, Surfside, Florida 33154",Atlantic,26,1.00/hour,25.872572,-80.120535
+FL1938,8th St.,Miami Beach,Miami-Dade,"800 Ocean Dr, Miami Beach, Florida 33139",Atlantic,25,1.75/hour,25.777936,-80.131088
+FL1939,9th St.,Miami Beach,Miami-Dade,"860 Ocean Dr, Miami Beach, Florida 33139",Atlantic,25,1.75/hour,25.779126,-80.130831
+FL1992,Allison Park,Miami Beach,Miami-Dade,,Atlantic,75,1.00/hour,25.84762,-80.119818
+FL1978,Beach View Park,Miami Beach,Miami-Dade,33140,Atlantic,210,1.00/hour,25.831177,-80.121481
+FL1952,Collins Park,Miami Beach,Miami-Dade,,Atlantic,,1.75/hour,25.796716,-80.127952
+FL1976,Indian Beach Park,Miami Beach,Miami-Dade,,Atlantic,,1.00/hour,25.820769,-80.121837
+FL1989,North Shore Open Space Park - 81st St. Access,Miami Beach,Miami-Dade,"8108 Collins Ave, Miami Beach, Florida 33141",Atlantic,25,1.00/hour,25.866129,-80.121051
+FL1990,North Shore Open Space Park - 85th St. Access,Miami Beach,Miami-Dade,"8508 Collins Ave, Miami Beach, Florida 33141",Atlantic,25,1.00/hour,25.870037,-80.121219
+FL1991,North Shore Open Space Park - 87th St. Access,Miami Beach,Miami-Dade,"8599 Atlantic Way, Miami Beach, Florida 33141",Atlantic,10,1.00/hour,25.871751,-80.121391
+FL1945,Ocean Ct.,Miami Beach,Miami-Dade,"1455 Ocean Dr, Miami Beach, Florida 33139",Atlantic,25,1.75/hour,25.786662,-80.12944
+FL1932,Pier Park,Miami Beach,Miami-Dade,"1 S Pointe Dr, Miami Beach, Florida 33139",Atlantic,30,1.75/hour,25.768368,-80.132041
+FL1931,South Pointe Park,Miami Beach,Miami-Dade,,Atlantic,240,1.75/hour,25.766385,-80.133929
+FL1970,W 41st St.,Miami Beach,Miami-Dade,"201 Arthur Godfrey Rd, Miami Beach, Florida 33140",Atlantic,8,1.75/hour,25.812996,-80.122198
+FL2033,Chapman Field Park,Palmetto Bay,Miami-Dade,,Atlantic,30,,25.644322,-80.286965
+FL1920,Deering Estate,Palmetto Bay,Miami-Dade,"16804 SW 72nd Ave, Palmetto Bay, Florida 33157",Atlantic,,,25.614889,-80.308493
+FL2036,Palmetto Bay at Deering Point,Palmetto Bay,Miami-Dade,,Atlantic,80,,25.611016,-80.309763
+FL1977,Public Pier at the Deering Estate,Palmetto Bay,Miami-Dade,"16840 SW 72nd Ave, Palmetto Bay, Florida 33157",Atlantic,60,,25.614182,-80.308036
+FL2060,Ellen M Wynne Beach Access,Sunny Isles Beach,Miami-Dade,"19333 Collins Ave, Sunny Isles Beach, Florida 33160",Atlantic,23,2.00/hour,25.954886,-80.120256
+FL2049,Sunny Isles Beach Pier Park,Sunny Isles Beach,Miami-Dade,,Atlantic,21,2.00/hour,25.929909,-80.121086
+,Historic Virginia Key Beach Park,Virginia Key,Miami-Dade,"4020 Virginia Beach Drive, Miami, FL 33149",Atlantic,450,No,25.734842,-80.1564
+FL2015,Virginia Key Beach Park,Virginia Key,Miami-Dade,,Atlantic,150,,25.744506,-80.144344
+FL2013,Virginia Key Beach Park -I,Virginia Key,Miami-Dade,"1874 Arthur Lamb Jr Rd, Miami, Florida 33149",Atlantic,45,,25.741214,-80.147452
+FL2014,Virginia Key Beach Park -II,Virginia Key,Miami-Dade,"1863 Arthur Lamb Jr Rd, Miami, Florida 33149",Atlantic,60,,25.739764,-80.149414
+FL311,Bahia Honda State Park,Bahia Honda Key,Monroe,,Gulf,247,,24.654761,-81.280067
+FL346,Boca Chica Beach,Boca Chica Key,Monroe,,Gulf,68,,24.557818,-81.702247
+FL324,DOT parcels,Craig Key,Monroe,"Overseas Hwy, Long Key, Florida 33001",Gulf,40,,24.837116,-80.760782
+FL322,Flamingo Beach,Everglades National Park,Monroe,,Gulf,40,,25.135082,-80.936436
+FL326,Upper Matecumbe County Park,Islamorada,Monroe,,Gulf,20,,24.917048,-80.639079
+FL314,Sunset Beach,Key Colony Beach,Monroe,,Gulf,25,,24.716864,-81.026911
+FL341,Cannon Beach - Pennekamp Coral Reef State Park,Key Largo,Monroe,,Gulf,150,,25.124801,-80.407442
+FL334,Dagny Johnson Key Largo Hammock Botanical State Park,Key Largo,Monroe,,Gulf,9,,25.177567,-80.359576
+FL342,Far Beach - Pennekamp Coral Reef State Park,Key Largo,Monroe,,Gulf,77,,25.123744,-80.404564
+FL335,Garden Cove Section 1,Key Largo,Monroe,"51 Garden Cove Dr, Key Largo, Florida 33037",Gulf,3,,25.170868,-80.368476
+FL333,Marseilles Blvd.,Key Largo,Monroe,,Gulf,2,,25.192468,-80.348737
+FL343,Pennekamp Coral Reef State Park lots,Key Largo,Monroe,,Gulf,76,,25.12334,-80.409115
+FL303,C.B. Harvey Rest Beach Park,Key West,Monroe,,Gulf,1,,24.547109,-81.786003
+FL308,Clarence S. Higgs Memorial Beach,Key West,Monroe,,Gulf,102,,24.546427,-81.789258
+FL344,Dog Beach,Key West,Monroe,,Gulf,2,,24.546387,-81.794961
+FL306,Fort Zachary Taylor Historic State Park,Key West,Monroe,,Gulf,154,,24.545185,-81.811282
+FL305,Simonton Street Beach,Key West,Monroe,"Sunset Pier, Key West, Florida 33040",Gulf,25,1.50/hr meter,24.560946,-81.807536
+FL307,Simonton Street South,Key West,Monroe,,Gulf,25,1.50/hr meter,24.545929,-81.7961
+FL349,Smathers Beach,Key West,Monroe,,Gulf,200,0.50/hr meter,24.550573,-81.772824
+FL304,South Beach,Key West,Monroe,,Gulf,9,1.50/hr,24.545642,-81.797883
+FL317,Curry Hammock State Park,Little Crawl Key,Monroe,,Gulf,29,,24.739361,-80.983288
+FL309,Veterans Memorial Park,Little Duck Key,Monroe,,Gulf,18,,24.680112,-81.232537
+FL323,Long Key State Park,Long Key,Monroe,,Gulf,43,,24.810749,-80.828299
+FL325,Anne's Beach,Lower Matecumbe Key,Monroe,,Gulf,31,,24.846698,-80.744251
+FL315,Sombrero Beach,Marathon MM50,Monroe,,Gulf,120,,24.691406,-81.086709
+FL321,Coco Plum Beach,Marathon MM54.5,Monroe,,Gulf,19,2/hr,24.728691,-81.003327
+FL318,Coco Plum Rd.,Marathon MM54.5,Monroe,,Gulf,10,,24.732022,-80.995285
+FL328,Harry Harris County Park,Tavernier,Monroe,,Gulf,60,,25.022616,-80.496517
+FL977,Burney Park,American Beach,Nassau,,Atlantic,220,,30.569159,-81.445606
+FL976,Dune Walk 108,American Beach,Nassau,"5614 Gregg St, Fernandina Beach, Florida 32034",Atlantic,4,,30.569687,-81.44414
+FL935,1,Fernandina Beach,Nassau,"2999 Nassau St, Fernandina Beach, Florida 32034",Atlantic,10,,30.666078,-81.431295
+FL942,10S,Fernandina Beach,Nassau,"1060 S Fletcher Ave, Fernandina Beach, Florida 32034",Atlantic,2,,30.65238,-81.433798
+FL944,13,Fernandina Beach,Nassau,"1350 S Fletcher Ave, Fernandina Beach, Florida 32034",Atlantic,10,,30.647893,-81.434711
+FL936,2,Fernandina Beach,Nassau,"2999 Amelia St, Fernandina Beach, Florida 32034",Atlantic,4,,30.664911,-81.43162
+FL956,25,Fernandina Beach,Nassau,"2579 S Fletcher Ave, Fernandina Beach, Florida 32034",Atlantic,10,,30.630454,-81.438768
+FL957,27,Fernandina Beach,Nassau,"2699 S Fletcher Ave, Fernandina Beach, Florida 32034",Atlantic,8,,30.628685,-81.439165
+FL958,28,Fernandina Beach,Nassau,"2782 S Fletcher Ave, Fernandina Beach, Florida 32034",Atlantic,11,,30.62773,-81.439352
+FL959,29,Fernandina Beach,Nassau,"2875 S Fletcher Ave, Fernandina Beach, Florida 32034",Atlantic,4,,30.626263,-81.439648
+FL960,30,Fernandina Beach,Nassau,"3036 S Fletcher Ave, Fernandina Beach, Florida 32034",Atlantic,10,,30.624175,-81.440101
+FL961,31,Fernandina Beach,Nassau,"3150 S Fletcher Ave, Fernandina Beach, Florida 32034",Atlantic,12,,30.622166,-81.44053
+FL963,35,Fernandina Beach,Nassau,"3500 S Fletcher Ave, Fernandina Beach, Florida 32034",Atlantic,12,,30.617758,-81.441367
+FL964,35S,Fernandina Beach,Nassau,"3563 S Fletcher Ave, Fernandina Beach, Florida 32034",Atlantic,8,,30.616559,-81.441544
+FL969,36,Fernandina Beach,Nassau,"3652 S Fletcher Ave, Fernandina Beach, Florida 32034",Atlantic,8,,30.615374,-81.441724
+FL965,37,Fernandina Beach,Nassau,"3729 S Fletcher Ave, Fernandina Beach, Florida 32034",Atlantic,11,,30.614169,-81.441829
+FL966,38,Fernandina Beach,Nassau,"3820 S Fletcher Ave, Fernandina Beach, Florida 32034",Atlantic,8,,30.61297,-81.442076
+FL967,39,Fernandina Beach,Nassau,"3910 S Fletcher Ave, Fernandina Beach, Florida 32034",Atlantic,8,,30.611788,-81.442236
+FL968,40,Fernandina Beach,Nassau,"4020 S Fletcher Ave, Fernandina Beach, Florida 32034",Atlantic,10,,30.610585,-81.442392
+FL937,5,Fernandina Beach,Nassau,"507 S Fletcher Ave, Fernandina Beach, Florida 32034",Atlantic,4,,30.660465,-81.43225
+FL938,6,Fernandina Beach,Nassau,"608 S Fletcher Ave, Fernandina Beach, Florida 32034",Atlantic,5,,30.658984,-81.432479
+FL939,8,Fernandina Beach,Nassau,"670 S Fletcher Ave, Fernandina Beach, Florida 32034",Atlantic,4,,30.657675,-81.432758
+FL940,9,Fernandina Beach,Nassau,"854 S Fletcher Ave, Fernandina Beach, Florida 32034",Atlantic,5,,30.655441,-81.433157
+FL979,Amelia Island State Park,Fernandina Beach,Nassau,,Atlantic,80,,30.521951,-81.44465
+FL923,Dolphin Street,Fernandina Beach,Nassau,"333 Ocean Ave, Fernandina Beach, Florida 32034",Atlantic,60,,30.670152,-81.430652
+FL920,Fort Clinch State Park Pier,Fernandina Beach,Nassau,,Atlantic,185,,30.698814,-81.429759
+FL922,Main Beach Park,Fernandina Beach,Nassau,"2899 Trout St, Fernandina Beach, Florida 32034",Atlantic,116,,30.669058,-81.431461
+FL932,North Beach Park,Fernandina Beach,Nassau,"1231 N Fletcher Ave, Fernandina Beach, Florida 32034",Atlantic,30,,30.682231,-81.429575
+FL970,Peters Point Beach Front Park,Fernandina Beach,Nassau,,Atlantic,180,,30.599694,-81.443936
+FL947,Seaside Park,Fernandina Beach,Nassau,"2000 S Fletcher Ave, Fernandina Beach, Florida 32034",Atlantic,75,,30.638004,-81.436855
+FL934,South Fletcher Avenue at Atlantic Avenue,Fernandina Beach,Nassau,,Atlantic,50,,30.667874,-81.430818
+FL978,Dune Walk 110,South End Beach,Nassau,"7958 1st Coast Hwy, Fernandina Beach, Florida 32034",Atlantic,19,,30.538093,-81.442048
+FL971,Scott Rd.,Summer Beach,Nassau,"4894 Amelia Island Pkwy, Fernandina Beach, Florida 32034",Atlantic,100,,30.588617,-81.44588
+FL291,Clement E. Taylor Park,Destin,Okaloosa,"124 Calhoun Ave, Destin, Florida 32541",Gulf,1,,30.399291,-86.511517
+FL297,Henderson Beach State Park,Destin,Okaloosa,"17000 Emerald Coast Pkwy, Destin, FL 32541",Gulf,150,,30.384451,-86.445614
+FL300,Hutchinson Street,Destin,Okaloosa,"2966 Scenic Highway 98, Destin, Florida 32541",Gulf,6,,30.382653,-86.426111
+FL298,James Lee Park,Destin,Okaloosa,"3500 Scenic Hwy 98, Destin, FL 32541",Gulf,166,,30.38055,-86.408893
+FL293,June White Decker Beach Access,Destin,Okaloosa,"1950 Scenic Highway 98, Destin, Florida 32541",Gulf,1,,30.384111,-86.456778
+FL292,Mattie M. Kelly Park,Destin,Okaloosa,"872 Beach Dr, Destin, Florida 32541",Gulf,2,,30.412222,-86.493683
+FL3005,Norriego Point,Destin,Okaloosa,"277 Gulf Shore Dr, Destin, Florida 32541",Gulf,10,,30.390347,-86.508374
+FL301,Pompano Street,Destin,Okaloosa,"3290 Scenic Hwy 98, Destin, FL 32541",Gulf,2,,30.381588,-86.418351
+FL299,Shirah Street,Destin,Okaloosa,"2891 Scenic Highway 98, Destin, Florida 32541",Gulf,6,,30.382822,-86.428382
+FL290,East Pass Beach Access,Eglin,Okaloosa,"SR 30, Fort Walton Beach, Florida 32548",Gulf,15,,30.390966,-86.523237
+FL289,Hwy 98 Beach Access,Eglin,Okaloosa,"SR 30, Fort Walton Beach, Florida 32548",Gulf,13,2.00,30.39005,-86.539325
+FL284,Beach Access 1,Fort Walton Beach,Okaloosa,"372 Santa Rosa Blvd, Fort Walton Beach, Florida 32548",Gulf,27,,30.396074,-86.602897
+FL283,Beach Access 2,Fort Walton Beach,Okaloosa,"2nd Beach Park, Fort Walton Beach, Florida 32548",Gulf,25,,30.396433,-86.607553
+FL282,Beach Access 3,Fort Walton Beach,Okaloosa,"3rd Beach Park, Fort Walton Beach, Florida 32548",Gulf,27,,30.396907,-86.612105
+FL281,Beach Access 4,Fort Walton Beach,Okaloosa,"4th Beach Park, Fort Walton Beach, Florida 32548",Gulf,25,,30.397232,-86.616701
+FL280,Beach Access 5,Fort Walton Beach,Okaloosa,"5th Beach Park, Fort Walton Beach, Florida 32548",Gulf,25,,30.397456,-86.621321
+FL279,Beach Access 6,Fort Walton Beach,Okaloosa,"6th Beach Park, Fort Walton Beach, Florida 32548",Gulf,25,,30.397713,-86.625964
+FL278,Beach Access 7,Fort Walton Beach,Okaloosa,"926 Whelk Ct, Fort Walton Beach, Florida 32548",Gulf,37,,30.398313,-86.629856
+FL287,John Beasley Park,Fort Walton Beach,Okaloosa,"1496 Miracle Strip Pkwy SE, Okaloosa Island, FL 32548",Gulf,208,,30.394545,-86.583861
+FL286,Newman C. Brackin Wayside Park,Fort Walton Beach,Okaloosa,"1356 Miracle Strip Pkwy SE, Okaloosa Island, FL 32548",Gulf,400,,30.394671,-86.591288
+FL285,Okaloosa Island Fishing Pier,Fort Walton Beach,Okaloosa,"Pier Rd, Fort Walton Beach, Florida 32548",Gulf,6,,30.394727,-86.592717
+FL288,Gulf Island National Seashore - South of Mircle Strip Pkwy SE,"Okaloosa Island, national seashore",Okaloosa,"Gulf National Sea Shore Dr, Fort Walton Beach, Florida 32548",Gulf,275,,30.395492,-86.578229
+FL1868,NE Spanish River Blvd.,Boca Raton,Palm Beach,"3998 N Ocean Blvd, Boca Raton, Florida 33431",Atlantic,20,,26.386351,-80.067165
+FL1874,Red Reef Park - Center,Boca Raton,Palm Beach,,Atlantic,90,,26.365181,-80.068979
+FL1873,Red Reef Park - North End,Boca Raton,Palm Beach,,Atlantic,50,,26.366533,-80.068852
+FL1875,Red Reef Park - South Side,Boca Raton,Palm Beach,,Atlantic,100,,26.363107,-80.069263
+FL1878,South Beach Park,Boca Raton,Palm Beach,,Atlantic,90,,26.354868,-80.069978
+FL1879,South Beach Park - North End,Boca Raton,Palm Beach,,Atlantic,50,,26.357172,-80.069884
+FL1877,South Beach Park - South End,Boca Raton,Palm Beach,,Atlantic,85,,26.352477,-80.069878
+FL1876,South Beach Pavillion,Boca Raton,Palm Beach,,Atlantic,16,2.00/hour,26.350751,-80.069827
+FL1880,South Inlet Park,Boca Raton,Palm Beach,,Atlantic,74,2.00/hour,26.3345,-80.073506
+FL1871,Spanish River Park,Boca Raton,Palm Beach,,Atlantic,,,26.37887,-80.068412
+FL1869,Spanish River Park (#1),Boca Raton,Palm Beach,,Atlantic,215,,26.384385,-80.068101
+FL1870,Spanish River Park (#2),Boca Raton,Palm Beach,,Atlantic,,,26.381442,-80.068146
+FL1865,Anchor Park,Delray Beach,Palm Beach,,Atlantic,86,1.25/hour,26.454919,-80.060013
+FL1867,Atlantic Dunes Park,Delray Beach,Palm Beach,"1364 S Ocean Blvd, Delray Beach, Florida 33483",Atlantic,114,1.25/hour,26.442164,-80.062234
+FL1863,Bay St.,Delray Beach,Palm Beach,"250 S Ocean Blvd, Delray Beach, Florida 33483",Atlantic,10,1.25/hour,26.45627,-80.058967
+FL1846,Delray Beachwalk #11,Delray Beach,Palm Beach,"234 N Ocean Blvd, Delray Beach, Florida 33483",Atlantic,10,1.25/hour,26.466402,-80.057448
+FL1847,Delray Beachwalk #12,Delray Beach,Palm Beach,"200 N Ocean Blvd, Delray Beach, Florida 33483",Atlantic,10,1.25/hour,26.465851,-80.057552
+FL1849,Delray Beachwalk #14,Delray Beach,Palm Beach,"126 N Ocean Blvd, Delray Beach, Florida 33483",Atlantic,10,1.25/hour,26.464785,-80.057759
+FL1850,Delray Beachwalk #15,Delray Beach,Palm Beach,"123 N Ocean Blvd, Delray Beach, Florida 33483",Atlantic,10,1.25/hour,26.464053,-80.05786
+FL1851,Delray Beachwalk #16,Delray Beach,Palm Beach,"100 N Ocean Blvd, Delray Beach, Florida 33483",Atlantic,10,1.25/hour,26.463598,-80.057913
+FL1852,Delray Beachwalk #17,Delray Beach,Palm Beach,"69 N Ocean Blvd, Delray Beach, Florida 33483",Atlantic,3,1.25/hour,26.462959,-80.057962
+FL1855,Delray Beachwalk #20,Delray Beach,Palm Beach,"64 S Ocean Blvd, Delray Beach, Florida 33483",Atlantic,5,1.25/hour,26.460708,-80.058444
+FL1856,Delray Beachwalk #21,Delray Beach,Palm Beach,"88 S Ocean Blvd, Delray Beach, Florida 33483",Atlantic,12,1.25/hour,26.460034,-80.058475
+FL1857,Delray Beachwalk #22,Delray Beach,Palm Beach,"110 S Ocean Blvd, Delray Beach, Florida 33483",Atlantic,15,1.25/hour,26.459505,-80.058589
+FL1858,Delray Beachwalk #23,Delray Beach,Palm Beach,"131 S Ocean Blvd, Delray Beach, Florida 33483",Atlantic,10,,26.459144,-80.058622
+FL1841,Delray Beachwalk #6,Delray Beach,Palm Beach,"358 N Ocean Blvd, Delray Beach, Florida 33483",Atlantic,5,1.25/hour,26.469129,-80.056983
+FL1842,Delray Beachwalk #7,Delray Beach,Palm Beach,"344 N Ocean Blvd, Delray Beach, Florida 33483",Atlantic,6,1.25/hour,26.468622,-80.057122
+FL1843,Delray Beachwalk #8,Delray Beach,Palm Beach,"334 N Ocean Blvd, Delray Beach, Florida 33483",Atlantic,10,1.25/hour,26.468056,-80.057228
+FL1844,Delray Beachwalk #9,Delray Beach,Palm Beach,"316 N Ocean Blvd, Delray Beach, Florida 33483",Atlantic,10,1.25/hour,26.4675,-80.057308
+FL1860,Ingraham Ave.,Delray Beach,Palm Beach,"148 S Ocean Blvd, Delray Beach, Florida 33483",Atlantic,10,1.25/hour,26.458096,-80.058765
+FL1845,N Vista del Mar Dr.,Delray Beach,Palm Beach,"302 N Ocean Blvd, Delray Beach, Florida 33483",Atlantic,10,1.25/hour,26.466947,-80.057389
+FL1862,Nassau St.,Delray Beach,Palm Beach,"226 S Ocean Blvd, Delray Beach, Florida 33483",Atlantic,10,1.25/hour,26.456847,-80.058882
+FL1861,Ocean Terrace,Delray Beach,Palm Beach,"216 S Ocean Blvd, Delray Beach, Florida 33483",Atlantic,10,1.25/hour,26.45755,-80.05881
+FL1859,Sandoway Park,Delray Beach,Palm Beach,,Atlantic,250,1.25/hour,26.458479,-80.059329
+FL1864,South Ocean Blvd 0.03 miles south of Bay Street,Delray Beach,Palm Beach,"300 S Ocean Blvd, Delray Beach, Florida 33483",Atlantic,10,1.25/hour,26.455703,-80.059041
+FL1848,Thomas St.,Delray Beach,Palm Beach,"195 N Ocean Blvd, Delray Beach, Florida 33483",Atlantic,10,1.25/hour,26.465334,-80.057667
+FL1835,Gulfstream Park,Gulfstream,Palm Beach,,Atlantic,75,,26.504551,-80.052951
+FL1768,Juno Beach Park,Juno Beach,Palm Beach,,Atlantic,,,26.893336,-80.058415
+FL1771,Loggerhead Park,Juno Beach,Palm Beach,"Erikson Way, Juno Beach, Florida 33408",Atlantic,90,,26.885089,-80.055132
+FL1778,Mercury Rd.,Juno Beach,Palm Beach,"250 Mercury Rd, Juno Beach, Florida 33408",Atlantic,50,,26.871936,-80.050511
+FL1766,Access #26,Jupiter,Palm Beach,"3899 S County Road A1A, Jupiter, Florida 33477",Atlantic,6,,26.897006,-80.058309
+FL1765,Access #27,Jupiter,Palm Beach,"3422 S County Road A1A, Jupiter, Florida 33477",Atlantic,23,,26.899558,-80.059061
+FL1764,Access #28,Jupiter,Palm Beach,"3314 S County Road A1A, Jupiter, Florida 33477",Atlantic,11,,26.900664,-80.059342
+FL1763,Access #29,Jupiter,Palm Beach,"3391 S County Road A1A, Jupiter, Florida 33477",Atlantic,25,,26.901757,-80.059783
+FL1762,Access #30,Jupiter,Palm Beach,"3167 S County Road A1A, Jupiter, Florida 33477",Atlantic,20,,26.902949,-80.060154
+FL1761,Access #31,Jupiter,Palm Beach,"3123 S County Road A1A, Jupiter, Florida 33477",Atlantic,25,,26.9038,-80.060474
+FL1760,Access #32,Jupiter,Palm Beach,"3051 S County Road A1A, Jupiter, Florida 33477",Atlantic,15,,26.904671,-80.060788
+FL1759,Access #33,Jupiter,Palm Beach,"2939 S County Road A1A, Jupiter, Florida 33477",Atlantic,20,,26.905744,-80.061131
+FL1758,Access #34,Jupiter,Palm Beach,"2811 S County Road A1A, Jupiter, Florida 33477",Atlantic,5,,26.906962,-80.061589
+FL1757,Access #35,Jupiter,Palm Beach,"2777 S County Road A1A, Jupiter, Florida 33477",Atlantic,10,,26.907282,-80.061705
+FL1756,Access #36,Jupiter,Palm Beach,"2711 S County Road A1A, Jupiter, Florida 33477",Atlantic,10,,26.907914,-80.061929
+FL1755,Access #37,Jupiter,Palm Beach,"2649 S County Road A1A, Jupiter, Florida 33477",Atlantic,14,,26.908494,-80.062152
+FL1754,Access #38,Jupiter,Palm Beach,"2509 S County Road A1A, Jupiter, Florida 33477",Atlantic,5,,26.909824,-80.062617
+FL1753,Access #39,Jupiter,Palm Beach,"2501 S County Road A1A, Jupiter, Florida 33477",Atlantic,7,,26.909905,-80.062665
+FL1752,Access #40,Jupiter,Palm Beach,"2447 S County Road A1A, Jupiter, Florida 33477",Atlantic,6,,26.91042,-80.062818
+FL1751,Access #41,Jupiter,Palm Beach,"2397 S County Road A1A, Jupiter, Florida 33477",Atlantic,11,,26.910883,-80.063022
+FL1750,Access #42,Jupiter,Palm Beach,"2333 S County Road A1A, Jupiter, Florida 33477",Atlantic,8,,26.911506,-80.063202
+FL1749,Access #43,Jupiter,Palm Beach,"2267 S County Road A1A, Jupiter, Florida 33477",Atlantic,12,,26.912138,-80.063374
+FL1748,Access #44,Jupiter,Palm Beach,"2169 S County Road A1A, Jupiter, Florida 33477",Atlantic,12,,26.913094,-80.063685
+FL1747,Access #45,Jupiter,Palm Beach,"2075 S County Road A1A, Jupiter, Florida 33477",Atlantic,20,,26.913992,-80.063928
+FL1746,Access #46,Jupiter,Palm Beach,"1791 S County Road A1A, Jupiter, Florida 33477",Atlantic,30,,26.915107,-80.064286
+FL1745,Access #47,Jupiter,Palm Beach,"1825 S Highway A1a, Jupiter, Florida 33477",Atlantic,12,,26.916505,-80.064739
+FL1744,Access #48,Jupiter,Palm Beach,"1733 S Highway A1a, Jupiter, Florida 33477",Atlantic,10,,26.917572,-80.06513
+FL1743,Access #49,Jupiter,Palm Beach,"1663 S Highway A1a, Jupiter, Florida 33477",Atlantic,20,,26.918107,-80.065328
+FL1742,Access #50,Jupiter,Palm Beach,"1501 S Highway A1a, Jupiter, Florida 33477",Atlantic,6,,26.919208,-80.065713
+FL1741,Access #51,Jupiter,Palm Beach,"1403 S Highway A1a, Jupiter, Florida 33477",Atlantic,12,,26.919729,-80.065866
+FL1738,Access #53,Jupiter,Palm Beach,"14700 S Highway A1a, Jupiter, Florida 33477",Atlantic,15,,26.922123,-80.066554
+FL1737,Access #54,Jupiter,Palm Beach,"1099 S Highway A1a, Jupiter, Florida 33477",Atlantic,20,,26.922943,-80.066874
+FL1736,Access #55,Jupiter,Palm Beach,"931 S Highway A1a, Jupiter, Florida 33477",Atlantic,15,,26.923624,-80.067034
+FL1740,Access #56,Jupiter,Palm Beach,"CR-A1A, Jupiter, Florida 33477",Atlantic,20,,26.924218,-80.067163
+FL1735,Access #57,Jupiter,Palm Beach,"895 S Highway A1a, Jupiter, Florida 33477",Atlantic,6,,26.925095,-80.067368
+FL1929,Carlin Park,Jupiter,Palm Beach,"301 Old A1a, Jupiter, Florida 33477",Atlantic,,,26.929689,-80.068969
+FL1731,Civic Center (#65),Jupiter,Palm Beach,"355 Old A1a, Jupiter, Florida 33477",Atlantic,10,,26.930983,-80.068982
+FL1730,Jupiter Beach Drive (#66),Jupiter,Palm Beach,,Atlantic,2,,26.938605,-80.071006
+FL1728,Jupiter Beach Park,Jupiter,Palm Beach,"Ocean Trl Way, Jupiter, Florida 33477",Atlantic,135,,26.940406,-80.071617
+FL1767,Ocean Cay Park,Jupiter,Palm Beach,,Atlantic,,,26.895327,-80.058621
+FL1729,Jupiter Beach Park Pier,Jupiter Beach,Palm Beach,,Atlantic,75,,26.943602,-80.072037
+FL1724,Coral Cove Park,Jupiter Island,Palm Beach,"19450 Beach Rd, Tequesta, Florida 33469",Atlantic,110,,26.963564,-80.079187
+FL1727,Coral Cove South (Access #73),Jupiter Island,Palm Beach,"848 Beach Rd, Jupiter, Florida 33469",Atlantic,15,,26.958067,-80.07758
+FL1726,Coral Cove South (Access #74),Jupiter Island,Palm Beach,"1176 CR 707, Jupiter, Florida 33469",Atlantic,10,,26.959359,-80.077994
+FL1725,Coral Cove South (Access #75),Jupiter Island,Palm Beach,"1218 Beach Rd, Jupiter, Florida 33469",Atlantic,15,,26.959856,-80.078164
+FL1818,Lake Worth Municipal Park and Pier,Lake Worth,Palm Beach,,Atlantic,,5.00/hour,26.612866,-80.037017
+FL1816,Richard G. Kreusler Memorial Park,Lake Worth,Palm Beach,,Atlantic,134,5.00/hour,26.615804,-80.037439
+FL1819,Lantana Municipal Beach,Lantana,Palm Beach,,Atlantic,180,1.50/hour,26.584598,-80.038303
+FL1820,SLWI District Park,Manalapan,Palm Beach,,Atlantic,23,,26.545903,-80.043916
+FL1780,John D. MacArthur State Park,North Palm Beach,Palm Beach,,Atlantic,108,,26.825362,-80.043062
+FL1787,Boynton Beach Oceanfront Park,Ocean Ridge,Palm Beach,"6417 N Ocean Blvd, Ocean Ridge, Florida 33435",Atlantic,230,5.00/car,26.530243,-80.047762
+FL1821,Ocean Inlet Park,Ocean Ridge,Palm Beach,"6970 N Ocean Blvd, Ocean Ridge, Florida 33435",Atlantic,178,,26.544415,-80.043738
+FL1822,Ocean Ridge Hammock Park,Ocean Ridge,Palm Beach,,Atlantic,25,,26.533836,-80.047769
+FL1734,Access #58,Palm Beach,Palm Beach,"889 S Highway A1a, Jupiter, Florida 33477",Atlantic,3,,26.925434,-80.067492
+FL1809,Brazilian Ave.,Palm Beach,Palm Beach,"331 S Ocean Blvd, Palm Beach, Florida 33480",Atlantic,,5.00/hour,26.704235,-80.033166
+FL1810,Chilian Ave.,Palm Beach,Palm Beach,"419 S Ocean Blvd, Palm Beach, Florida 33480",Atlantic,,5.00/hour,26.702393,-80.033131
+FL1808,Clarke Ave.,Palm Beach,Palm Beach,"161 S Ocean Blvd, Palm Beach, Florida 33480",Atlantic,4,,26.709517,-80.033678
+FL1812,Phipps Ocean Park,Palm Beach,Palm Beach,,Atlantic,115,5.00/hour,26.640974,-80.038463
+FL1813,Phipps Ocean Park II,Palm Beach,Palm Beach,"2197 S Ocean Blvd, Palm Beach, Florida 33480",Atlantic,130,5.00/hour,26.638522,-80.039014
+FL1781,Ocean Reef Park,Riviera Beach,Palm Beach,,Atlantic,200,,26.793758,-80.033559
+FL1784,Riviera Beach Municipal Park,Riviera Beach,Palm Beach,"2444 N Ocean Ave, Riviera Beach, Florida 33404",Atlantic,60,,26.783191,-80.033856
+FL277,Anclote Gulf Park,Holiday,Pasco,,Gulf,76,2.00,28.192419,-82.786783
+FL276,Keys Vista Nature Park,Holiday,Pasco,,Gulf,18,2.00,28.196853,-82.784694
+FL273,Hudson Beach Robert J Stricland Memorial Park,Hudson,Pasco,"6333 Clark St, Hudson, Florida 34667",Gulf,145,2.00,28.362694,-82.710136
+FL272,Robert K Rees Park,New Port Richey,Pasco,"4835 Green Key Rd, New Port Richey, FL 34652",Gulf,25,2.00,28.253828,-82.756967
+FL275,Werner-Boyce Salt Springs State Park,Port Richey,Pasco,"8801 FL-55 Port Richey, FL 34668",Gulf,21,3.00,28.284777,-82.715244
+FL159,Morgan Park,Belleair Beach,Pinellas,"2700 Gulf Blvd, Belleair Beach, Florida 33786",Gulf,16,,27.929947,-82.841996
+FL168,Beach Walk,Clearwater Beach,Pinellas,"270 S Gulfview Blvd, Clearwater, Florida 33767",Gulf,431,2.00/hr,27.974028,-82.829569
+FL176,Glendale Street,Clearwater Beach,Pinellas,"628 Mandalay Ave, Clearwater, Florida 33767",Gulf,4,,27.987296,-82.826693
+FL175,Heilwood Street,Clearwater Beach,Pinellas,"619 Mandalay Ave, Clearwater, Florida 33767",Gulf,4,,27.986719,-82.826699
+FL174,North Beach Park,Clearwater Beach,Pinellas,"32 Bay Esplanade, Clearwater, Florida 33767",Gulf,217,1.25/hr Meter,27.984885,-82.826772
+FL170,Papaya Street,Clearwater Beach,Pinellas,"8 Papaya St, Clearwater, Florida 33767",Gulf,7,1.25/hr Meter,27.979921,-82.827743
+FL169,Pier 60 Park,Clearwater Beach,Pinellas,,Gulf,139,2.00/hr,27.976522,-82.828507
+FL179,Somerset Street,Clearwater Beach,Pinellas,"676 Mandalay Ave, Clearwater, Florida 33767",Gulf,5,,27.989056,-82.826759
+FL268,Honeymoon Island State Park,Dunedin,Pinellas,"Causeway Blvd, Dunedin, Florida 34698",Gulf,2779,,28.060318,-82.819787
+FL116,12th Avenue,Indian Rocks Beach,Pinellas,"1200 Beach Trl, Indian Rocks Beach, Florida 33785",Gulf,15,,27.895022,-82.849053
+FL117,15th Avenue,Indian Rocks Beach,Pinellas,"74 15th Ave, Indian Rocks Beach, Florida 33785",Gulf,13,,27.897405,-82.848711
+FL118,16th Avenue,Indian Rocks Beach,Pinellas,"1600 Gulf Blvd, Indian Rocks Beach, Florida 33785",Gulf,15,,27.899001,-82.848447
+FL121,19th Avenue,Indian Rocks Beach,Pinellas,"1900 Gulf Blvd, Indian Rocks Beach, Florida 33785",Gulf,7,,27.901431,-82.848047
+FL111,1st Avenue,Indian Rocks Beach,Pinellas,"81 Gulf Blvd, Indian Rocks Beach, Florida 33785",Gulf,11,,27.878083,-82.850395
+FL122,20th Avenue,Indian Rocks Beach,Pinellas,"2000 Gulf Blvd, Indian Rocks Beach, Florida 33785",Gulf,12,,27.902284,-82.84793
+FL123,21st Avenue,Indian Rocks Beach,Pinellas,"2008 Gulf Blvd, Indian Rocks Beach, Florida 33785",Gulf,9,,27.903067,-82.847805
+FL126,22nd Avenue,Indian Rocks Beach,Pinellas,"2112 Gulf Blvd, Indian Rocks Beach, Florida 33785",Gulf,15,,27.904026,-82.847596
+FL127,23rd Avenue,Indian Rocks Beach,Pinellas,"1 23rd Ave, Indian Rocks Beach, Florida 33785",Gulf,15,,27.904971,-82.847511
+FL128,24th Avenue,Indian Rocks Beach,Pinellas,"2316 Gulf Blvd, Indian Rocks Beach, Florida 33785",Gulf,15,,27.905926,-82.847301
+FL129,25th Avenue,Indian Rocks Beach,Pinellas,"2408 Beach Trl, Indian Rocks Beach, Florida 33785",Gulf,14,,27.906915,-82.847189
+FL130,26th Avenue,Indian Rocks Beach,Pinellas,"2600 Beach Trl, Indian Rocks Beach, Florida 33785",Gulf,15,,27.90785,-82.846998
+FL131,27th Avenue,Indian Rocks Beach,Pinellas,"2700 Gulf Blvd, Indian Rocks Beach, Florida 33785",Gulf,7,,27.908814,-82.846821
+FL110,2nd Avenue,Indian Rocks Beach,Pinellas,"200 Gulf Blvd, Indian Rocks Beach, Florida 33785",Gulf,9,,27.879304,-82.850456
+FL109,3rd Avenue,Indian Rocks Beach,Pinellas,"300 Gulf Blvd, Indian Rocks Beach, Florida 33785",Gulf,4,,27.880544,-82.850526
+FL108,4th Avenue,Indian Rocks Beach,Pinellas,"400 Gulf Blvd, Indian Rocks Beach, Florida 33785",Gulf,7,,27.882607,-82.850632
+FL124,8th Avenue,Indian Rocks Beach,Pinellas,"800 Gulf Blvd, Indian Rocks Beach, Florida 33785",Gulf,13,,27.889627,-82.849996
+FL112,Central Avenue,Indian Rocks Beach,Pinellas,"84 Central Ave, Indian Rocks Beach, Florida 33785",Gulf,6,,27.87576,-82.850447
+FL119,Indian Rocks Beach Access Park,Indian Rocks Beach,Pinellas,"1760 Gulf Blvd, Indian Rocks Beach, Florida 33785",Gulf,77,1.25/hr,27.900278,-82.848356
+FL141,186th Avenue,Indian Shores,Pinellas,"18600 Gulf Blvd, Indian Shores, Florida 33785",Gulf,4,,27.839228,-82.838443
+FL135,197th Avenue,Indian Shores,Pinellas,"19656 Gulf Blvd, Indian Shores, Florida 33785",Gulf,8,,27.857173,-82.846836
+FL137,Tiki Gardens,Indian Shores,Pinellas,"19540 Gulf Blvd, Indian Shores, Florida 33785",Gulf,170,0.50/hr,27.854097,-82.845652
+FL252,130th Avenue,Madeira Beach,Pinellas,"22 130th Ave W, Madeira Beach, Florida 33708",Gulf,79,0.25/15min,27.785742,-82.784756
+FL253,131st Avenue,Madeira Beach,Pinellas,"102 131st Ave W, Madeira Beach, Florida 33708",Gulf,6,0.25/15min,27.787449,-82.785878
+FL254,132nd Avenue,Madeira Beach,Pinellas,"13149 Gulf Ln, Madeira Beach, Florida 33708",Gulf,27,0.25/15min,27.787812,-82.786359
+FL255,133rd Avenue,Madeira Beach,Pinellas,"103 133rd Ave W, Madeira Beach, Florida 33708",Gulf,5,0.25/15min,27.788851,-82.787179
+FL256,134th Avenue,Madeira Beach,Pinellas,"13398 Gulf Ln, Madeira Beach, Florida 33708",Gulf,9,0.25/15min,27.789835,-82.788075
+FL257,135th Avenue,Madeira Beach,Pinellas,"13446 Gulf Blvd, Madeira Beach, Florida 33708",Gulf,4,0.25/15min,27.790814,-82.788621
+FL258,136th Avenue,Madeira Beach,Pinellas,"13605 Gulf Blvd, Madeira Beach, Florida 33708",Gulf,7,0.25/15min,27.791724,-82.789889
+FL248,Archibald Memorial Park,Madeira Beach,Pinellas,"15102 Gulf Blvd, Madeira Beach, Florida 33708",Gulf,122,0.25/15 min,27.801914,-82.802607
+FL211,John's Pass,Madeira Beach,Pinellas,"12901 Gulf Ln, Madeira Beach, FL 33708",Gulf,127,0.25/15min,27.783908,-82.783545
+FL244,Madiera Beach Park,Madeira Beach,Pinellas,"14400 Gulf Blvd, Madeira Beach, Florida 33708",Gulf,99,1.00/hr,27.797431,-82.797224
+FL260,Tom & Kitty Stuart Park,Madeira Beach,Pinellas,"14099 Gulf Blvd, Madeira Beach, Florida 33708",Gulf,5,0.25/15min,27.794942,-82.793925
+FL144,Redington Shores County Park,Redington Shores,Pinellas,33708,Gulf,170,1.00/hr,27.832885,-82.833707
+FL167,Sand Key County Park,Sand Key,Pinellas,,Gulf,531,1.25/hr Meter,27.960004,-82.829341
+FL222,51st Avenue,St. Pete Beach,Pinellas,"133 51st Ave W, St Pete Beach, Florida 33706",Gulf,7,0.25/15 min,27.725207,-82.741731
+FL226,Inlet lot,St. Pete Beach,Pinellas,"7284 Sunset Way, St Pete Beach, Florida 33706",Gulf,9,,27.739206,-82.753319
+FL189,Pass-a-Grille Beach,St. Pete Beach,Pinellas,"1001 Gulf Way, St Pete Beach, Florida 33706",Gulf,826,,27.689324,-82.737939
+FL221,St. Pete Beach County Park,St. Pete Beach,Pinellas,"4730 Gulf Blvd, St Pete Beach, FL 33706",Gulf,239,1.25/hr,27.721449,-82.740564
+FL225,Upham Beach,St. Pete Beach,Pinellas,"6866 Beach Plz, St Pete Beach, Florida 33706",Gulf,171,1.25/hr,27.736255,-82.751282
+FL234,88th Avenue,Sunset Beach,Pinellas,"8801 W Gulf Blvd, Treasure Island, Florida 33706",Gulf,8,0.25/15 min,27.753019,-82.763867
+FL229,Sunset Beach Park,Sunset Beach,Pinellas,"8115 W Gulf Blvd, Treasure Island, Florida 33706",Gulf,34,0.25/15 min,27.745121,-82.760001
+FL227,Treasure Island Park,Sunset Beach,Pinellas,"7801 W Gulf Blvd, Treasure Island, Florida 33706",Gulf,53,0.25/15 min,27.743446,-82.758848
+FL271,Fred Howard Park,Tarpon Springs,Pinellas,"Howard Park Cswy, Tarpon Springs, Florida 34689",Gulf,359,,28.154193,-82.805029
+FL270,Sunset Beach,Tarpon Springs,Pinellas,"1898 Gulf Rd, Tarpon Springs, Florida 34689",Gulf,86,,28.14446,-82.79007
+FL188,Fort DeSoto Park,Tierra Verde,Pinellas,"27.639696, -82.738132",Gulf,3250,1.25/hr,27.639696,-82.738135
+FL216,100th Ave,Treasure Island,Pinellas,"10001 Gulf Blvd, Treasure Island, Florida 33706",Gulf,15,0.25/15 min,27.759253,-82.765843
+FL217,101st Avenue,Treasure Island,Pinellas,"10098 Gulf Blvd, Treasure Island, Florida 33706",Gulf,5,,27.761153,-82.766353
+FL219,103rd Avenue,Treasure Island,Pinellas,"10280 Gulf Blvd, Treasure Island, Florida 33706",Gulf,18,,27.764554,-82.767602
+FL206,123rd Avenue,Treasure Island,Pinellas,"12274 1st St W, Treasure Island, Florida 33706",Gulf,1,,27.77788,-82.780377
+FL207,124th Avenue,Treasure Island,Pinellas,"12418 1st St W, Treasure Island, Florida 33706",Gulf,17,,27.778451,-82.780746
+FL209,126th Avenue,Treasure Island,Pinellas,"126 126th Ave W, Treasure Island, Florida 33706",Gulf,11,0.25/15min,27.779505,-82.781995
+FL210,127th Avenue,Treasure Island,Pinellas,"138 127th Ave, Treasure Island, Florida 33706",Gulf,3,,27.780429,-82.782237
+FL215,99th Avenue,Treasure Island,Pinellas,"9900 Gulf Blvd, Treasure Island, Florida 33706",Gulf,2,,27.757399,-82.765214
+FL236,Beach Park,Treasure Island,Pinellas,"10418 Gulf Blvd, Treasure Island, Florida 33706",Gulf,65,,27.766414,-82.768567
+FL239,St. Petersburg Municipal Beach,Treasure Island,Pinellas,"11260 Gulf Blvd, Treasure Island, FL 33706",Gulf,121,1.50/hr,27.771746,-82.772276
+FL645,California Street,Navarre Beach,Santa Rosa,"8118 Gulf Blvd, Navarre, Florida 32566",Gulf,39,,30.377064,-86.884387
+FL644,Indiana Street,Navarre Beach,Santa Rosa,"7965 Gulf Blvd, Navarre, Florida 32566",Gulf,12,,30.376203,-86.890461
+FL643,Louisiana Street,Navarre Beach,Santa Rosa,"7859 Gulf Blvd, Navarre, Florida 32566",Gulf,16,,30.375494,-86.894913
+FL642,Michigan Street,Navarre Beach,Santa Rosa,"7761 Gulf Blvd, Navarre, Florida 32566",Gulf,36,,30.374904,-86.899569
+FL101,Navarre Beach Park,Navarre Beach,Santa Rosa,"8631 Gulf Blvd, Navarre, Florida 32566",Gulf,326,,30.381181,-86.863747
+FL102,Navarre Park,Navarre Beach,Santa Rosa,"1455 Navarre Beach Cswy, Navarre, Florida 32566",Gulf,100,,30.382768,-86.862267
+FL641,New Jersey Street,Navarre Beach,Santa Rosa,"7601 Gulf Blvd, Navarre, Florida 32566",Gulf,44,,30.373768,-86.906453
+FL647,Sonata Ct.,Navarre Beach,Santa Rosa,"8477 Gulf Blvd, Navarre, Florida 32566",Gulf,2,,30.38039,-86.869542
+FL640,South Carolina Street,Navarre Beach,Santa Rosa,"7424 Gulf Blvd, Navarre, Florida 32566",Gulf,12,,30.372573,-86.913709
+FL94,Tramonto Vista Park,Brohard Beach,Sarasota,"1744 Harbor Dr S, Venice, Florida 34285",Gulf,115,,27.070867,-82.447975
+FL100,Blind Pass Beach,Englewood,Sarasota,"6702 Manasota Key Rd, Englewood, Florida 34223",Gulf,180,,26.963213,-82.384866
+FL89,Manasota Pass,Englewood,Sarasota,"8598 Manasota Key Rd, Englewood, Florida 34223",Gulf,214,,27.010444,-82.412169
+FL82,Cleveland Dr.,Lido Key,Sarasota,"2 Cleveland Dr, Sarasota, Florida 34236",Gulf,1,,27.309535,-82.574746
+FL87,Lido Beach,Lido Key,Sarasota,"498 Benjamin Franklin Dr, Sarasota, FL 34236",Gulf,462,,27.312237,-82.577048
+FL83,South Lido Park,Lido Key,Sarasota,"2160 Benjamin Franklin Dr, Sarasota, FL 34236",Gulf,29,,27.299443,-82.566971
+FL64,3495 Gulf of Mexico Dr.,Longboat Key,Sarasota,"3515 Gulf of Mexico Dr, Longboat Key, Florida 34228",Gulf,9,,27.378216,-82.634798
+FL65,Monroe St.,Longboat Key,Sarasota,"3207 Gulf of Mexico Dr, Longboat Key, Florida 34228",Gulf,4,,27.373474,-82.631424
+FL66,Neptune Ave.,Longboat Key,Sarasota,"2833 Gulf of Mexico Dr, Longboat Key, Florida 34228",Gulf,1,,27.368177,-82.627399
+FL88,New Pass,Longboat Key,Sarasota,"27.335411, -82.584259",Gulf,25,,27.334638,-82.583787
+FL68,Westfield St.,Longboat Key,Sarasota,"3351 Gulf of Mexico Dr, Longboat Key, Florida 34228",Gulf,4,,27.376345,-82.633505
+FL90,Nokomis Beach,Nokomis,Sarasota,"100 S Casey Key Rd, Nokomis, Florida 34275",Gulf,191,,27.12442,-82.470243
+FL91,North Jetty Park,Nokomis,Sarasota,"1000 S Casey Key Rd, Nokomis, FL 34275",Gulf,295,,27.114164,-82.468626
+FL81,Avenida Navarra,Siesta Key,Sarasota,"158 Beach Rd, Sarasota, Florida 34242",Gulf,5,,27.273258,-82.565466
+FL79,Calle De La Siesta,Siesta Key,Sarasota,"5404 Calle de la Siesta, Sarasota, Florida 34242",Gulf,27,,27.271629,-82.561942
+FL80,Ocean Blvd.,Siesta Key,Sarasota,"5379 Ocean Blvd, Sarasota, Florida 34242",Gulf,29,,27.272959,-82.564325
+FL74,Old Stickney Point Road,Siesta Key,Sarasota,"1192 Old Stickney Point Rd, Sarasota, Florida 34242",Gulf,28,,27.251244,-82.535168
+FL77,Plaza De Las Palmas 1,Siesta Key,Sarasota,"508 Beach Rd, Sarasota, Florida 34242",Gulf,13,,27.270369,-82.559922
+FL78,Plaza De Las Palmas 2,Siesta Key,Sarasota,"488 Beach Rd, Sarasota, Florida 34242",Gulf,22,,27.270642,-82.560416
+FL84,Shell Rd.,Siesta Key,Sarasota,"3900 Shell Rd, Sarasota, Florida 34242",Gulf,2,,27.29128,-82.560086
+FL75,Siesta Key Beach,Siesta Key,Sarasota,"898 Beach Road, Siesta Key, FL 34242",Gulf,783,,27.266862,-82.551778
+FL70,Turtle Beach,Siesta Key,Sarasota,"8699 Turtle Beach Rd, Sarasota, Florida 34242",Gulf,261,,27.21945,-82.517093
+FL96,Brohard Beach,Venice,Sarasota,"1600 Harbor Dr S Venice, FL 34285",Gulf,594,,27.073269,-82.44981
+FL95,Caspersen Beach,Venice,Sarasota,"4165 Harbor Dr, Venice, Florida 34293",Gulf,191,,27.056481,-82.44262
+FL92,Humphris Park,Venice,Sarasota,"2075 Tarpon Center Dr, Venice, Florida 34285",Gulf,113,,27.112153,-82.466993
+FL93,Service Club Park,Venice,Sarasota,"1190 Harbor Dr S Venice, FL 34285",Gulf,51,,27.078669,-82.451287
+FL98,Venice Municipal Beach Park,Venice,Sarasota,"101 The Esplanade N, Venice, Florida 34285",Gulf,138,,27.099998,-82.459593
+FL1181,Frank Butler Park East,Butler Beach,St Johns,,Atlantic,56,,29.786652,-81.25807
+FL1179,Mary St.,Butler Beach,St Johns,"5700 Gloria Ave, St Augustine, Florida 32080",Atlantic,15,,29.789063,-81.25841
+FL1180,Minnie St.,Butler Beach,St Johns,"5787 Gloria Ave, St Augustine, Florida 32080",Atlantic,20,,29.78803,-81.258108
+FL1183,Crescent Beach Park,Crescent Beach,St Johns,,Atlantic,115,,29.768382,-81.25258
+FL1188,Fort Matanzas,Crescent Beach,St Johns,,Atlantic,42,,29.713298,-81.230273
+FL1187,Fort Matanzas Drive on,Crescent Beach,St Johns,,Atlantic,36,,29.717675,-81.231401
+FL1186,Splyglass,Crescent Beach,St Johns,,Atlantic,22,,29.73199,-81.238742
+FL1195,Sea to River Preserve,Marineland,St Johns,"9704 Ocean Shore Blvd, St Augustine, Florida 32080",Atlantic,5,,29.672142,-81.214153
+FL1109,GTMNERR Middle Walkover,Ponte Vedra Beach,St Johns,,Atlantic,70,,30.083978,-81.338357
+FL1108,GTMNERR North Walkover,Ponte Vedra Beach,St Johns,"1266 S Ponte Vedra Blvd, Ponte Vedra Beach, Florida 32082",Atlantic,70,,30.11662,-81.345973
+FL1110,GTMNERR South Walkover,Ponte Vedra Beach,St Johns,"2098 S Ponte Vedra Blvd, Ponte Vedra Beach, Florida 32082",Atlantic,100,,30.074038,-81.335379
+FL1169,GTMNERR Store Walkover,Ponte Vedra Beach,St Johns,"2701 S Ponte Vedra Blvd, Ponte Vedra Beach, Florida 32082",Atlantic,20,,30.022398,-81.323149
+FL1096,Micklers Landing,Ponte Vedra Beach,St Johns,,Atlantic,240,,30.162012,-81.35715
+FL1112,South Ponte Vedra Park,South Ponte Vedra Beach,St Johns,"2993 S Ponte Vedra Blvd, Ponte Vedra Beach, Florida 32082",Atlantic,22,,29.990523,-81.31509
+FL1167,Anastasia State Park,St. Augustine,St Johns,,Atlantic,200,,29.866152,-81.270966
+FL1146,10th St.,St. Augustine Beach,St Johns,"2 10th St, St Augustine Beach, Florida 32080",Atlantic,21,,29.851341,-81.265703
+FL1145,12th St.,St. Augustine Beach,St Johns,"2 12th St, St Augustine Beach, Florida 32080",Atlantic,2,,29.852672,-81.265638
+FL1152,4th St.,St. Augustine Beach,St Johns,"11 4th St, St Augustine Beach, Florida 32080",Atlantic,4,,29.847361,-81.26544
+FL1148,8th St.,St. Augustine Beach,St Johns,"2 8th St, St Augustine Beach, Florida 32080",Atlantic,2,,29.850024,-81.265695
+FL1162,Ocean Hammock Walkover,St. Augustine Beach,St Johns,"902 A1a Beach Blvd, St Augustine Beach, Florida 32080",Atlantic,3,,29.832049,-81.269482
+FL1136,Pope Rd.,St. Augustine Beach,St Johns,,Atlantic,65,,29.859405,-81.266292
+FL1137,St Johns County Ocean Pier & Courts Park,St. Augustine Beach,St Johns,,Atlantic,112,,29.857271,-81.265909
+FL1190,Gene Johnson Rd.,Summer Haven,St Johns,"9121 Old A1a, St Augustine, Florida 32080",Atlantic,3,,29.699125,-81.223473
+FL1189,Old SR A1A 0.06 miles north of Gene Johnson Road,Summer Haven,St Johns,"9101 Old A1a, St Augustine, Florida 32080",Atlantic,6,,29.699887,-81.223888
+FL1132,Beachcomber Way,Villano Beach,St Johns,"21 Beachcomber Way, St Augustine, Florida 32084",Atlantic,2,,29.919258,-81.291902
+FL1117,North Beach Park,Villano Beach,St Johns,,Atlantic,70,,29.940467,-81.301002
+FL1134,North Jetty,Villano Beach,St Johns,"2656 Anahma Dr, St Augustine, Florida 32084",Atlantic,20,,29.915658,-81.290174
+FL1131,Oak Ave.,Villano Beach,St Johns,"20 Oak Ave, St Augustine, Florida 32084",Atlantic,3,,29.920762,-81.292673
+FL1128,Parkins,Villano Beach,St Johns,"3171 Coastal Hwy, St Augustine, Florida 32084",Atlantic,14,,29.927027,-81.295698
+FL1129,Surfside Park,Villano Beach,St Johns,"54 Surfside Ave, St Augustine, Florida 32084",Atlantic,55,,29.924043,-81.29428
+FL1116,Usina Ramp Vehicle Access,Villano Beach,St Johns,"4105 Coastal Hwy, St Augustine, Florida 32084",Atlantic,10,,29.952326,-81.304359
+FL1133,Vilano Beach Pavilion,Villano Beach,St Johns,"Anahma Dr, Saint Augustine, Florida 32084",Atlantic,61,,29.916741,-81.290642
+FL1675,Avalon State Park,Fort Pierce,St Lucie,"6000 N Highway A1a, Fort Pierce, Florida 34949",Atlantic,40,,27.538636,-80.316331
+FL1697,Blind Creek Beachside North,Fort Pierce,St Lucie,,Atlantic,50,,27.376683,-80.254403
+FL1693,Blue Heron Blvd.,Fort Pierce,St Lucie,"Blue Heron Blvd, Fort Pierce, Florida 34949",Atlantic,50,,27.437233,-80.279592
+FL1692,Coconut Drive,Fort Pierce,St Lucie,"2001 Surfside Dr, Fort Pierce, Florida 34949",Atlantic,25,,27.446146,-80.282884
+FL1683,Fort Pierce Inlet State Park,Fort Pierce,St Lucie,,Atlantic,200,,27.474315,-80.292204
+FL1695,Frederick Douglas Memorial Park,Fort Pierce,St Lucie,,Atlantic,30,,27.413445,-80.270251
+FL1688,Gulfstream Ave.,Fort Pierce,St Lucie,"620 S Ocean Dr, Fort Pierce, Florida 34949",Atlantic,5,,27.461672,-80.28884
+FL1694,John Brooks Park,Fort Pierce,St Lucie,,Atlantic,30,,27.419456,-80.272831
+FL1690,Kimberly Bergalis Park,Fort Pierce,St Lucie,"1400 S Ocean Dr, Fort Pierce, Florida 34949",Atlantic,61,,27.454427,-80.286078
+FL1696,Middle Cove,Fort Pierce,St Lucie,"Middle Cove Beach Access Rd, Fort Pierce, Florida 34949",Atlantic,12,,27.395453,-80.263127
+FL1677,Navy Seals Museum,Fort Pierce,St Lucie,,Atlantic,40,,27.495433,-80.299739
+FL1678,Pepper Park,Fort Pierce,St Lucie,,Atlantic,96,,27.49643,-80.300212
+FL1687,Porpoise Ave.,Fort Pierce,St Lucie,"500 S Ocean Dr, Fort Pierce, Florida 34949",Atlantic,5,,27.464048,-80.289863
+FL1689,South Beach Park,Fort Pierce,St Lucie,"946 S Ocean Dr, Fort Pierce, Florida 34949",Atlantic,70,,27.459305,-80.288034
+FL1684,South Jetty Park,Fort Pierce,St Lucie,"2098 Seaway Dr, Fort Pierce, Florida 34949",Atlantic,80,,27.470183,-80.290885
+FL1685,St Lucie Ct.,Fort Pierce,St Lucie,,Atlantic,10,,27.46796,-80.291053
+FL1691,Surfside Park,Fort Pierce,St Lucie,"1484 S Ocean Dr, Fort Pierce, Florida 34949",Atlantic,15,,27.452281,-80.285577
+FL1698,Blind Creek Park,Hutchinson Island,St Lucie,,Atlantic,20,,27.36569,-80.248052
+FL1699,FPL Easement,Hutchinson Island,St Lucie,"5990 S Ocean Dr, Fort Pierce, Florida 34949",Atlantic,2,,27.355879,-80.245981
+FL1704,Dollman Park Beachside,Jensen Beach,St Lucie,"Dollman Beachside Rd, Jensen Beach, Florida 34957",Atlantic,30,,27.297209,-80.216709
+FL1702,Hermans Bay,Jensen Beach,St Lucie,,Atlantic,23,,27.321149,-80.227187
+FL1703,Normandy Beach,Jensen Beach,St Lucie,,Atlantic,8,,27.307359,-80.220744
+FL1701,Ocean Bay Beachside,Jensen Beach,St Lucie,,Atlantic,8,,27.32591,-80.229749
+FL1700,Walton Rocks Beach,Jensen Beach,St Lucie,,Atlantic,32,,27.338,-80.233512
+FL1705,Waveland Beach Park,Jensen Beach,St Lucie,,Atlantic,60,,27.275215,-80.206124
+FL63,Dark Island Road,Dark Island,Taylor,"22099 N Gulfview Dr, Perry, Florida 32348",Gulf,6,5.00,29.803442,-83.589233
+FL60,Dekle Beach Blvd,Dekle Beach,Taylor,"2900 Dekle Beach Blvd, Perry, Florida 32348",Gulf,8,,29.847861,-83.618444
+FL61,Hagin Cove Road,Hagin Cove,Taylor,"Hagins Cove Rd, Perry, Florida 32348",Gulf,3,,29.772156,-83.579922
+FL62,Keaton Beach Drive,Keaton Beach,Taylor,"CR 361, Perry, Florida 32348",Gulf,8,,29.818644,-83.593731
+FL1447,#1,Apollo Beach,Volusia,"7293 Turtle Mound Rd, New Smyrna Beach, Florida 32169",Atlantic,85,,28.935603,-80.829221
+FL1446,#2,Apollo Beach,Volusia,"8159 Turtle Mound Rd, New Smyrna Beach, Florida 32169",Atlantic,25,,28.910964,-80.812103
+FL1445,#3,Apollo Beach,Volusia,"CR-A1A, New Smyrna Beach, Florida 32169",Atlantic,22,,28.898481,-80.803432
+FL1444,#4,Apollo Beach,Volusia,"CR-A1A, New Smyrna Beach, Florida 32169",Atlantic,25,,28.885145,-80.794416
+FL1443,#5,Apollo Beach,Volusia,"CR-A1A, New Smyrna Beach, Florida 32169",Atlantic,28,,28.858197,-80.776585
+FL1436,Bethune Beach Park (parking lot),Bethune Beach,Volusia,"6656 S Atlantic Ave, New Smyrna Beach, Florida 32169",Atlantic,85,,28.950894,-80.839063
+FL1435,Kingfish Ave.,Bethune Beach,Volusia,"6599 S Atlantic Ave, New Smyrna Beach, Florida 32169",Atlantic,30,,28.952125,-80.839994
+FL1310,2800 N Atlantic Blvd.,Daytona Beach,Volusia,,Atlantic,10,,29.265891,-81.026445
+FL1324,Audtitorium Blvd.,Daytona Beach,Volusia,"44 N Ocean Ave, Daytona Beach, Florida 32118",Atlantic,50,Metered,29.228583,-81.008233
+FL1311,Boylston Ave.,Daytona Beach,Volusia,"2404 N Atlantic Ave, Daytona Beach, Florida 32118",Atlantic,4,,29.260441,-81.023941
+FL1325,Breakers Oceanfront Park,Daytona Beach,Volusia,"1101 Main St, Daytona Beach, Florida 32118",Atlantic,50,10.00,29.227003,-81.007423
+FL1320,Glenview Blvd.,Daytona Beach,Volusia,"720 Glenview Blvd, Daytona Beach, Florida 32118",Atlantic,12,,29.237484,-81.01267
+FL1314,Hartford Ave.,Daytona Beach,Volusia,"1825 N Atlantic Ave, Daytona Beach, Florida 32118",Atlantic,10,,29.255603,-81.021753
+FL1329,International Speedway Blvd.,Daytona Beach,Volusia,"825 E International Speedway Blvd, Daytona Beach, Florida 32118",Atlantic,14,,29.222194,-81.00503
+FL1332,Lenox Ave.,Daytona Beach,Volusia,"799 Lenox Ave, Daytona Beach, Florida 32118",Atlantic,15,,29.21646,-81.002197
+FL1322,Oakridge Blvd.,Daytona Beach,Volusia,"700 Oakridge Blvd, Daytona Beach, Florida 32118",Atlantic,3,,29.234142,-81.011137
+FL1319,Riverview Blvd.,Daytona Beach,Volusia,"797 Riverview Blvd, Daytona Beach, Florida 32118",Atlantic,22,,29.239181,-81.013465
+FL1327,S Ocean Ave.,Daytona Beach,Volusia,"18 S Ocean Ave, Daytona Beach, Florida 32118",Atlantic,50,Metered,29.226397,-81.007202
+FL1333,Silver Beach Ave.,Daytona Beach,Volusia,"790 Silver Beach Ave, Daytona Beach, Florida 32118",Atlantic,25,,29.212358,-81.000368
+FL1331,Sun Splash Park,Daytona Beach,Volusia,,Atlantic,166,,29.218194,-81.00333
+FL1318,University Blvd.,Daytona Beach,Volusia,"University Blvd, Daytona Beach, Florida 32118",Atlantic,12,,29.242591,-81.014883
+FL1312,Williams Ave.,Daytona Beach,Volusia,"2214 N Atlantic Ave, Daytona Beach, Florida 32118",Atlantic,5,,29.259089,-81.023258
+FL1352,Dahlia Ave.,Daytona Beach Shores,Volusia,"3625 S Atlantic Ave, Daytona Beach Shores, Florida 32118",Atlantic,16,,29.147696,-80.967045
+FL1350,Demotte St.,Daytona Beach Shores,Volusia,"Demotte St, Daytona Beach Shores, Florida 32118",Atlantic,20,,29.149417,-80.96752
+FL1347,El Portal,Daytona Beach Shores,Volusia,"El Portal, Daytona Beach Shores, Florida 32118",Atlantic,10,,29.159236,-80.973106
+FL1341,Florida Shores Blvd.,Daytona Beach Shores,Volusia,,Atlantic,6,,29.181627,-80.984994
+FL1342,Frank Rendon Park,Daytona Beach Shores,Volusia,,Atlantic,132,,29.180226,-80.984448
+FL1348,Larry Fornari Park,Daytona Beach Shores,Volusia,,Atlantic,14,,29.156638,-80.971703
+FL1351,Phillis Ave.,Daytona Beach Shores,Volusia,"3701 S Atlantic Ave, Daytona Beach Shores, Florida 32118",Atlantic,10,,29.146089,-80.966154
+FL1344,Van Ave. Park,Daytona Beach Shores,Volusia,"3111 S Atlantic Ave, Daytona Beach Shores, Florida 32118",Atlantic,14,,29.164662,-80.976172
+FL1419,27th Avenue Park,New Smyrna Beach,Volusia,,Atlantic,114,,29.009057,-80.878134
+FL1402,E 12th Ave.,New Smyrna Beach,Volusia,"1099 E 12th Ave, New Smyrna Beach, Florida 32169",Atlantic,6,,29.022114,-80.886237
+FL1403,E 13th Ave.,New Smyrna Beach,Volusia,"2209 Hill St, New Smyrna Beach, Florida 32169",Atlantic,2,,29.021109,-80.886136
+FL1406,E 16th Ave.,New Smyrna Beach,Volusia,"2509 Hill St, New Smyrna Beach, Florida 32169",Atlantic,2,,29.018554,-80.884606
+FL1407,E 17th Ave.,New Smyrna Beach,Volusia,"1006 E 17th Ave, New Smyrna Beach, Florida 32169",Atlantic,2,,29.017913,-80.883623
+FL1410,E 19th Ave.,New Smyrna Beach,Volusia,"2901 Hill St, New Smyrna Beach, Florida 32169",Atlantic,2,,29.01604,-80.882997
+FL1414,E 23rd Ave.,New Smyrna Beach,Volusia,"1098 E 23rd Ave, New Smyrna Beach, Florida 32169",Atlantic,3,,29.012853,-80.880473
+FL1415,E 24th Ave.,New Smyrna Beach,Volusia,"1099 E 24th Ave, New Smyrna Beach, Florida 32169",Atlantic,10,,29.012,-80.879959
+FL1416,E 25th Ave.,New Smyrna Beach,Volusia,"E 25th Ave, New Smyrna Beach, Florida 32169",Atlantic,2,,29.011184,-80.879321
+FL1394,E 4th Ave.,New Smyrna Beach,Volusia,"1409 Hill St, New Smyrna Beach, Florida 32169",Atlantic,2,,29.028881,-80.890489
+FL1395,E 5th Ave.,New Smyrna Beach,Volusia,"1100 E 5th Ave, New Smyrna Beach, Florida 32169",Atlantic,5,,29.028127,-80.889827
+FL1396,E 6th Ave.,New Smyrna Beach,Volusia,"E 6th Ave, New Smyrna Beach, Florida 32169",Atlantic,22,,29.027309,-80.889137
+FL1397,E 7th Ave.,New Smyrna Beach,Volusia,"E 7th Ave, New Smyrna Beach, Florida 32169",Atlantic,2,,29.026424,-80.888792
+FL1398,E 8th Ave.,New Smyrna Beach,Volusia,"1711 Hill St, New Smyrna Beach, Florida 32169",Atlantic,1,,29.025462,-80.88851
+FL1399,E 9th Ave.,New Smyrna Beach,Volusia,"1098 E 9th Ave, New Smyrna Beach, Florida 32169",Atlantic,3,,29.024638,-80.887842
+FL1387,Flagler Avenue Boardwalk,New Smyrna Beach,Volusia,"207 Buenos Aires St, New Smyrna Beach, Florida 32169",Atlantic,90,,29.038115,-80.895567
+FL1383,Grace Kenemer Barck North Beach Community Park,New Smyrna Beach,Volusia,"309 Sapphire Rd, New Smyrna Beach, Florida 32169",Atlantic,27,,29.046128,-80.900627
+FL1422,Matthews Ave.,New Smyrna Beach,Volusia,,Atlantic,18,,29.002016,-80.873468
+FL1375,Smyrna Dunes Park,New Smyrna Beach,Volusia,,Atlantic,40,,29.066144,-80.914873
+FL1300,Amsden Rd.,Ormond Beach,Volusia,"Amsden Rd, Ormond Beach, Florida 32176",Atlantic,14,,29.307739,-81.046989
+FL2193,Andy Romano Beachfront Park,Ormond Beach,Volusia,"815 S Atlantic Ave, Ormond Beach, Florida 32176",Atlantic,,,29.271352,-81.029632
+FL1277,Avalon Dr.,Ormond Beach,Volusia,"3069 Ocean Shore Blvd, Ormond Beach, Florida 32176",Atlantic,35,,29.369893,-81.07624
+FL1272,Bass Dr.,Ormond Beach,Volusia,"3612 Ocean Shore Blvd, Ormond Beach, Florida 32176",Atlantic,25,,29.384077,-81.082825
+FL1290,Bicentennial Park,Ormond Beach,Volusia,"1876 Ocean Shore Blvd, Ormond Beach, Florida 32176",Atlantic,70,,29.339381,-81.062104
+FL1274,Capistrano Dr.,Ormond Beach,Volusia,"3300 Ocean Shore Blvd, Ormond Beach, Florida 32176",Atlantic,10,,29.373829,-81.078112
+FL1278,Capri Dr.,Ormond Beach,Volusia,"3020 Ocean Shore Blvd, Ormond Beach, Florida 32176",Atlantic,35,,29.369137,-81.07589
+FL1307,Cardinal Dr.,Ormond Beach,Volusia,,Atlantic,8,,29.275521,-81.031322
+FL1302,E Granada Blvd.,Ormond Beach,Volusia,"E Granada Blvd, Ormond Beach, Florida 32176",Atlantic,11,,29.292133,-81.039488
+FL1309,Harvard Dr.,Ormond Beach,Volusia,"Harvard Dr, Ormond Beach, Florida 32176",Atlantic,45,,29.26948,-81.028447
+FL1279,Marlin Dr.,Ormond Beach,Volusia,"2986 Ocean Shore Blvd, Ormond Beach, Florida 32176",Atlantic,10,,29.367987,-81.075316
+FL1301,Neptune Ave.,Ormond Beach,Volusia,"289 Neptune Ave, Ormond Beach, Florida 32176",Atlantic,18,,29.301405,-81.044016
+FL1271,North Peninsula State Park,Ormond Beach,Volusia,"6117 S Oceanshore Blvd, Flagler Beach, Florida 32136",Atlantic,9,,29.410723,-81.094949
+FL1295,North Shore Park,Ormond Beach,Volusia,"1631 Ocean Shore Blvd, Ormond Beach, Florida 32176",Atlantic,73,,29.333997,-81.059114
+FL1292,Rivocean Dr.,Ormond Beach,Volusia,"1796 Ocean Shore Blvd, Ormond Beach, Florida 32176",Atlantic,5,,29.33801,-81.061007
+FL1293,Seabreeze Dr.,Ormond Beach,Volusia,"1776 Ocean Shore Blvd, Ormond Beach, Florida 32176",Atlantic,10,,29.337257,-81.060678
+FL1304,Seminole Ave.,Ormond Beach,Volusia,"219 S Atlantic Ave, Ormond Beach, Florida 32176",Atlantic,14,,29.286005,-81.036806
+FL1299,Standish Dr.,Ormond Beach,Volusia,"Standish Dr, Ormond Beach, Florida 32176",Atlantic,14,,29.311897,-81.049365
+FL1297,Tom Renick Park,Ormond Beach,Volusia,"1567 Ocean Shore Blvd, Ormond Beach, Florida 32176",Atlantic,54,,29.331084,-81.058745
+FL1276,Via Madrid Dr.,Ormond Beach,Volusia,"3076 Ocean Shore Blvd, Ormond Beach, Florida 32176",Atlantic,35,,29.370599,-81.07664
+FL1287,WWII Coastal Watch Tower,Ormond Beach,Volusia,"2160 Ocean Shore Blvd, Ormond Beach, Florida 32176",Atlantic,5,,29.346815,-81.065192
+FL1368,Inlet Harbor Rd.,Ponce Inlet,Volusia,"4807 S Atlantic Ave, Ponce Inlet, Florida 32127",Atlantic,12,,29.089514,-80.929631
+FL1372,Lighthouse Point Park #1,Ponce Inlet,Volusia,"4929 Robert A Merrill Pkwy, Ponce Inlet, Florida 32127",Atlantic,6,,29.080767,-80.923514
+FL1373,Lighthouse Point Park #2,Ponce Inlet,Volusia,"4967 Robert A Merrill Pkwy, Ponce Inlet, Florida 32127",Atlantic,6,,29.079486,-80.922558
+FL1374,Lighthouse Point Park #3,Ponce Inlet,Volusia,"5091 S Peninsula Dr, Ponce Inlet, Florida 32127",Atlantic,60,,29.078244,-80.921705
+FL1111,Lighthouse Point Park #4,Ponce Inlet,Volusia,"4905 Robert A Merrill Pkwy, Ponce Inlet, Florida 32127",Atlantic,6,,29.081656,-80.924109
+FL1365,North Turn,Ponce Inlet,Volusia,"4513 S Atlantic Ave, Ponce Inlet, Florida 32127",Atlantic,20,,29.108832,-80.943939
+FL1371,Oceanview Ave.,Ponce Inlet,Volusia,,Atlantic,22,,29.097189,-80.935329
+FL1364,Ponce Outdoor Recreation Area,Ponce Inlet,Volusia,"4377 S Atlantic Ave, Ponce Inlet, Florida 32127",Atlantic,2,,29.116627,-80.948931
+FL1366,Winterhaven Park,Ponce Inlet,Volusia,"4535 Winterhaven Rd, Ponce Inlet, Florida 32127",Atlantic,112,,29.104922,-80.941371
+FL1425,Hiles Blvd.,Silver Sands,Volusia,"648 Hiles Blvd, New Smyrna Beach, Florida 32169",Atlantic,22,,28.990565,-80.86637
+FL1357,Heron St.,Wilbur by the Sea,Volusia,"4026 S Atlantic Ave, Port Orange, Florida 32127",Atlantic,26,,29.131558,-80.957705
+FL1362,Major St.,Wilbur by the Sea,Volusia,"4279 S Atlantic Ave, Port Orange, Florida 32127",Atlantic,16,,29.123084,-80.952946
+FL1356,Mallard St.,Wilbur by the Sea,Volusia,"4001 S Atlantic Ave, Port Orange, Florida 32127",Atlantic,6,,29.133122,-80.958642
+FL1359,Toronita Ave.,Wilbur by the Sea,Volusia,"Toronita Ave, Port Orange, Florida 32127",Atlantic,110,,29.128502,-80.955644
+FL57,Mashes Sand Beach Road,Panacea Ridge,Wakulla,"998 Mashes Sands Rd, Panacea, Florida 32346",Gulf,2,,29.973428,-84.340672
+FL58,Shell Point Beach,Shell Point,Wakulla,"117 Beaty Taff Dr, Crawfordville, Florida 32327",Gulf,82,,30.057978,-84.290539
+FL59,St. Marks Wildlife Refuge,St. Marks,Wakulla,"3442 Lighthouse Rd, Crawfordville, Florida 32327",Gulf,12,,30.077536,-84.177159
+FL2180,St. Marks Wildlife Refuge 2,St. Marks,Wakulla,,Gulf,12,,30.074204,-84.179973
+FL2154,Blue Lake Road,Blue Mountain Beach,Walton,"726 Blue Mountain Rd, Santa Rosa Beach, Florida 32459",Gulf,4,,30.33644,-86.194293
+FL53,Old Blue Mountain Road (CR 83),Blue Mountain Beach,Walton,"2398 CR 83, Santa Rosa Beach, Florida 32459",Gulf,2,,30.338009,-86.200896
+FL55,Seagrade Road,Blue Mountain Beach,Walton,"600 Blue Mountain Rd, Santa Rosa Beach, Florida 32459",Gulf,1,,30.336934,-86.196492
+FL33,Deer Lake State Park,Deer Lake Beach,Walton,"30.305737, -86.074752",Gulf,9,,30.305723,-86.074763
+FL48,Fort Panic Park,Dune-Allen Beach,Walton,"5701 W County Hwy 30A, Santa Rosa Beach, FL 32459",Gulf,28,,30.35255,-86.251235
+FL47,Highlands Avenue,Dune-Allen Beach,Walton,"125 Stallworth Blvd, Santa Rosa Beach, Florida 32459",Gulf,61,,30.355854,-86.263118
+FL2152,Palms of Dune Allen,Dune-Allen Beach,Walton,"4801 W County Highway 30A, Santa Rosa Beach, Florida 32459",Gulf,25,,30.348858,-86.236457
+FL8,Grayton Beach State Park,Freeport,Walton,"367 Main Park Rd, Santa Rosa Beach, Florida 32459",Gulf,80,,30.329315,-86.156647
+FL45,Topsail Hill Preserve State Park (west),Freeport,Walton,"1 Ranger Rd, Santa Rosa Beach, Florida 32459",Gulf,25,,30.374336,-86.299567
+FL5,Defuniak Street,Grayton Beach,Walton,"544 Defuniak St, Santa Rosa Beach, Florida 32459",Gulf,12,,30.329305,-86.166068
+FL4,Garfield Street Access,Grayton Beach,Walton,"288 Garfield St, Santa Rosa Beach, Florida 32459",Gulf,6,,30.328649,-86.164725
+FL7,Main Park Road,Grayton Beach,Walton,"355 Pine St, Santa Rosa Beach, Florida 32459",Gulf,1,,30.329877,-86.168766
+FL6,Sandy Lane Access,Grayton Beach,Walton,"115 Sandy Ln, Santa Rosa Beach, Florida 32459",Gulf,1,,30.329018,-86.167224
+FL27,Inlet Beach,Inlet Beach,Walton,"309 W Park Place Ave, Panama City Beach, Florida 32413",Gulf,1,,30.273946,-86.003933
+FL43,Miramar Beach,Miramar Beach,Walton,"2373 Scenic Gulf Dr, Miramar Beach, Florida 32550",Gulf,16,,30.378195,-86.387528
+FL2147,Seascape,Miramar Beach,Walton,"1329 CR 2378, Miramar Beach, Florida 32550",Gulf,,,30.37588,-86.370515
+FL51,Ed Walline Park,Santa Rosa Beach,Walton,"4403 W County Highway 30A, Santa Rosa Beach, Florida 32459",Gulf,36,,30.346872,-86.229972
+FL52,Gulf View Heights Street,Santa Rosa Beach,Walton,"186 Gulfview Heights St, Santa Rosa Beach, Florida 32459",Gulf,22,,30.344193,-86.221082
+FL46,Topsail Hill Preserve State Park (east),Santa Rosa Beach,Walton,"Pinecone Way, Santa Rosa Beach, Florida 32459",Gulf,6,,30.361022,-86.278838
+FL15,County Highway 395,Seagrove,Walton,"2796 E CR 30A, Santa Rosa Beach, Florida 32459",Gulf,2,,30.317002,-86.129437
+FL18,Robert Ellis Street (Seagrove Place),Seagrove,Walton,"4124 E County Highway 30A, Santa Rosa Beach, Florida 32459",Gulf,7,,30.311238,-86.108749
+FL23,San Juan Street,Seagrove,Walton,"36 S San Juan Ave, Santa Rosa Beach, Florida 32459",Gulf,13,,30.313995,-86.120164
+FL22,Santa Clara Park,Seagrove,Walton,"3430 E County Highway 30A, Santa Rosa Beach, Florida 32459",Gulf,33,,30.314263,-86.119069

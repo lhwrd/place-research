@@ -98,6 +98,81 @@ def air_quality(data: Dict[str, Any]) -> Level:
     return GOOD if aqi <= 50 else FAIR if aqi <= 100 else POOR
 
 
+# Miles within which each kind of odor source (odor_sources provider) is rated poor rather
+# than fair: roughly where the smell goes from an occasional whiff to a regular nuisance
+ODOR_STRONG_WITHIN_MI = {
+    "paper_mill": 4,
+    "landfill": 1.5,
+    "rendering_plant": 1.5,
+    "fertilizer_plant": 1.5,
+    "sugar_mill": 1.5,
+    "animal_feeding": 1,
+    "biosolids": 0.5,
+    "wastewater_plant": 0.5,
+    "waste_to_energy": 0.5,
+    "composting": 0.5,
+    "debris_landfill": 0.5,
+    "asphalt_plant": 0.5,
+    "citrus_plant": 0.5,
+    "transfer_station": 0.25,
+    "petroleum_terminal": 0.25,
+    "small_wastewater_plant": 0.1,
+}
+
+
+def odor_sources(data: Dict[str, Any]) -> Level:
+    """Sources are only stored within the range their kind of smell carries."""
+    if "sources" not in data:
+        return None
+    sources = data["sources"]
+    if not sources:
+        return GOOD
+    strong = any(
+        float(s["distance_m"]) / METERS_PER_MILE < ODOR_STRONG_WITHIN_MI.get(s.get("kind"), 0)
+        for s in sources
+    )
+    return POOR if strong else FAIR
+
+
+def food_drink(data: Dict[str, Any]) -> Level:
+    """Good is a choice of places on foot; poor is a drive to anything."""
+    if "places" not in data:
+        return None
+    walkable = data.get("walkable_count") or 0
+    if walkable >= 8:
+        return GOOD
+    # Capped means at least 20 within the mile and a half searched
+    return FAIR if walkable >= 2 or data.get("capped") else POOR
+
+
+# A counted road within this many meters of the map pin is the one out front
+FRONTING_ROAD_M = 50
+
+
+def road_traffic(data: Dict[str, Any]) -> Level:
+    """Vehicles a day on the road out front; a busy road a block away is only fair."""
+    if "roads" not in data:
+        return None
+    roads = data["roads"]
+    fronting = [r for r in roads if r["distance_m"] <= FRONTING_ROAD_M]
+    if fronting:
+        busiest = max(r["vehicles_per_day"] for r in fronting)
+        return POOR if busiest >= 15_000 else FAIR if busiest >= 5_000 else GOOD
+    return FAIR if any(r["vehicles_per_day"] >= 25_000 for r in roads) else GOOD
+
+
+def attractions(data: Dict[str, Any]) -> Level:
+    """Attractions are only stored within 5 miles; within 2 the daily traffic is yours too."""
+    places = data.get("attractions") or []
+    return _distance(places[0]["distance_m"], 2, 5) if places else None
+
+
+def venues(data: Dict[str, Any]) -> Level:
+    """Venues are only stored within 3 miles; within half a mile event nights block you in."""
+    places = data.get("venues") or []
+    return _distance(places[0]["distance_m"], 0.5, 3) if places else None
+
+
 # Hazards
 
 
@@ -177,6 +252,13 @@ def drive_minutes(minutes: Optional[float]) -> Level:
     if minutes is None:
         return None
     return GOOD if minutes <= 15 else FAIR if minutes <= 30 else POOR
+
+
+def beach_minutes(minutes: Optional[float]) -> Level:
+    """A beach inside half an hour is an after-work trip; past an hour it's a day out."""
+    if minutes is None:
+        return None
+    return GOOD if minutes <= 30 else FAIR if minutes <= 60 else POOR
 
 
 def nearby_minutes(minutes: Optional[float]) -> Level:

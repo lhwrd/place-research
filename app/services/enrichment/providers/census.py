@@ -28,8 +28,8 @@ class CensusProvider(BaseEnrichmentProvider):
             category=ProviderCategory.DEMOGRAPHICS,
             enabled=True,
             description=(
-                "Provides city and county population, and census tract age, race/ethnicity "
-                "and education, from the ACS 5-year estimates."
+                "Provides city and county population, and census tract age, race/ethnicity, "
+                "education, tenure, households and rents, from the ACS 5-year estimates."
             ),
             version="1.0.0",
             requires_api_key=True,

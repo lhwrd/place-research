@@ -78,6 +78,8 @@ class GooglePlacesAPI(BaseAPIClient):
         place_types: List[str],
         radius_miles: float = 5.0,
         max_results: int = 3,
+        excluded_types: Optional[List[str]] = None,
+        nearest_first: bool = False,
     ) -> List[Dict[str, Any]]:
         """
         Search for nearby places of a specific type.
@@ -88,7 +90,9 @@ class GooglePlacesAPI(BaseAPIClient):
             place_type: Type of place to search for
             radius_miles: Search radius in miles
             keyword: Optional keyword filter
-            max_results: Maximum number of results to return
+            max_results: Maximum number of results to return (the API allows 20)
+            excluded_types: Leave out places that are any of these types
+            nearest_first: Return the closest places rather than the most prominent
 
         Returns:
             List of nearby places with details
@@ -135,6 +139,10 @@ class GooglePlacesAPI(BaseAPIClient):
                 }
             },
         }
+        if excluded_types:
+            data["excludedTypes"] = excluded_types
+        if nearest_first:
+            data["rankPreference"] = "DISTANCE"
         headers = {
             "X-Goog-FieldMask": ",".join(["places." + field for field in self.FIELDS]),
         }

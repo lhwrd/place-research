@@ -38,6 +38,11 @@ def _tract_values():
     # 25+: 800 adults
     values.update({"B15003_001E": 800, "B15003_017E": 200, "B15003_021E": 100,
                    "B15003_022E": 300, "B15003_023E": 150, "B15003_025E": 50})  # fmt: skip
+    # 400 homes: 100 rented, 100 with children. Only 2-bedroom rent has an estimate
+    values.update({"B25003_001E": 400, "B25003_003E": 100, "B11005_001E": 400,
+                   "B11005_002E": 100, "B19013_001E": 80000, "B25064_001E": 1500})  # fmt: skip
+    values.update({f"B25031_{n:03d}E": -666666666 for n in range(2, 8)})
+    values["B25031_004E"] = 1700
     return values
 
 
@@ -144,6 +149,11 @@ async def test_demographics(api):
                 "Graduate / professional": 25.0,
             },
             "bachelors_or_higher_pct": 62.5,
+            "renter_pct": 25.0,
+            "households_without_children_pct": 75.0,
+            "median_household_income": 80000,
+            "median_gross_rent": 1500,
+            "median_gross_rent_by_bedrooms": {"2": 1700},
         },
     }
     # Geocoder, county, city, and the tract split into two requests of <= 50 variables

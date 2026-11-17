@@ -61,6 +61,8 @@ class PropertyView:
     # The county property appraiser's record (Florida); unrated, so not in the scorecard
     parcel: Rows = field(default_factory=list)
     parcel_note: Optional[str] = None
+    # What the rent buys: rent against the area, the owner, the electric utility. Unrated
+    renting: Rows = field(default_factory=list)
 
     def scorecard(self) -> Dict[str, Any]:
         """
@@ -84,7 +86,9 @@ class PropertyView:
 
 
 def build_view(
-    enrichment: Dict[str, Dict[str, Any]], walk_scores: Optional[Dict[str, Any]] = None
+    enrichment: Dict[str, Dict[str, Any]],
+    walk_scores: Optional[Dict[str, Any]] = None,
+    listing: Optional[Dict[str, Any]] = None,
 ) -> PropertyView:
     """
     Build the detail-page view from {provider name: data}.
@@ -92,6 +96,8 @@ def build_view(
     Args:
         walk_scores: Scores fetched for this page view (app.services.walk_score); they
             aren't part of the stored enrichment
+        listing: The property's own "price" (monthly rent) and "beds", to set against the
+            area's rents
     """
     view = PropertyView()
     data = lambda name: enrichment.get(name) or {}  # noqa: E731
@@ -106,6 +112,11 @@ def build_view(
     local_noise = data("local_noise_sources_provider")
     flood = data("flood_zone_provider")
     air = data("air_quality_provider")
+    odors = data("odor_sources_provider")
+    beach = (data("beach_parking_provider").get("sites") or [None])[0]
+    food = data("food_drink_provider")
+    roads = data("road_traffic_provider")
+    crowds = data("event_traffic_provider")
     view.surroundings = _rows(
         (
             "Walk score",
@@ -149,6 +160,20 @@ def build_view(
             else None,
         ),
         ("Air quality", air_quality_text(air), ratings.air_quality(air)),
+        ("Odor sources", odor_sources_text(odors), ratings.odor_sources(odors)),
+        ("Road traffic", road_traffic_text(roads), ratings.road_traffic(roads)),
+        (
+            "Tourist traffic",
+            _nearby_names_text(crowds.get("attractions")),
+            ratings.attractions(crowds),
+        ),
+        ("Event venues", _nearby_names_text(crowds.get("venues")), ratings.venues(crowds)),
+        ("Food & drink", food_drink_text(food), ratings.food_drink(food)),
+        (
+            "Nearest beach parking",
+            beach_parking_text(beach),
+            ratings.beach_minutes(beach.get("drive_minutes")) if beach else None,
+        ),
     )
 
     view.drive_times = drive_times(data("distance_provider"))
@@ -202,6 +227,11 @@ def build_view(
     view.parcel, view.parcel_note = parcel_section(data("parcel_provider"))
 
     census = data("census_provider")
+    view.renting = _rows(
+        ("Rent vs area", rent_text(listing or {}, census)),
+        ("Owner", owner_text(data("parcel_provider"))),
+        ("Electricity", electricity_text(data("electric_utility_provider"))),
+    )
     view.acs_year = census.get("acs_year")
     view.census, view.distributions = census_sections(census)
     return view
@@ -290,6 +320,167 @@ def air_quality_text(data: Dict[str, Any]) -> Optional[str]:
     if data.get("category"):
         parts.append(str(data["category"]))
     return " ".join(parts) or None
+
+
+def odor_sources_text(data: Dict[str, Any]) -> Optional[str]:
+    """E.g. "Iron Bridge WRF (wastewater treatment plant) 0.4 mi · +1 more"."""
+    if "sources" not in data:
+        return None
+    sources = data["sources"]
+    if not sources:
+        return "None in range"
+    shown = [
+        f"{s.get('name') or 'Unnamed'} ({s['type']}) {_feet_or_miles(s['distance_m'])}"
+        for s in sources[:3]
+    ]
+    more = (data.get("source_count") or len(sources)) - len(shown)
+    return " · ".join(shown + ([f"+{more} more"] if more > 0 else []))
+
+
+def beach_parking_text(site: Optional[Dict[str, Any]]) -> Optional[str]:
+    """E.g. "58 min · 52.3 mi (Lori Wilson Park, Cocoa Beach · Atlantic · 1.50/hr)"."""
+    if not site or site.get("drive_minutes") is None:
+        return None
+    hours, minutes = divmod(int(site["drive_minutes"]), 60)
+    drive = f"{hours} hr {minutes} min" if hours else f"{minutes} min"
+    if site.get("drive_miles") is not None:
+        drive += f" · {float(site['drive_miles']):.1f} mi"
+    place = ", ".join(dict.fromkeys(p for p in (site.get("name"), site.get("beach")) if p))
+    # The fee is the posted rate ("1.50/hr") or just "yes"
+    fee = site.get("fee") and ("paid parking" if site["fee"] == "yes" else f"parking {site['fee']}")
+    return f"{drive} ({' · '.join(p for p in (place, site.get('coast'), fee) if p)})"
+
+
+def food_drink_text(data: Dict[str, Any]) -> Optional[str]:
+    """E.g. "6 within a 10-min walk · 20 within 0.9 mi (nearest Prato, 400 ft)"."""
+    if "places" not in data:
+        return None
+    places = data["places"]
+    radius = _miles(data.get("radius_m") or 0)
+    if not places:
+        return f"None within {radius}"
+    walkable = data.get("walkable_count") or 0
+    nearest = places[0]
+    closest = f"nearest {nearest.get('name') or 'unnamed'}, {_feet_or_miles(nearest['distance_m'])}"
+    # With all 20 returned there are more beyond the last, so its distance is the measure
+    reach = _feet_or_miles(places[-1]["distance_m"]) if data.get("capped") else radius
+    if walkable == len(places) and data.get("capped"):
+        return (
+            f"{walkable}+ within a 10-min walk · the closest {walkable} within {reach} ({closest})"
+        )
+    return f"{walkable or 'None'} within a 10-min walk · {len(places)} within {reach} ({closest})"
+
+
+def road_traffic_text(data: Dict[str, Any]) -> Optional[str]:
+    """E.g. "On a counted road: 24,500 vehicles a day (Fairbanks Ave to Park Ave)"."""
+    if "roads" not in data:
+        return None
+    if not data["roads"]:
+        return "No counted road within 650 ft (a local street)"
+    fronting = [r for r in data["roads"] if r["distance_m"] <= ratings.FRONTING_ROAD_M]
+    road = max(fronting, key=lambda r: r["vehicles_per_day"]) if fronting else data["roads"][0]
+    between = " to ".join(s for s in (road.get("from_street"), road.get("to_street")) if s)
+    count = f"{road['vehicles_per_day']:,} vehicles a day" + (f" ({between})" if between else "")
+    if fronting:
+        return f"On a counted road: {count}"
+    return f"Nearest counted road {_feet_or_miles(road['distance_m'])} away: {count}"
+
+
+def _nearby_names_text(places: Optional[List[Dict[str, Any]]]) -> Optional[str]:
+    """E.g. "Kia Center 0.8 mi, Camping World Stadium 1.9 mi"; None if none in range."""
+    return ", ".join(f"{p['name']} {_miles(p['distance_m'])}" for p in (places or [])[:3]) or None
+
+
+# Above this a listing's price is a sale price, not a month's rent
+MAX_MONTHLY_RENT = 20_000
+
+
+def rent_text(listing: Dict[str, Any], census: Dict[str, Any]) -> Optional[str]:
+    """E.g. "$2,400 asking · 30% above the tract's 3-bedroom median of $1,850 (...)"."""
+    tract = census.get("tract") or {}
+    by_bedrooms = tract.get("median_gross_rent_by_bedrooms") or {}
+    beds = listing.get("beds")
+    size = str(min(int(beds), 5)) if beds is not None else None
+    if size in by_bedrooms:
+        median = by_bedrooms[size]
+        kind = "studio" if size == "0" else f"{size}{'+' if size == '5' else ''}-bedroom"
+    else:
+        median, kind = tract.get("median_gross_rent"), None
+    if not median:
+        return None
+
+    year = census.get("acs_year")
+    source = (f"ACS {year - 4}–{year}, " if year else "") + "rent plus utilities"
+    what = f"the tract's {kind + ' ' if kind else ''}median of {_money(median)} ({source})"
+    price = listing.get("price")
+    if not price or price > MAX_MONTHLY_RENT:
+        return f"Tract {kind + ' ' if kind else ''}median {_money(median)} ({source})"
+    difference = round(100 * (price - median) / median)
+    if difference == 0:
+        return f"{_money(price)} asking · level with {what}"
+    return f"{_money(price)} asking · {abs(difference)}% {'above' if difference > 0 else 'below'} {what}"
+
+
+def owner_text(data: Dict[str, Any]) -> Optional[str]:
+    """E.g. "Progress Residential Borrower 12 LLC · company · tax bill to Scottsdale, AZ"."""
+    name = data.get("owner_name")
+    if not data.get("found") or not name:
+        return None
+    parts = [_title_name(name), data.get("owner_type")]
+    if data.get("homestead"):
+        parts.append("homesteaded (the owner's own home)")
+    elif data.get("owner_city") or data.get("owner_state"):
+        parts.append("tax bill to " + ", ".join(
+            p for p in (data.get("owner_city"), data.get("owner_state")) if p
+        ))  # fmt: skip
+    bought = next(
+        (s for s in data.get("recent_sales") or [] if s.get("arms_length") and s.get("year")),
+        None,
+    )
+    if bought:
+        month = MONTHS[bought["month"] - 1] + " " if bought.get("month") else ""
+        parts.append(f"bought {month}{bought['year']}")
+    return " · ".join(p for p in parts if p)
+
+
+def electricity_text(data: Dict[str, Any]) -> Optional[str]:
+    """E.g. "Orlando Utilities Comm (municipal) · 13.2¢/kWh average residential, 2025"."""
+    utilities = data.get("utilities") or []
+    if not utilities:
+        return None
+
+    def rate(utility: Dict[str, Any]) -> Optional[str]:
+        cents = utility.get("residential_cents_per_kwh")
+        return f"{cents:.1f}¢/kWh" if cents else None
+
+    first = utilities[0]
+    text = _title_name(first.get("name") or "Unknown utility")
+    if first.get("type"):
+        text += f" ({first['type']})"
+    if rate(first):
+        year = f", {first['rate_year']}" if first.get("rate_year") else ""
+        text += f" · {rate(first)} average residential{year}"
+    others = [
+        _title_name(u["name"]) + (f" ({rate(u)})" if rate(u) else "")
+        for u in utilities[1:]
+        if u.get("name")
+    ]
+    return text + (f" · or {', '.join(others)}" if others else "")
+
+
+KEEP_UPPER = {"LLC", "LLP", "LP", "INC", "II", "III", "IV", "USA", "FL", "REIT"}
+KEEP_LOWER = {"OF", "AND", "THE", "AT"}
+
+
+def _title_name(name: str) -> str:
+    """Tax roll and utility names come in capitals: "WP1 HOMES LLC" -> "WP1 Homes LLC"."""
+    words = [
+        w if w.strip(",.") in KEEP_UPPER or any(c.isdigit() for c in w)
+        else w.lower() if w in KEEP_LOWER and i
+        else w.title()
+        for i, w in enumerate(name.split())
+    ]  # fmt: skip
+    return " ".join(words)
 
 
 def fireworks_text(data: Dict[str, Any]) -> Optional[str]:
@@ -474,6 +665,13 @@ def census_sections(data: Dict[str, Any]) -> Tuple[Rows, List[Distribution]]:
         ("Tract population", _count(tract.get("population"))),
         ("Tract median age", _unit(tract.get("median_age"), "")),
         ("Bachelor's or higher", _unit(tract.get("bachelors_or_higher_pct"), "%")),
+        ("Tract homes rented", _unit(tract.get("renter_pct"), "%")),
+        (
+            "Tract households without children",
+            _unit(tract.get("households_without_children_pct"), "%"),
+        ),
+        ("Tract median household income", _money(tract.get("median_household_income"))),
+        ("Tract median rent", _money(tract.get("median_gross_rent"))),
     )
 
     # Race & ethnicity: largest first, and leave out groups with nobody in them
