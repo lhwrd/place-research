@@ -8,8 +8,8 @@ on unexpected shapes; missing facts are simply None.
 
 import json
 import re
-from dataclasses import asdict, dataclass
-from typing import Any, Dict, Iterator, Optional
+from dataclasses import asdict, dataclass, field
+from typing import Any, Dict, Iterator, List, Optional, Tuple
 from urllib.parse import urlparse
 
 SQFT_PER_ACRE = 43560
@@ -17,6 +17,8 @@ ZPID_PATTERN = re.compile(r"(\d+)_zpid")
 # /homedetails/111-White-Pl-Port-Orange-FL-32127/46284123_zpid/
 SLUG_PATTERN = re.compile(r"/homedetails/([^/]+)/\d+_zpid")
 SLUG_STATE_ZIP = re.compile(r"^(.*)-([A-Z]{2})-(\d{5})$")
+# What Zillow's rental form leaves in the brokerage field when the landlord skips it
+PLACEHOLDER_NAMES = frozenset({"enter a company name"})
 # Guards against json.loads on huge non-JSON strings while walking the payload
 MAX_EMBEDDED_JSON_CHARS = 5_000_000
 
@@ -50,6 +52,30 @@ class ListingFacts:
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
+
+
+@dataclass
+class ListingDetails:
+    """What the listing says beyond the facts kept in columns: for the detail page."""
+
+    status: Optional[str] = None  # "For rent", "Off market", ...
+    description: Optional[str] = None
+    # Zillow's summary of the listing: ("Pets", "Cats, Small Dogs"), ("Laundry", "In Unit")
+    at_a_glance: List[Tuple[str, str]] = field(default_factory=list)
+    highlights: List[str] = field(default_factory=list)  # short phrases Zillow pulls out
+    fees: List[Tuple[str, str]] = field(default_factory=list)  # ("Deposit", "$2,050")
+    lease_term: Optional[str] = None
+    appliances: List[str] = field(default_factory=list)
+    flooring: List[str] = field(default_factory=list)
+    days_on_zillow: Optional[int] = None
+    rent_zestimate: Optional[int] = None
+    zestimate: Optional[int] = None
+    listed_by: Optional[str] = None  # "Jane Doe · Acme Realty"
+    contact_phone: Optional[str] = None
+    photo_urls: List[str] = field(default_factory=list)
+
+    def __bool__(self) -> bool:
+        return any(asdict(self).values())
 
 
 def parse_zpid(url: str) -> Optional[str]:
@@ -86,13 +112,101 @@ def parse_listing_json(raw: Any) -> ListingFacts:
         return ListingFacts()
 
     facts = ListingFacts()
-    zillow = _find_zillow_property(data)
+    zillow = find_zillow_property(data)
     if zillow:
         _apply_zillow_property(facts, zillow)
     for node in _walk(data):
         if "@type" in node:
             _apply_json_ld(facts, node)
     return facts
+
+
+def parse_listing_details(raw: Any) -> ListingDetails:
+    """Description, rental terms, photos etc. from Zillow's property object, if present."""
+    data = _decode(raw)
+    prop = find_zillow_property(data) if data is not None else None
+    if not prop:
+        return ListingDetails()
+
+    reso = _dict(prop.get("resoFacts"))
+    attribution = _dict(prop.get("attributionInfo"))
+    contact = _dict(prop.get("postingContact"))
+    description = prop.get("description")
+    return ListingDetails(
+        status=_humanize(prop.get("homeStatus")),
+        description=description.strip() if isinstance(description, str) else None,
+        at_a_glance=[
+            (str(f["factLabel"]), str(f["factValue"]))
+            for f in _dicts(reso.get("atAGlanceFacts"))
+            if f.get("factLabel") and f.get("factValue") not in (None, "")
+        ],
+        highlights=_highlights(prop.get("homeInsights")),
+        fees=[
+            (str(f["type"]), str(f["fee"]))
+            for f in _dicts(reso.get("feesAndDues"))
+            if f.get("type") and f.get("fee")
+        ],
+        lease_term=_text(reso.get("leaseTerm")),
+        appliances=_strings(reso.get("appliances")),
+        flooring=_strings(reso.get("flooring")),
+        days_on_zillow=_to_int(prop.get("daysOnZillow")),
+        rent_zestimate=_to_int(prop.get("rentZestimate")),
+        zestimate=_to_int(prop.get("zestimate")),
+        listed_by=" · ".join(
+            dict.fromkeys(
+                n
+                for n in (
+                    _text(contact.get("name") or attribution.get("agentName")),
+                    _text(prop.get("brokerageName") or attribution.get("brokerName")),
+                )
+                if n and n.lower() not in PLACEHOLDER_NAMES
+            )
+        )
+        or None,
+        contact_phone=_text(attribution.get("agentPhoneNumber")),
+        photo_urls=photo_urls(prop),
+    )
+
+
+def photo_urls(prop: Dict[str, Any]) -> List[str]:
+    """The widest JPEG of each listing photo, in listing order."""
+    urls = []
+    for photo in _dicts(prop.get("originalPhotos") or prop.get("responsivePhotos")):
+        sources = [s for s in _dicts(_dict(photo.get("mixedSources")).get("jpeg")) if s.get("url")]
+        if sources:
+            best = max(sources, key=lambda s: _to_int(s.get("width")) or 0)
+            urls.append(str(best["url"]))
+        elif isinstance(photo.get("url"), str):
+            urls.append(photo["url"])
+    return list(dict.fromkeys(urls))
+
+
+def _highlights(insights: Any) -> List[str]:
+    """The phrases from Zillow's first insights model (the others repeat them)."""
+    for group in _dicts(insights):
+        for insight in _dicts(group.get("insights")):
+            phrases = _strings(insight.get("phrases"))
+            if phrases:
+                return phrases
+    return []
+
+
+def _dict(value: Any) -> Dict[str, Any]:
+    return value if isinstance(value, dict) else {}
+
+
+def _dicts(value: Any) -> List[Dict[str, Any]]:
+    return [v for v in value if isinstance(v, dict)] if isinstance(value, list) else []
+
+
+def _strings(value: Any) -> List[str]:
+    if not isinstance(value, list):
+        return []
+    return [str(v).strip() for v in value if isinstance(v, (str, int, float)) and str(v).strip()]
+
+
+def _text(value: Any) -> Optional[str]:
+    return str(value).strip() or None if isinstance(value, (str, int, float)) else None
 
 
 def _decode(raw: Any) -> Any:
@@ -127,11 +241,21 @@ def _walk(node: Any) -> Iterator[Dict[str, Any]]:
             yield from _walk(decoded)
 
 
-def _find_zillow_property(data: Any) -> Optional[Dict[str, Any]]:
+def find_zillow_property(data: Any, zpid: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    """
+    Zillow's property object in a JSON tree.
+
+    Args:
+        zpid: The listing's id, when known. Nearby and similar homes have zpids and prices
+            too, so with it the listing's own object wins over the first one found.
+    """
+    first = None
     for node in _walk(data):
         if "zpid" in node and any(k in node for k in ("price", "bedrooms", "livingArea")):
-            return node
-    return None
+            if zpid is None or str(node["zpid"]) == str(zpid):
+                return node
+            first = first or node
+    return first
 
 
 def _apply_zillow_property(facts: ListingFacts, prop: Dict[str, Any]) -> None:
@@ -142,7 +266,7 @@ def _apply_zillow_property(facts: ListingFacts, prop: Dict[str, Any]) -> None:
     facts.zip_code = facts.zip_code or address.get("zipcode")
     facts.price = facts.price or _to_int(prop.get("price"))
     facts.beds = facts.beds or _to_float(prop.get("bedrooms"))
-    facts.baths = facts.baths or _to_float(prop.get("bathrooms"))
+    facts.baths = facts.baths or _zillow_baths(prop)
     facts.sqft = facts.sqft or _to_int(prop.get("livingArea"))
     facts.lot_acres = facts.lot_acres or _zillow_lot_acres(prop)
     facts.year_built = facts.year_built or _to_int(prop.get("yearBuilt"))
@@ -151,6 +275,15 @@ def _apply_zillow_property(facts: ListingFacts, prop: Dict[str, Any]) -> None:
         facts.garage_spaces = _zillow_garage_spaces(prop)
     facts.latitude = facts.latitude or _to_float(prop.get("latitude"))
     facts.longitude = facts.longitude or _to_float(prop.get("longitude"))
+
+
+def _zillow_baths(prop: Dict[str, Any]) -> Optional[float]:
+    """Half baths count as half; Zillow's "bathrooms" counts 2 full + 1 half as 3."""
+    reso = prop.get("resoFacts") if isinstance(prop.get("resoFacts"), dict) else {}
+    full, half = _to_float(reso.get("bathroomsFull")), _to_float(reso.get("bathroomsHalf"))
+    if full is not None and half:
+        return full + half / 2
+    return _to_float(prop.get("bathrooms"))
 
 
 def _zillow_garage_spaces(prop: Dict[str, Any]) -> Optional[int]:

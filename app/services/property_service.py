@@ -2,8 +2,9 @@
 
 Properties come from the iOS Shortcut (a Zillow URL plus scraped listing JSON) or from the
 web UI (a Zillow URL or a plain address). Each new property is enriched in the background:
-geocode, run every provider, and store each provider's data on the row. A provider that
-fails keeps its previous data, so a flaky API never blanks a property.
+fetch the Zillow listing page (price, description, photos), geocode, run every provider,
+and store each provider's data on the row. A provider that fails keeps its previous data,
+so a flaky API never blanks a property; so does a Zillow page that can't be fetched.
 
 The stored results are the cache. Enriching again only calls the providers whose result
 is missing, failed last time, is older than the provider's cache_duration_days, or was
@@ -15,10 +16,20 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
+from pathlib import PurePosixPath
 from typing import Any, Dict, List, Optional, Set, Tuple
+from urllib.parse import urlparse
 
+import httpx
+
+from app.core.config import settings
 from app.db import Database, PropertyStatus, get_database
 from app.db.database import LOCATION_GEOCODE_COLUMNS
+from app.integrations.zillow_page import (
+    ZillowFetchError,
+    ZillowPageClient,
+    is_zillow_listing_url,
+)
 from app.services.enrichment.orchestrator import EnrichmentOrchestrator
 from app.services.enrichment.providers.driving_distance import CustomLocation
 from app.services.geocoding_service import GeocodingService
@@ -27,6 +38,7 @@ from app.services.zillow_listing import (
     address_from_url,
     parse_listing_json,
     parse_zpid,
+    photo_urls,
 )
 
 logger = logging.getLogger(__name__)
@@ -34,6 +46,12 @@ logger = logging.getLogger(__name__)
 # The raw JSON is only kept for re-parsing; don't let one huge paste bloat the database
 MAX_LISTING_JSON_CHARS = 2_000_000
 MAX_ERROR_CHARS = 2_000
+
+# Photos copied from the Zillow listing; their filenames start with this
+ZILLOW_PHOTO_PREFIX = "zillow-"
+MAX_LISTING_PHOTOS = 60
+LISTING_PHOTO_TYPES = frozenset({"image/jpeg", "image/png", "image/webp"})
+MAX_LISTING_PHOTO_BYTES = 25 * 1024 * 1024
 
 # Settings keys
 AMENITY_TYPES = "amenity_types"
@@ -59,10 +77,12 @@ class PropertyService:
         db: Optional[Database] = None,
         geocoder: Optional[GeocodingService] = None,
         orchestrator: Optional[EnrichmentOrchestrator] = None,
+        listing_client: Optional[ZillowPageClient] = None,
     ):
         self.db = db or get_database()
         self.geocoder = geocoder or GeocodingService()
         self.orchestrator = orchestrator or EnrichmentOrchestrator()
+        self.listing_client = listing_client or ZillowPageClient()
         self._in_progress: Set[int] = set()
 
     # Ingest
@@ -138,7 +158,12 @@ class PropertyService:
 
             self.db.update_property(property_id, {"status": PropertyStatus.ENRICHING})
             try:
+                listing_error = await self._refresh_listing(prop)
+                prop = self.db.get_property(property_id) or prop
                 values = await self._enrich(prop, use_cached=use_cached)
+                if listing_error:
+                    errors = [listing_error, values.get("error")]
+                    values["error"] = "\n".join(e for e in errors if e)[:MAX_ERROR_CHARS]
             except Exception as e:  # pylint: disable=broad-except
                 logger.error("Enrichment failed for property %s: %s", property_id, e, exc_info=True)
                 self.db.update_property(
@@ -169,6 +194,76 @@ class PropertyService:
         if enriched:
             logger.info("Enriched %d pending properties", enriched)
         return enriched
+
+    async def _refresh_listing(self, prop: Dict[str, Any]) -> Optional[str]:
+        """
+        Fetch the property's Zillow page: store its listing data and copy its photos.
+
+        Runs on every enrichment, so the price and availability stay current. A page that
+        can't be fetched (Zillow's bot check, a removed listing) keeps the stored data.
+
+        Returns:
+            A line for the property's failures, or None
+        """
+        url = prop.get("zillow_url")
+        if not settings.zillow_fetch_enabled or not url or not is_zillow_listing_url(url):
+            return None
+        try:
+            listing = await self.listing_client.fetch_property(url)
+        except ZillowFetchError as e:
+            logger.warning("Property %s: could not fetch Zillow listing: %s", prop["id"], e)
+            return f"zillow_listing: {e}"
+
+        facts = parse_listing_json(listing)
+        values: Dict[str, Any] = {
+            "listing_json": _listing_json_text(listing),
+            **_listing_columns(facts),
+        }
+        # Replace the address guessed from the URL, but never one typed in
+        if facts.full_address and prop.get("address") in (address_from_url(url), url):
+            values["address"] = facts.full_address
+        self.db.update_property(prop["id"], values)
+        await self._import_listing_photos(prop["id"], photo_urls(listing))
+        return None
+
+    async def _import_listing_photos(self, property_id: int, urls: List[str]) -> int:
+        """
+        Copy the listing's photos into the property's photos. Returns how many were added.
+
+        Only once: if any Zillow photos are already stored, nothing is added, so photos you
+        deleted don't come back on the next enrichment.
+        """
+        if any(f.startswith(ZILLOW_PHOTO_PREFIX) for f in self.db.photo_filenames(property_id)):
+            return 0
+        added = 0
+        for url in urls[:MAX_LISTING_PHOTOS]:
+            try:
+                response = await self.listing_client.fetch_photo(url)
+            except (ZillowFetchError, httpx.HTTPError) as e:
+                logger.warning("Property %s: skipping listing photo: %s", property_id, e)
+                continue
+            content_type = response.headers.get("content-type", "").split(";")[0].strip().lower()
+            content = response.content
+            if (
+                response.status_code != 200
+                or content_type not in LISTING_PHOTO_TYPES
+                or not content
+                or len(content) > MAX_LISTING_PHOTO_BYTES
+            ):
+                logger.warning(
+                    "Property %s: skipping listing photo (HTTP %s, %s, %d bytes)",
+                    property_id,
+                    response.status_code,
+                    content_type or "no type",
+                    len(content),
+                )
+                continue
+            name = PurePosixPath(urlparse(url).path).name or f"{added + 1}.jpg"
+            self.db.add_photo(property_id, ZILLOW_PHOTO_PREFIX + name, content_type, content)
+            added += 1
+        if added:
+            logger.info("Property %s: copied %d listing photos", property_id, added)
+        return added
 
     async def _enrich(self, prop: Dict[str, Any], use_cached: bool) -> Dict[str, Any]:
         facts = parse_listing_json(prop.get("listing_json"))

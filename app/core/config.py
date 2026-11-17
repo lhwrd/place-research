@@ -61,6 +61,11 @@ class Settings(BaseSettings):
         """`RAILLINES_PATH=` in .env means "not set", not the current directory."""
         return None if isinstance(value, str) and not value.strip() else value
 
+    # Fetch Zillow listing pages for price, description, rental terms and photos. Zillow
+    # has no API and may serve its bot check instead; listing data from the iOS Shortcut
+    # is used then
+    zillow_fetch_enabled: bool = Field(True, alias="ZILLOW_FETCH_ENABLED")
+
     # Static bearer token for the iOS Shortcut ingest endpoints
     ingest_api_token: Optional[str] = Field(None, alias="INGEST_API_TOKEN")
 

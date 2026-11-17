@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from app.services import noise, ratings
 from app.services.noise import NoiseEstimate
+from app.services.zillow_listing import ListingDetails, parse_listing_details
 
 METERS_PER_MILE = 1609.344
 
@@ -63,6 +64,10 @@ class PropertyView:
     parcel_note: Optional[str] = None
     # What the rent buys: rent against the area, the owner, the electric utility. Unrated
     renting: Rows = field(default_factory=list)
+    # What the Zillow listing says: description, highlights, rental terms. Unrated
+    description: Optional[str] = None
+    highlights: List[str] = field(default_factory=list)
+    listing: Rows = field(default_factory=list)
 
     def scorecard(self) -> Dict[str, Any]:
         """
@@ -96,10 +101,14 @@ def build_view(
     Args:
         walk_scores: Scores fetched for this page view (app.services.walk_score); they
             aren't part of the stored enrichment
-        listing: The property's own "price" (monthly rent) and "beds", to set against the
-            area's rents
+        listing: The property's row: its "price" (monthly rent) and "beds", to set
+            against the area's rents, and its "listing_json" from Zillow
     """
     view = PropertyView()
+    details = parse_listing_details((listing or {}).get("listing_json"))
+    view.description = details.description
+    view.highlights = details.highlights
+    view.listing = listing_rows(details)
     data = lambda name: enrichment.get(name) or {}  # noqa: E731
 
     walk = walk_scores or {}
@@ -389,6 +398,37 @@ def road_traffic_text(data: Dict[str, Any]) -> Optional[str]:
 def _nearby_names_text(places: Optional[List[Dict[str, Any]]]) -> Optional[str]:
     """E.g. "Kia Center 0.8 mi, Camping World Stadium 1.9 mi"; None if none in range."""
     return ", ".join(f"{p['name']} {_miles(p['distance_m'])}" for p in (places or [])[:3]) or None
+
+
+def listing_rows(details: ListingDetails) -> Rows:
+    """The listing's terms and facts, Zillow's at-a-glance summary first."""
+    glance = dict(details.at_a_glance)
+    # The hero already shows the type, and the fees row is more specific than Zillow's total
+    glance.pop("Type", None)
+    if details.fees:
+        glance.pop("Deposit & fees", None)
+    listed = [details.listed_by, details.contact_phone]
+    return _rows(
+        ("Status", details.status if details.status != "For rent" else None),
+        *glance.items(),
+        ("Lease", details.lease_term),
+        ("Fees", " · ".join(f"{name} {fee}" for name, fee in details.fees) or None),
+        ("Appliances", ", ".join(details.appliances) or None),
+        ("Flooring", ", ".join(details.flooring) or None),
+        (
+            "Rent Zestimate",
+            _money(details.rent_zestimate) and f"{_money(details.rent_zestimate)}/mo",
+        ),
+        ("Zestimate", _money(details.zestimate)),
+        ("On Zillow", _days(details.days_on_zillow)),
+        ("Listed by", " · ".join(p for p in listed if p) or None),
+    )
+
+
+def _days(days: Optional[int]) -> Optional[str]:
+    if days is None:
+        return None
+    return "Listed today" if days == 0 else f"{days} day{'s' if days != 1 else ''}"
 
 
 # Above this a listing's price is a sale price, not a month's rent

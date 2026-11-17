@@ -5,10 +5,14 @@ import json
 import pytest
 
 from app.services.zillow_listing import (
+    ListingDetails,
     ListingFacts,
     address_from_url,
+    find_zillow_property,
+    parse_listing_details,
     parse_listing_json,
     parse_zpid,
+    photo_urls,
 )
 
 URL = "https://www.zillow.com/homedetails/111-White-Pl-Port-Orange-FL-32127/46284123_zpid/"
@@ -142,3 +146,125 @@ class TestParseListingJson:
 
     def test_full_address_requires_street(self):
         assert ListingFacts(city="Port Orange", state="FL").full_address is None
+
+
+RENTAL = {
+    "zpid": 58336203,
+    "price": 2050,
+    "homeStatus": "FOR_RENT",
+    "description": "  Screened porch.\n\nRenter pays utilities.  ",
+    "daysOnZillow": 2,
+    "rentZestimate": 2123,
+    "zestimate": 335300,
+    "brokerageName": "Vista Realty",
+    "postingContact": {"name": "Pat Lee", "photo": None},
+    "attributionInfo": {"agentName": "Pat Lee", "agentPhoneNumber": "321-555-0100"},
+    "homeInsights": [
+        {"insights": [{"phrases": ["Large screened-in porch", "One-level living"]}]},
+        {"insights": [{"phrases": ["Repeated"]}]},
+    ],
+    "resoFacts": {
+        "atAGlanceFacts": [
+            {"factLabel": "Date available", "factValue": "Available Now"},
+            {"factLabel": "Heating", "factValue": None},
+            {"factLabel": "Pets", "factValue": "Cats, Small Dogs"},
+        ],
+        "feesAndDues": [
+            {"type": "Deposit", "fee": "$2,050"},
+            {"type": "Application", "fee": "$50"},
+            {"type": "Pet", "fee": None},
+        ],
+        "leaseTerm": "1 Year",
+        "appliances": ["Dishwasher", "Washer"],
+        "flooring": ["Hardwood"],
+    },
+    "originalPhotos": [
+        {
+            "mixedSources": {
+                "jpeg": [
+                    {"url": "https://photos.zillowstatic.com/a-small.jpg", "width": 800},
+                    {"url": "https://photos.zillowstatic.com/a-big.jpg", "width": 1536},
+                ]
+            }
+        },
+        {"url": "https://photos.zillowstatic.com/b.jpg"},
+        "not a photo",
+        {"mixedSources": {"jpeg": [{"url": "https://photos.zillowstatic.com/b.jpg"}]}},
+    ],
+}
+
+
+class TestParseListingDetails:
+    def test_rental(self):
+        details = parse_listing_details({"props": {"property": RENTAL}})
+
+        assert details == ListingDetails(
+            status="For rent",
+            description="Screened porch.\n\nRenter pays utilities.",
+            at_a_glance=[("Date available", "Available Now"), ("Pets", "Cats, Small Dogs")],
+            highlights=["Large screened-in porch", "One-level living"],
+            fees=[("Deposit", "$2,050"), ("Application", "$50")],
+            lease_term="1 Year",
+            appliances=["Dishwasher", "Washer"],
+            flooring=["Hardwood"],
+            days_on_zillow=2,
+            rent_zestimate=2123,
+            zestimate=335300,
+            listed_by="Pat Lee · Vista Realty",
+            contact_phone="321-555-0100",
+            photo_urls=[
+                "https://photos.zillowstatic.com/a-big.jpg",
+                "https://photos.zillowstatic.com/b.jpg",
+            ],
+        )
+
+    def test_from_json_string(self):
+        assert parse_listing_details(json.dumps(RENTAL)).lease_term == "1 Year"
+
+    @pytest.mark.parametrize("raw", [None, "", "not json", {"@type": "House"}, []])
+    def test_nothing_to_find(self, raw):
+        details = parse_listing_details(raw)
+
+        assert details == ListingDetails()
+        assert not details
+
+    def test_odd_shapes_are_ignored(self):
+        details = parse_listing_details(
+            {"zpid": 1, "price": 1, "resoFacts": "oops", "homeInsights": {}, "description": 5}
+        )
+
+        assert details.description is None
+        assert details.at_a_glance == [] and details.highlights == []
+
+    def test_photo_urls_empty(self):
+        assert photo_urls({}) == []
+
+
+class TestFindZillowProperty:
+    def test_prefers_matching_zpid(self):
+        data = {"a": {"zpid": 1, "price": 5}, "b": {"zpid": 2, "price": 6}}
+
+        assert find_zillow_property(data, "2")["zpid"] == 2
+
+    def test_falls_back_to_first(self):
+        data = {"a": {"zpid": 1, "price": 5}}
+
+        assert find_zillow_property(data, "9")["zpid"] == 1
+        assert find_zillow_property(data)["zpid"] == 1
+
+
+def test_half_baths_count_as_half():
+    prop = {
+        "zpid": 1,
+        "price": 1,
+        "bathrooms": 3,
+        "resoFacts": {"bathroomsFull": 2, "bathroomsHalf": 1},
+    }
+
+    assert parse_listing_json(prop).baths == 2.5
+
+
+def test_placeholder_brokerage_is_dropped():
+    prop = {"zpid": 1, "price": 1, "brokerageName": "Enter a company name"}
+
+    assert parse_listing_details(prop).listed_by is None

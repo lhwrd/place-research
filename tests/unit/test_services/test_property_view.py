@@ -4,6 +4,7 @@ from app.services.property_view import (
     DriveTime,
     build_view,
     flood_zone_text,
+    listing_rows,
     noise_estimate,
     noise_sources_text,
     noise_text,
@@ -16,6 +17,58 @@ def values(rows):
 
 def pairs(rows):
     return [(r.label, r.value) for r in rows]
+
+
+class TestListing:
+    LISTING = {
+        "zpid": 1,
+        "price": 2050,
+        "homeStatus": "FOR_RENT",
+        "description": "Screened porch.",
+        "daysOnZillow": 1,
+        "rentZestimate": 2123,
+        "brokerageName": "Vista Realty",
+        "attributionInfo": {"agentPhoneNumber": "321-555-0100"},
+        "homeInsights": [{"insights": [{"phrases": ["Large porch"]}]}],
+        "resoFacts": {
+            "atAGlanceFacts": [
+                {"factLabel": "Type", "factValue": "Single Family Residence"},
+                {"factLabel": "Pets", "factValue": "Cats"},
+                {"factLabel": "Deposit & fees", "factValue": "$2,050"},
+            ],
+            "feesAndDues": [{"type": "Deposit", "fee": "$2,050"}],
+            "leaseTerm": "1 Year",
+        },
+    }
+
+    def test_build_view(self):
+        import json
+
+        view = build_view({}, listing={"listing_json": json.dumps(self.LISTING)})
+
+        assert view.description == "Screened porch."
+        assert view.highlights == ["Large porch"]
+        assert pairs(view.listing) == [
+            ("Pets", "Cats"),
+            ("Lease", "1 Year"),
+            ("Fees", "Deposit $2,050"),
+            ("Rent Zestimate", "$2,123/mo"),
+            ("On Zillow", "1 day"),
+            ("Listed by", "Vista Realty · 321-555-0100"),
+        ]
+        assert all(r.level is None for r in view.listing)
+
+    def test_off_market_status_shown(self):
+        from app.services.zillow_listing import ListingDetails
+
+        rows = listing_rows(ListingDetails(status="Off market", days_on_zillow=0))
+
+        assert pairs(rows) == [("Status", "Off market"), ("On Zillow", "Listed today")]
+
+    def test_no_listing(self):
+        view = build_view({}, listing={"listing_json": None})
+
+        assert view.description is None and view.listing == []
 
 
 def levels(rows):

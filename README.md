@@ -66,6 +66,15 @@ string) and schema.org JSON-LD blocks, and takes address, price, beds, baths, sq
 year built, type and coordinates from them. Without it, the address comes from the URL
 slug and the geocoder does the rest.
 
+Enrichment also fetches the listing's Zillow page itself, every time it runs, and stores
+the same property object (trimmed to ~10 KB). That fills in the price and facts, plus the
+description, Zillow's highlights, rental terms (availability, pets, laundry, parking, lease,
+deposit and fees, appliances), the Rent Zestimate and who listed it, shown in a Listing
+section on the property page. The listing photos are copied into the property's photos once.
+Zillow has no API and its bot check may answer with a captcha instead of the page; then the
+stored data (or the Shortcut's `listing_json`) is kept and the failure is listed with the
+providers'. Set `ZILLOW_FETCH_ENABLED=false` to stop fetching.
+
 ### Add photos
 
 ```

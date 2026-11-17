@@ -94,6 +94,25 @@
   </form>
 </section>
 
+{% if view.description or view.listing %}
+<section class="card-section" id="listing">
+  <h2>Listing</h2>
+  {% if view.highlights %}
+  <ul class="highlights">
+    {% for phrase in view.highlights %}<li>{{ phrase }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+  {% if view.listing %}{{ rows(view.listing, rated=false) }}{% endif %}
+  {% if view.description %}
+  <details class="description" open>
+    <summary>Description</summary>
+    <p>{{ view.description }}</p>
+  </details>
+  {% endif %}
+  <p class="dim small">From the Zillow listing, fetched when the property is enriched.</p>
+</section>
+{% endif %}
+
 {% if view.parcel %}
 <section class="card-section">
   <h2>Property record</h2>
