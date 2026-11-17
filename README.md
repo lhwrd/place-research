@@ -127,8 +127,10 @@ national. None needs a key.
 The property record (Florida) is the county property appraiser's tax roll entry for the
 parcel, from the Department of Revenue's statewide parcels on Florida GIO's ArcGIS
 service: year built, living area, lot, use, quality, just and taxable value, homestead and
-sales from this year and last. No key. It has no bed or bath counts; those come from the
-listing.
+sales from this year and last. No key. When the listing (or your edits) leaves sqft, year
+built or lot blank, enrichment fills them from the record, unless the parcel was only the
+nearest one or holds several units. It has no bed, bath or garage counts; those come from
+the listing.
 
 Airports ship with the app (`app/data/airports.csv`, large and medium airports from
 OurAirports); refresh the list with `uv run python scripts/build_airports.py`. Beach

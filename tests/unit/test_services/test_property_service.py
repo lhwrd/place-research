@@ -31,6 +31,16 @@ LISTING_JSON = {
 }
 
 
+PARCEL = {
+    "found": True,
+    "match": "address",
+    "living_area_sqft": 1850,
+    "year_built": 1987,
+    "lot_acres": 0.23,
+    "residential_units": 1,
+}
+
+
 def _result(**providers):
     return {"enrichment_data": providers}
 
@@ -296,6 +306,49 @@ class TestEnrich:
 
         prop = db.get_property(property_id)
         assert (prop["price"], prop["beds"]) == (300000, 2)
+
+    @pytest.mark.asyncio
+    async def test_parcel_record_fills_blank_facts(self, service, db, orchestrator):
+        orchestrator.enrich.return_value = _result(parcel_provider=_ok(PARCEL))
+        property_id, _ = service.create_from_input("111 White Pl")
+        db.update_property(property_id, {"year_built": 1990})
+
+        await service.enrich(property_id)
+
+        prop = db.get_property(property_id)
+        assert (prop["sqft"], prop["lot_acres"]) == (1850, 0.23)
+        assert prop["year_built"] == 1990  # hand-entered value wins
+        assert prop["beds"] is None  # the roll has no bedroom counts
+
+    @pytest.mark.asyncio
+    async def test_listing_facts_win_over_parcel_record(self, service, db, orchestrator):
+        orchestrator.enrich.return_value = _result(parcel_provider=_ok(PARCEL))
+        listing = {"property": {**LISTING_JSON["property"], "livingArea": 1900}}
+        property_id, _ = service.create_listing(URL, listing)
+
+        await service.enrich(property_id)
+
+        prop = db.get_property(property_id)
+        assert prop["sqft"] == 1900
+        assert prop["year_built"] == 1987
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "parcel",
+        [
+            {**PARCEL, "match": "nearest"},
+            {**PARCEL, "residential_units": 4},
+            {"found": False},
+        ],
+    )
+    async def test_uncertain_parcel_fills_nothing(self, service, db, orchestrator, parcel):
+        orchestrator.enrich.return_value = _result(parcel_provider=_ok(parcel))
+        property_id, _ = service.create_from_input("111 White Pl")
+
+        await service.enrich(property_id)
+
+        prop = db.get_property(property_id)
+        assert (prop["sqft"], prop["year_built"], prop["lot_acres"]) == (None, None, None)
 
     @pytest.mark.asyncio
     async def test_missing_property(self, service):

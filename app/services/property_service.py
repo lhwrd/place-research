@@ -230,8 +230,10 @@ class PropertyService:
                 "inputs": (providers.get(name) or {}).get("inputs"),
             }
 
+        listing = _listing_columns(facts)
         return {
-            **_listing_columns(facts),
+            **_parcel_columns(enrichment.get("parcel_provider"), {**prop, **listing}),
+            **listing,
             "latitude": latitude,
             "longitude": longitude,
             "enrichment": enrichment,
@@ -332,6 +334,28 @@ def _listing_columns(facts: ListingFacts) -> Dict[str, Any]:
         "garage_spaces": facts.garage_spaces,
     }
     return {k: v for k, v in values.items() if v is not None}
+
+
+def _parcel_columns(parcel: Optional[Dict[str, Any]], current: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Listing facts the property appraiser's record can supply, for the ones still blank.
+
+    The listing and hand edits win: this only fills gaps (e.g. a property added by
+    address). The statewide roll has living area, year built and lot, but no bedroom,
+    bathroom or garage counts. Nothing is taken from a parcel picked only because it was
+    nearest, which may be the neighbor's, or from a multi-unit parcel, whose living area
+    is the whole building's.
+    """
+    if not parcel or not parcel.get("found") or parcel.get("match") == "nearest":
+        return {}
+    if (parcel.get("residential_units") or 0) > 1:
+        return {}
+    values = {
+        "sqft": parcel.get("living_area_sqft"),
+        "year_built": parcel.get("year_built"),
+        "lot_acres": parcel.get("lot_acres"),
+    }
+    return {k: v for k, v in values.items() if v is not None and current.get(k) is None}
 
 
 def _property_data(facts: ListingFacts) -> Dict[str, Any]:
