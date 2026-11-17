@@ -200,6 +200,7 @@ class GooglePlacesAPI(BaseAPIClient):
         included_type: Optional[str] = None,
         opening_hours: bool = False,
         merge_departments: bool = True,
+        nearest_first: bool = False,
     ) -> List[Dict[str, Any]]:
         """
         Search for nearby places of a specific type.
@@ -217,6 +218,11 @@ class GooglePlacesAPI(BaseAPIClient):
                 Enterprise Text Search SKU rather than Pro.
             merge_departments: Keep one result per spot (a store and its departments);
                 off where neighbors in one plaza are different businesses
+            nearest_first: Bias toward the point instead of restricting to the circle's
+                bounding box. With a rectangle restriction the API doesn't really rank by
+                distance (an Orlando search for "emergency room" returned Sanford before
+                the hospital half a mile away); a bias does. Results past the radius are
+                still dropped. The bias circle is capped at the API's 50 km.
 
         Returns:
             List of nearby places with details
@@ -258,8 +264,16 @@ class GooglePlacesAPI(BaseAPIClient):
             # Extra results, since a store's departments (e.g. "Costco Bakery") come back too
             "pageSize": min(max_results * 3, 20),
             "rankPreference": "DISTANCE",
-            "locationRestriction": {"rectangle": bounding_box(lat, lon, radius_meters)},
         }
+        if nearest_first:
+            data["locationBias"] = {
+                "circle": {
+                    "center": {"latitude": lat, "longitude": lon},
+                    "radius": min(radius_meters, MAX_BIAS_RADIUS_M),
+                }
+            }
+        else:
+            data["locationRestriction"] = {"rectangle": bounding_box(lat, lon, radius_meters)}
         if included_type:
             data["includedType"] = included_type
             data["strictTypeFiltering"] = True
@@ -400,6 +414,8 @@ class GooglePlacesAPI(BaseAPIClient):
 
 
 METERS_PER_DEGREE_LAT = 111_320
+# The largest circle Text Search takes as a location bias
+MAX_BIAS_RADIUS_M = 50_000
 # Text results closer together than this are one place (a store and its departments)
 SAME_PLACE_METERS = 200
 

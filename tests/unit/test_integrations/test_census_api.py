@@ -41,6 +41,9 @@ def _tract_values():
     # 400 homes: 100 rented, 100 with children. Only 2-bedroom rent has an estimate
     values.update({"B25003_001E": 400, "B25003_003E": 100, "B11005_001E": 400,
                    "B11005_002E": 100, "B19013_001E": 80000, "B25064_001E": 1500})  # fmt: skip
+    # 440 housing units: 40 vacant, 10 of them for rent and 20 just sitting empty
+    values.update({"B25002_001E": 440, "B25004_002E": 10, "B25004_003E": 0,
+                   "B25004_008E": 22})  # fmt: skip
     values.update({f"B25031_{n:03d}E": -666666666 for n in range(2, 8)})
     values["B25031_004E"] = 1700
     return values
@@ -150,6 +153,9 @@ async def test_demographics(api):
             },
             "bachelors_or_higher_pct": 62.5,
             "renter_pct": 25.0,
+            # 22 / 440; 10 for rent / (10 + 0 + 100 rented)
+            "other_vacant_pct": 5.0,
+            "rental_vacancy_pct": 9.1,
             "households_without_children_pct": 75.0,
             "median_household_income": 80000,
             "median_gross_rent": 1500,

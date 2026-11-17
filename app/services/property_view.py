@@ -116,6 +116,10 @@ def build_view(
     beach = (data("beach_parking_provider").get("sites") or [None])[0]
     food = data("food_drink_provider")
     vets = data("emergency_vet_provider")
+    ers = data("emergency_room_provider")
+    sirens = data("sirens_provider")
+    industry = data("industrial_neighbors_provider")
+    tract = data("census_provider").get("tract") or {}
     roads = data("road_traffic_provider")
     crowds = data("event_traffic_provider")
     view.surroundings = _rows(
@@ -136,6 +140,7 @@ def build_view(
         ),
         ("Noise", noise_text(view.noise), ratings.noise_level(view.noise)),
         ("Noise by source", noise_sources_text(view.noise)),
+        ("Sirens", sirens_text(sirens, ers), ratings.sirens(sirens, ers)),
         ("Fireworks", fireworks_text(local_noise), ratings.fireworks(local_noise)),
         ("Rocket launches", launch_text(local_noise), ratings.launches(local_noise)),
         ("Flood zone", flood_zone_text(flood), ratings.flood_zone(flood)),
@@ -162,6 +167,7 @@ def build_view(
         ),
         ("Air quality", air_quality_text(air), ratings.air_quality(air)),
         ("Odor sources", odor_sources_text(odors), ratings.odor_sources(odors)),
+        ("Industry nearby", industry_text(industry), ratings.industry(industry)),
         ("Road traffic", road_traffic_text(roads), ratings.road_traffic(roads)),
         (
             "Tourist traffic",
@@ -175,7 +181,13 @@ def build_view(
             beach_parking_text(beach),
             ratings.beach_minutes(beach.get("drive_minutes")) if beach else None,
         ),
+        ("Emergency room", emergency_room_text(ers), ratings.emergency_room(ers)),
         ("Emergency vet (24 hr)", emergency_vet_text(vets), ratings.emergency_vet(vets)),
+        (
+            "Vacant homes",
+            vacant_homes_text(tract),
+            ratings.vacant_homes(tract.get("other_vacant_pct")),
+        ),
     )
 
     view.drive_times = drive_times(data("distance_provider"))
@@ -343,6 +355,87 @@ def _drive_text(minutes: float, miles: Optional[float]) -> str:
     hours, minutes = divmod(int(minutes), 60)
     drive = f"{hours} hr {minutes} min" if hours else f"{minutes} min"
     return drive if miles is None else f"{drive} · {float(miles):.1f} mi"
+
+
+def emergency_room_text(data: Dict[str, Any]) -> Optional[str]:
+    """E.g. "9 min · 4.1 mi (AdventHealth Orlando Emergency Room)"."""
+    if "ers" not in data:
+        return None
+    if not data["ers"]:
+        return f"None within {_miles(data.get('radius_m') or 0)}"
+    er = data["ers"][0]
+    return f"{_drive_text(er['drive_minutes'], er.get('drive_miles'))} ({er['name']})"
+
+
+HELIPORT_LABELS = {
+    "hospital": "hospital helipad",
+    "public": "police/fire helipad",
+    "tours": "tour helicopters",
+    "other": "private helipad",
+}
+
+
+def sirens_text(data: Dict[str, Any], ers: Dict[str, Any]) -> Optional[str]:
+    """E.g. "Fire station 0.3 mi (Station 7) · ER 0.8 mi (ORMC) · hospital helipad 0.8 mi"."""
+    if "fire_stations" not in data:
+        return None
+    parts = []
+    if data["fire_stations"]:
+        station = data["fire_stations"][0]
+        parts.append(_with_name(f"Fire station {_feet_or_miles(station['distance_m'])}",
+                                station.get("name")))  # fmt: skip
+    er = min(ers.get("ers") or [], key=lambda e: e["straight_line_m"], default=None)
+    if er and er["straight_line_m"] <= ratings.ER_MI[1] * METERS_PER_MILE:
+        parts.append(_with_name(f"ER {_feet_or_miles(er['straight_line_m'])}", er.get("name")))
+    if data.get("heliports"):
+        pad = data["heliports"][0]
+        label = HELIPORT_LABELS.get(pad.get("category"), "helipad")
+        parts.append(_with_name(f"{label} {_feet_or_miles(pad['distance_m'])}", pad.get("name")))
+    if not parts:
+        return f"None within {_miles(data.get('radius_m') or 0)}"
+    return " · ".join(parts)
+
+
+INDUSTRY_SHORT = {
+    "040": "vacant industrial lot",
+    "041": "light manufacturing",
+    "042": "heavy industry",
+    "043": "lumber yard",
+    "044": "packing plant",
+    "045": "cannery/brewery",
+    "046": "food processing",
+    "047": "cement/asphalt/rock plant",
+    "048": "warehouse",
+    "049": "open storage yard",
+}
+
+
+def industry_text(data: Dict[str, Any]) -> Optional[str]:
+    """E.g. "3 within ¼ mi · warehouse 450 ft (349,000 sq ft) · heavy industry 0.2 mi"."""
+    if "parcels" not in data:
+        return None
+    parcels = data["parcels"]
+    if not parcels:
+        return "None within ¼ mi"
+    shown = []
+    for p in parcels[:2]:
+        text = f"{INDUSTRY_SHORT.get(p['use_code'], p['use'])} {_feet_or_miles(p['distance_m'])}"
+        if p.get("building_sqft"):
+            text += f" ({p['building_sqft']:,.0f} sq ft)"
+        shown.append(text)
+    return " · ".join([f"{len(parcels)} within ¼ mi", *shown])
+
+
+def vacant_homes_text(tract: Dict[str, Any]) -> Optional[str]:
+    """E.g. "2.1% of homes sit empty (not for rent, sale or seasonal) · 6.5% of rentals
+    for rent"."""
+    other, rental = tract.get("other_vacant_pct"), tract.get("rental_vacancy_pct")
+    parts = []
+    if other is not None:
+        parts.append(f"{other:g}% of the tract's homes sit empty (not for rent, sale or seasonal)")
+    if rental is not None:
+        parts.append(f"{rental:g}% of its rentals are vacant")
+    return " · ".join(parts) or None
 
 
 def emergency_vet_text(data: Dict[str, Any]) -> Optional[str]:

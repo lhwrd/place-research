@@ -348,3 +348,32 @@ def test_always_open_from_weekday_descriptions():
     }
     assert always_open(weekdays_only) is False
     assert always_open({}) is False
+
+
+@pytest.mark.asyncio
+async def test_text_search_nearest_first_biases_instead_of_restricting(google_places_api):
+    def place(name, lat):
+        return {"displayName": {"text": name}, "location": {"latitude": lat, "longitude": -105.0}}
+
+    google_places_api._make_request = AsyncMock(
+        return_value={"places": [place("Near", 40.01), place("Past the radius", 40.5)]}
+    )
+
+    results = await google_places_api.text_search(
+        lat=40.0, lon=-105.0, text_query="ER", radius_miles=20, max_results=5, nearest_first=True
+    )
+
+    assert [r["name"] for r in results] == ["Near"]
+    body = google_places_api._make_request.call_args[1]["json_data"]
+    assert "locationRestriction" not in body
+    assert body["locationBias"]["circle"]["radius"] == int(20 * 1609.34)
+
+
+@pytest.mark.asyncio
+async def test_text_search_bias_is_capped(google_places_api):
+    google_places_api._make_request = AsyncMock(return_value={"places": []})
+    await google_places_api.text_search(
+        lat=40.0, lon=-105.0, text_query="ER", radius_miles=40, nearest_first=True
+    )
+    body = google_places_api._make_request.call_args[1]["json_data"]
+    assert body["locationBias"]["circle"]["radius"] == 50_000

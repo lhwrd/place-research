@@ -87,6 +87,7 @@ class EmergencyVetProvider(BaseEnrichmentProvider):
                 opening_hours=True,
                 # An ER often shares a plaza with a general practice
                 merge_departments=False,
+                nearest_first=True,
             )
         except Exception as e:  # pylint: disable=broad-except
             logger.error("Error searching emergency vets for %s: %s", address, e)
