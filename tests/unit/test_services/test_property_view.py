@@ -295,6 +295,30 @@ def test_beach_parking():
     assert rows[0].level == "poor"
 
 
+def test_emergency_vet():
+    def row(vets):
+        rows = build_view(
+            {"emergency_vet_provider": {"vets": vets, "radius_m": 48280}}
+        ).surroundings
+        return rows[0].value, rows[0].level
+
+    all_night = {"name": "BluePearl Pet Hospital", "open_24_hours": True, "drive_minutes": 14,
+                 "drive_miles": 6.21}  # fmt: skip
+    nearer_er = {"name": "Pet ER", "open_24_hours": False, "drive_minutes": 6}
+    farther_er = {**nearer_er, "drive_minutes": 20}
+    assert row([all_night, farther_er]) == ("14 min · 6.2 mi (BluePearl Pet Hospital)", "good")
+    assert row([nearer_er, all_night]) == (
+        "14 min · 6.2 mi (BluePearl Pet Hospital) · closer but not overnight: Pet ER, 6 min",
+        "good",
+    )
+    assert row([nearer_er]) == (
+        "None within 30.0 mi · nearest ER with set hours: Pet ER, 6 min",
+        "poor",
+    )
+    assert row([]) == ("None within 30.0 mi", "poor")
+    assert build_view({}).surroundings == []
+
+
 def test_food_drink_road_and_crowds():
     def surroundings(**providers):
         return values(build_view({f"{k}_provider": v for k, v in providers.items()}).surroundings)
@@ -740,3 +764,51 @@ class TestParcel:
     def test_not_found_or_missing(self):
         assert build_view({"parcel_provider": {"found": False}}).parcel == []
         assert build_view({}).parcel == []
+
+
+def test_emergency_room_sirens_industry_and_vacancy():
+    def surroundings(**providers):
+        enrichment = {f"{k}_provider": v for k, v in providers.items()}
+        return {r.label: (r.value, r.level) for r in build_view(enrichment).surroundings}
+
+    er = {"name": "AdventHealth Orlando", "drive_minutes": 9, "drive_miles": 4.12,
+          "straight_line_m": 1200}  # fmt: skip
+    rows = surroundings(emergency_room={"ers": [er], "radius_m": 40234})
+    assert rows["Emergency room"] == ("9 min · 4.1 mi (AdventHealth Orlando)", "good")
+    rows = surroundings(emergency_room={"ers": [], "radius_m": 40234})
+    assert rows["Emergency room"] == ("None within 25.0 mi", "poor")
+
+    sirens = {
+        "fire_stations": [{"name": "Station 7", "distance_m": 300}],
+        "heliports": [{"name": "ORMC Heliport", "category": "hospital", "distance_m": 1200}],
+        "radius_m": 1609,
+    }
+    rows = surroundings(sirens=sirens, emergency_room={"ers": [er], "radius_m": 40234})
+    assert rows["Sirens"] == (
+        "Fire station 984 ft (Station 7) · ER 0.7 mi (AdventHealth Orlando) · "
+        "hospital helipad 0.7 mi (ORMC Heliport)",
+        "poor",
+    )
+    quiet = {"fire_stations": [], "heliports": [], "radius_m": 1609}
+    assert surroundings(sirens=quiet)["Sirens"] == ("None within 1.0 mi", "good")
+
+    parcels = [
+        {"use_code": "048", "use": "Warehouse", "kind": "warehouse", "distance_m": 140,
+         "building_sqft": 348830},
+        {"use_code": "040", "use": "Vacant industrial land", "kind": "vacant", "distance_m": 380},
+        {"use_code": "041", "use": "Light manufacturing", "kind": "light", "distance_m": 390},
+    ]  # fmt: skip
+    rows = surroundings(industrial_neighbors={"parcels": parcels, "radius_m": 402})
+    assert rows["Industry nearby"] == (
+        "3 within ¼ mi · warehouse 459 ft (348,830 sq ft) · vacant industrial lot 1,247 ft",
+        "poor",
+    )
+    rows = surroundings(industrial_neighbors={"parcels": [], "radius_m": 402})
+    assert rows["Industry nearby"] == ("None within ¼ mi", "good")
+
+    rows = surroundings(census={"tract": {"other_vacant_pct": 2.1, "rental_vacancy_pct": 6.5}})
+    assert rows["Vacant homes"] == (
+        "2.1% of the tract's homes sit empty (not for rent, sale or seasonal) · "
+        "6.5% of its rentals are vacant",
+        "good",
+    )

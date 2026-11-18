@@ -73,7 +73,19 @@ MEDIAN_HOUSEHOLD_INCOME = "B19013_001E"
 MEDIAN_GROSS_RENT = "B25064_001E"  # rent plus utilities
 # B25031 (median gross rent by bedrooms): studio, 1, 2, 3, 4, 5 or more
 MEDIAN_GROSS_RENT_BY_BEDROOMS = {beds: f"B25031_{beds + 2:03d}E" for beds in range(6)}
+# Vacancy: B25002 counts every housing unit; B25004 says why the vacant ones are empty.
+# "Other vacant" is the rest once homes for rent or sale, sold or rented awaiting their
+# occupants, and seasonal homes are taken out: foreclosures, estates, homes under repair
+# or simply abandoned, the ones that sit empty for years.
+HOUSING_UNITS = "B25002_001E"
+VACANT_FOR_RENT = "B25004_002E"
+RENTED_NOT_OCCUPIED = "B25004_003E"
+OTHER_VACANT = "B25004_008E"
 HOUSING_VARIABLES = [
+    HOUSING_UNITS,
+    VACANT_FOR_RENT,
+    RENTED_NOT_OCCUPIED,
+    OTHER_VACANT,
     OCCUPIED_HOMES,
     RENTER_OCCUPIED,
     HOUSEHOLDS,
@@ -362,6 +374,8 @@ def _tract_profile(values: Dict[str, Optional[float]]) -> Dict[str, Any]:
             "all"
         ),
         "renter_pct": breakdown([("all", [RENTER_OCCUPIED])], OCCUPIED_HOMES).get("all"),
+        "other_vacant_pct": breakdown([("all", [OTHER_VACANT])], HOUSING_UNITS).get("all"),
+        "rental_vacancy_pct": _rental_vacancy(values),
         "households_without_children_pct": _complement(
             breakdown([("all", [HOUSEHOLDS_WITH_CHILDREN])], HOUSEHOLDS).get("all")
         ),
@@ -373,6 +387,14 @@ def _tract_profile(values: Dict[str, Optional[float]]) -> Dict[str, Any]:
             if values.get(name) is not None
         },
     }
+
+
+def _rental_vacancy(values: Dict[str, Optional[float]]) -> Optional[float]:
+    """The Census Bureau's rental vacancy rate: homes for rent, out of every rental."""
+    parts = [values.get(n) for n in (VACANT_FOR_RENT, RENTED_NOT_OCCUPIED, RENTER_OCCUPIED)]
+    if any(p is None for p in parts) or not sum(parts):
+        return None
+    return round(100 * parts[0] / sum(parts), 1)
 
 
 def _complement(percent: Optional[float]) -> Optional[float]:

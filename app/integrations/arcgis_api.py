@@ -96,6 +96,7 @@ class ArcGISClient(BaseAPIClient):
         longitude: float,
         half_size_m: float,
         out_fields: Sequence[str] = ("*",),
+        where: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """
         Features intersecting a square of 2 * half_size_m around a point, with geometries.
@@ -103,6 +104,9 @@ class ArcGISClient(BaseAPIClient):
         Use this rather than query_near(distance_m=...) for layers stored in a projection
         the server can't buffer in (it answers distance queries with an SRID error). The
         Florida statewide parcels, in Florida GDL Albers, are one.
+
+        Args:
+            where: SQL filter on the layer's fields, e.g. "DOR_UC = '048'"
 
         Returns:
             One dict per feature: its attributes plus "geometry" (a shapely geometry in WGS84)
@@ -120,6 +124,8 @@ class ArcGISClient(BaseAPIClient):
             "geometryPrecision": 6,
             "f": "geojson",
         }
+        if where:
+            params["where"] = where
         data = await self._get(f"{layer}/query", params)
         return [
             {**(f.get("properties") or {}), "geometry": _shape(f.get("geometry"))}

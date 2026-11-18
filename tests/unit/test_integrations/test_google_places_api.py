@@ -296,3 +296,84 @@ def test_bounding_box_contains_circle(lat):
     assert haversine_distance(lat, -105.0, lat, box["high"]["longitude"]) == pytest.approx(
         16093, rel=0.01
     )
+
+
+@pytest.mark.asyncio
+async def test_text_search_with_opening_hours(google_places_api):
+    def place(name, lat, hours, status="OPERATIONAL"):
+        return {"displayName": {"text": name}, "businessStatus": status,
+                "location": {"latitude": lat, "longitude": -105.0},
+                "regularOpeningHours": hours}  # fmt: skip
+
+    always = {"periods": [{"open": {"day": 0, "hour": 0, "minute": 0}}]}
+    daytime = {"periods": [{"open": {"day": d, "hour": 8}, "close": {"day": d, "hour": 18}}
+                           for d in range(1, 6)]}  # fmt: skip
+    google_places_api._make_request = AsyncMock(
+        return_value={
+            "places": [
+                place("Pet ER", 40.0100, always),
+                place("Clinic next door", 40.0101, daytime),  # same plaza, kept
+            ]
+        }
+    )
+
+    results = await google_places_api.text_search(
+        lat=40.0, lon=-105.0, text_query="emergency vet", max_results=5,
+        included_type="veterinary_care", opening_hours=True, merge_departments=False,
+    )  # fmt: skip
+
+    assert [(r["name"], r["open_24_hours"]) for r in results] == [
+        ("Pet ER", True),
+        ("Clinic next door", False),
+    ]
+    assert results[0]["business_status"] == "OPERATIONAL"
+    call = google_places_api._make_request.call_args[1]
+    assert call["json_data"]["includedType"] == "veterinary_care"
+    assert call["json_data"]["strictTypeFiltering"] is True
+    assert "places.regularOpeningHours" in call["headers"]["X-Goog-FieldMask"]
+
+
+def test_always_open_from_weekday_descriptions():
+    from app.integrations.google_places_api import always_open
+
+    midnight_to_midnight = {
+        "periods": [{"open": {"day": d, "hour": 0}, "close": {"day": d, "hour": 23, "minute": 59}}
+                    for d in range(7)],
+        "weekdayDescriptions": [f"Day {d}: Open 24 hours" for d in range(7)],
+    }  # fmt: skip
+    assert always_open(midnight_to_midnight) is True
+    weekdays_only = {
+        "periods": midnight_to_midnight["periods"][1:6],
+        "weekdayDescriptions": ["Open 24 hours"] * 5 + ["Closed"] * 2,
+    }
+    assert always_open(weekdays_only) is False
+    assert always_open({}) is False
+
+
+@pytest.mark.asyncio
+async def test_text_search_nearest_first_biases_instead_of_restricting(google_places_api):
+    def place(name, lat):
+        return {"displayName": {"text": name}, "location": {"latitude": lat, "longitude": -105.0}}
+
+    google_places_api._make_request = AsyncMock(
+        return_value={"places": [place("Near", 40.01), place("Past the radius", 40.5)]}
+    )
+
+    results = await google_places_api.text_search(
+        lat=40.0, lon=-105.0, text_query="ER", radius_miles=20, max_results=5, nearest_first=True
+    )
+
+    assert [r["name"] for r in results] == ["Near"]
+    body = google_places_api._make_request.call_args[1]["json_data"]
+    assert "locationRestriction" not in body
+    assert body["locationBias"]["circle"]["radius"] == int(20 * 1609.34)
+
+
+@pytest.mark.asyncio
+async def test_text_search_bias_is_capped(google_places_api):
+    google_places_api._make_request = AsyncMock(return_value={"places": []})
+    await google_places_api.text_search(
+        lat=40.0, lon=-105.0, text_query="ER", radius_miles=40, nearest_first=True
+    )
+    body = google_places_api._make_request.call_args[1]["json_data"]
+    assert body["locationBias"]["circle"]["radius"] == 50_000
