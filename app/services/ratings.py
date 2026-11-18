@@ -261,6 +261,88 @@ def beach_minutes(minutes: Optional[float]) -> Level:
     return GOOD if minutes <= 30 else FAIR if minutes <= 60 else POOR
 
 
+def emergency_room(data: Dict[str, Any]) -> Level:
+    """Minutes count in a heart attack or a stroke: within ten is good, past twenty poor."""
+    if "ers" not in data:
+        return None
+    if not data["ers"]:
+        return POOR
+    minutes = data["ers"][0]["drive_minutes"]
+    return GOOD if minutes <= 10 else FAIR if minutes <= 20 else POOR
+
+
+# Sirens: a source this close is heard on most of its calls (poor) or some of them (fair)
+FIRE_STATION_MI = (0.25, 0.5)
+ER_MI = (0.5, 1.0)
+HELIPORT_MI = (0.5, 1.0)
+# Heliports that see regular traffic; private and corporate pads mostly don't
+BUSY_HELIPORTS = {"hospital", "public", "tours"}
+
+
+def sirens(data: Dict[str, Any], ers: Dict[str, Any]) -> Level:
+    """Fire stations, ERs and busy helipads close by. ers is the emergency room data."""
+    if "fire_stations" not in data:
+        return None
+    miles = lambda m: float(m) / METERS_PER_MILE  # noqa: E731
+    fire = [miles(s["distance_m"]) for s in data["fire_stations"]]
+    er = [miles(e["straight_line_m"]) for e in ers.get("ers") or []]
+    pads = [miles(h["distance_m"]) for h in data.get("heliports") or []]
+    busy = [
+        miles(h["distance_m"])
+        for h in data.get("heliports") or []
+        if h.get("category") in BUSY_HELIPORTS
+    ]
+
+    def within(distances: list, limit: float) -> bool:
+        return any(d <= limit for d in distances)
+
+    if within(fire, FIRE_STATION_MI[0]) or within(er, ER_MI[0]) or within(busy, HELIPORT_MI[0]):
+        return POOR
+    if within(fire, FIRE_STATION_MI[1]) or within(er, ER_MI[1]) or within(pads, HELIPORT_MI[1]):
+        return FAIR
+    return GOOD
+
+
+# Industry: right next door, anything is a neighbor you hear; heavy industry and big
+# distribution centers carry further
+INDUSTRY_ADJACENT_M = 100  # about 330 ft: the next lot or across the street
+BIG_WAREHOUSE_SQFT = 100_000
+
+
+def industry(data: Dict[str, Any]) -> Level:
+    if "parcels" not in data:
+        return None
+    parcels = data["parcels"]
+    if not parcels:
+        return GOOD
+    if any(
+        p["kind"] == "heavy"
+        or (p["kind"] == "warehouse" and (p.get("building_sqft") or 0) >= BIG_WAREHOUSE_SQFT)
+        or (p["kind"] != "vacant" and p["distance_m"] <= INDUSTRY_ADJACENT_M)
+        for p in parcels
+    ):
+        return POOR
+    return FAIR
+
+
+def vacant_homes(other_vacant_pct: Optional[float]) -> Level:
+    """Homes empty and not for rent or sale; a few percent is normal turnover."""
+    if other_vacant_pct is None:
+        return None
+    return GOOD if other_vacant_pct < 3 else FAIR if other_vacant_pct < 6 else POOR
+
+
+def emergency_vet(data: Dict[str, Any]) -> Level:
+    """A blocked cat or a swallowed lily can't wait for morning: the nearest 24-hour vet
+    within a quarter hour is good; past half an hour, or none at all, is poor."""
+    if "vets" not in data:
+        return None
+    minutes = next((v["drive_minutes"] for v in data["vets"] if v.get("open_24_hours")), None)
+    if minutes is None:
+        return POOR
+    return GOOD if minutes <= 15 else FAIR if minutes <= 30 else POOR
+
+
 def nearby_minutes(minutes: Optional[float]) -> Level:
     """Errands (groceries, pharmacy, ...) should be closer than a commute."""
     if minutes is None:

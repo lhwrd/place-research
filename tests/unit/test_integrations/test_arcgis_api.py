@@ -119,3 +119,15 @@ async def test_sample_outside_raster():
     api, _ = make_client({"samples": []})
 
     assert await api.sample("Dem/ImageServer", 0, 0) is None
+
+
+@pytest.mark.asyncio
+async def test_query_box_where():
+    from app.integrations.arcgis_api import ArcGISClient
+
+    client = ArcGISClient("https://example.com/rest/services", service="test")
+    client._get = AsyncMock(return_value={"features": []})
+
+    await client.query_box("Layer/FeatureServer/0", 28.5, -81.4, 400, where="DOR_UC = '048'")
+
+    assert client._get.call_args.args[1]["where"] == "DOR_UC = '048'"

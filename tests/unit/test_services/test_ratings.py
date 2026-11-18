@@ -172,6 +172,20 @@ def test_beach_minutes():
     ]  # fmt: skip
 
 
+def test_emergency_vet():
+    def vets(*minutes_open):
+        return {"vets": [{"drive_minutes": m, "open_24_hours": o} for m, o in minutes_open]}
+
+    assert ratings.emergency_vet({}) is None
+    assert ratings.emergency_vet({"vets": []}) == POOR
+    assert ratings.emergency_vet(vets((15, True))) == GOOD
+    # A limited-hours ER doesn't count, however close
+    assert ratings.emergency_vet(vets((5, False), (16, True))) == FAIR
+    assert ratings.emergency_vet(vets((30, True))) == FAIR
+    assert ratings.emergency_vet(vets((31, True))) == POOR
+    assert ratings.emergency_vet(vets((5, False))) == POOR
+
+
 def test_fireworks_and_launches():
     assert ratings.fireworks({"fireworks": [{"distance_m": 2 * MILE}]}) == POOR
     assert ratings.fireworks({"fireworks": [{"distance_m": 5 * MILE}]}) == FAIR
@@ -196,3 +210,54 @@ def test_internet(shown, level):
 def test_drive_and_nearby_minutes():
     assert [ratings.drive_minutes(m) for m in (10, 25, 45, None)] == [GOOD, FAIR, POOR, None]
     assert [ratings.nearby_minutes(m) for m in (5, 15, 25)] == [GOOD, FAIR, POOR]
+
+
+def test_emergency_room():
+    def ers(*minutes):
+        return {"ers": [{"drive_minutes": m} for m in minutes]}
+
+    assert ratings.emergency_room({}) is None
+    assert ratings.emergency_room({"ers": []}) == POOR
+    assert [ratings.emergency_room(ers(m)) for m in (10, 11, 20, 21)] == [GOOD, FAIR, FAIR, POOR]
+
+
+def test_sirens():
+    mile = 1609.344
+
+    def level(fire=(), er=(), pads=()):
+        data = {
+            "fire_stations": [{"distance_m": m * mile} for m in fire],
+            "heliports": [{"distance_m": m * mile, "category": c} for m, c in pads],
+        }
+        return ratings.sirens(data, {"ers": [{"straight_line_m": m * mile} for m in er]})
+
+    assert ratings.sirens({}, {}) is None
+    assert level() == GOOD
+    assert level(fire=[0.25]) == POOR
+    assert level(fire=[0.4]) == FAIR
+    assert level(fire=[0.9]) == GOOD
+    assert level(er=[0.5]) == POOR
+    assert level(er=[0.9]) == FAIR
+    assert level(pads=[(0.4, "hospital")]) == POOR
+    # A private pad this close is rarely used
+    assert level(pads=[(0.4, "other")]) == FAIR
+
+
+def test_industry():
+    def level(*parcels):
+        return ratings.industry({"parcels": [dict(p) for p in parcels]})
+
+    assert ratings.industry({}) is None
+    assert level() == GOOD
+    assert level({"kind": "light", "distance_m": 300}) == FAIR
+    assert level({"kind": "light", "distance_m": 90}) == POOR
+    assert level({"kind": "vacant", "distance_m": 50}) == FAIR
+    assert level({"kind": "heavy", "distance_m": 380}) == POOR
+    assert level({"kind": "warehouse", "distance_m": 300, "building_sqft": 50_000}) == FAIR
+    assert level({"kind": "warehouse", "distance_m": 300, "building_sqft": 348_830}) == POOR
+
+
+def test_vacant_homes():
+    assert [ratings.vacant_homes(p) for p in (None, 2.9, 3, 5.9, 6)] == [
+        None, GOOD, FAIR, FAIR, POOR,
+    ]  # fmt: skip
