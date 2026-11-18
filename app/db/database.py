@@ -294,6 +294,13 @@ class Database:
             ).fetchall()
         return [r["id"] for r in rows]
 
+    def photo_filenames(self, property_id: int) -> List[str]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                "SELECT filename FROM photos WHERE property_id = ?", (property_id,)
+            ).fetchall()
+        return [r["filename"] for r in rows]
+
     def get_photo(self, photo_id: int) -> Optional[Photo]:
         with self._connect() as conn:
             row = conn.execute(

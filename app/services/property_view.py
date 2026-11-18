@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from app.services import noise, ratings
 from app.services.noise import NoiseEstimate
+from app.services.zillow_listing import ListingDetails, parse_listing_details
 
 METERS_PER_MILE = 1609.344
 
@@ -24,6 +25,15 @@ class Row:
 
 
 Rows = List[Row]
+
+
+@dataclass
+class Section:
+    """A titled group of rated rows on the detail page; `key` lets the template add notes."""
+
+    key: str
+    title: str
+    rows: Rows
 
 
 @dataclass
@@ -48,14 +58,15 @@ class Distribution:
 
 @dataclass
 class PropertyView:
-    surroundings: Rows = field(default_factory=list)
+    # The property's own rated data points, by topic: neighborhood (getting around and what's
+    # nearby), noise, natural hazards, pollution. Empty sections are left out
+    sections: List[Section] = field(default_factory=list)
     drive_times: List[DriveTime] = field(default_factory=list)
     nearby_places: List[Dict[str, Any]] = field(default_factory=list)
     census: Rows = field(default_factory=list)
     distributions: List[Distribution] = field(default_factory=list)
     acs_year: Optional[int] = None
     noise: Optional[NoiseEstimate] = None
-    hazards: Rows = field(default_factory=list)
     internet_summary: Optional[Row] = None
     internet: List[Dict[str, Any]] = field(default_factory=list)
     # The county property appraiser's record (Florida); unrated, so not in the scorecard
@@ -63,6 +74,14 @@ class PropertyView:
     parcel_note: Optional[str] = None
     # What the rent buys: rent against the area, the owner, the electric utility. Unrated
     renting: Rows = field(default_factory=list)
+    # What the Zillow listing says: description, highlights, rental terms. Unrated
+    description: Optional[str] = None
+    highlights: List[str] = field(default_factory=list)
+    listing: Rows = field(default_factory=list)
+
+    def section(self, key: str) -> Rows:
+        """The rows of the section with this key; empty if it has none."""
+        return next((s.rows for s in self.sections if s.key == key), [])
 
     def scorecard(self) -> Dict[str, Any]:
         """
@@ -73,8 +92,7 @@ class PropertyView:
         park, an outlet mall) would otherwise outweigh a flood zone.
         """
         rated = [
-            *self.surroundings,
-            *self.hazards,
+            *(row for section in self.sections for row in section.rows),
             *([self.internet_summary] if self.internet_summary else []),
         ]
         counts = {level: sum(1 for r in rated if r.level == level) for level in ratings.LEVELS}
@@ -96,10 +114,14 @@ def build_view(
     Args:
         walk_scores: Scores fetched for this page view (app.services.walk_score); they
             aren't part of the stored enrichment
-        listing: The property's own "price" (monthly rent) and "beds", to set against the
-            area's rents
+        listing: The property's row: its "price" (monthly rent) and "beds", to set
+            against the area's rents, and its "listing_json" from Zillow
     """
     view = PropertyView()
+    details = parse_listing_details((listing or {}).get("listing_json"))
+    view.description = details.description
+    view.highlights = details.highlights
+    view.listing = listing_rows(details)
     data = lambda name: enrichment.get(name) or {}  # noqa: E731
 
     walk = walk_scores or {}
@@ -114,6 +136,8 @@ def build_view(
     air = data("air_quality_provider")
     odors = data("odor_sources_provider")
     beach = (data("beach_parking_provider").get("sites") or [None])[0]
+    malls = data("malls_provider")
+    healthy_mall = (malls.get("healthy") or [None])[0]
     food = data("food_drink_provider")
     vets = data("emergency_vet_provider")
     ers = data("emergency_room_provider")
@@ -122,73 +146,132 @@ def build_view(
     tract = data("census_provider").get("tract") or {}
     roads = data("road_traffic_provider")
     crowds = data("event_traffic_provider")
-    view.surroundings = _rows(
+    sinkholes = data("sinkhole_provider")
+    elevation = data("elevation_provider")
+    evacuation = data("evacuation_zone_provider")
+    wetlands = data("wetlands_provider")
+    contamination = data("contamination_provider")
+    waters = data("impaired_waters_provider")
+    sections = (
         (
-            "Walk score",
-            _score_text(walk.get("walk_score"), walk.get("description")),
-            ratings.walk_score(walk.get("walk_score")),
-        ),
-        (
-            "Bike score",
-            _score_text(walk.get("bike_score"), walk.get("bike_description")),
-            ratings.bike_score(walk.get("bike_score")),
-        ),
-        (
-            "Transit score",
-            _score_text(walk.get("transit_score"), walk.get("transit_description")),
-            ratings.transit_score(walk.get("transit_score")),
-        ),
-        ("Noise", noise_text(view.noise), ratings.noise_level(view.noise)),
-        ("Noise by source", noise_sources_text(view.noise)),
-        ("Sirens", sirens_text(sirens, ers), ratings.sirens(sirens, ers)),
-        ("Fireworks", fireworks_text(local_noise), ratings.fireworks(local_noise)),
-        ("Rocket launches", launch_text(local_noise), ratings.launches(local_noise)),
-        ("Flood zone", flood_zone_text(flood), ratings.flood_zone(flood)),
-        (
-            "Nearest highway",
-            _with_name(
-                _miles_text(highway.get("highway_distance_m")), highway.get("nearest_highway_name")
+            "neighborhood",
+            "Neighborhood",
+            _rows(
+                (
+                    "Walk score",
+                    _score_text(walk.get("walk_score"), walk.get("description")),
+                    ratings.walk_score(walk.get("walk_score")),
+                ),
+                (
+                    "Bike score",
+                    _score_text(walk.get("bike_score"), walk.get("bike_description")),
+                    ratings.bike_score(walk.get("bike_score")),
+                ),
+                (
+                    "Transit score",
+                    _score_text(walk.get("transit_score"), walk.get("transit_description")),
+                    ratings.transit_score(walk.get("transit_score")),
+                ),
+                ("Road traffic", road_traffic_text(roads), ratings.road_traffic(roads)),
+                (
+                    "Tourist traffic",
+                    _nearby_names_text(crowds.get("attractions")),
+                    ratings.attractions(crowds),
+                ),
+                ("Event venues", _nearby_names_text(crowds.get("venues")), ratings.venues(crowds)),
+                ("Food & drink", food_drink_text(food), ratings.food_drink(food)),
+                (
+                    "Nearest beach parking",
+                    beach_parking_text(beach),
+                    ratings.beach_minutes(beach.get("drive_minutes")) if beach else None,
+                ),
+                (
+                    "Nearest healthy mall",
+                    healthy_mall_text(healthy_mall),
+                    ratings.mall_minutes(healthy_mall.get("drive_minutes"))
+                    if healthy_mall
+                    else None,
+                ),
+                ("Dying malls nearby", dying_malls_text(malls), ratings.dying_malls(malls)),
+                ("Emergency room", emergency_room_text(ers), ratings.emergency_room(ers)),
+                ("Emergency vet (24 hr)", emergency_vet_text(vets), ratings.emergency_vet(vets)),
+                (
+                    "Vacant homes",
+                    vacant_homes_text(tract),
+                    ratings.vacant_homes(tract.get("other_vacant_pct")),
+                ),
             ),
-            ratings.highway(highway.get("highway_distance_m")),
         ),
         (
-            "Nearest railroad",
-            _miles_text(rail.get("railroad_distance_m")),
-            ratings.railroad(rail.get("railroad_distance_m")),
+            "noise",
+            "Noise",
+            _rows(
+                ("Noise", noise_text(view.noise), ratings.noise_level(view.noise)),
+                ("Noise by source", noise_sources_text(view.noise)),
+                ("Sirens", sirens_text(sirens, ers), ratings.sirens(sirens, ers)),
+                (
+                    "Nearest highway",
+                    _with_name(
+                        _miles_text(highway.get("highway_distance_m")),
+                        highway.get("nearest_highway_name"),
+                    ),
+                    ratings.highway(highway.get("highway_distance_m")),
+                ),
+                (
+                    "Nearest railroad",
+                    _miles_text(rail.get("railroad_distance_m")),
+                    ratings.railroad(rail.get("railroad_distance_m")),
+                ),
+                (
+                    "Nearest airport",
+                    _with_name(
+                        _miles_text(nearest_airport["distance_m"]),
+                        f"{nearest_airport['code']}, {nearest_airport['name']}",
+                    )
+                    if nearest_airport
+                    else None,
+                ),
+                ("Fireworks", fireworks_text(local_noise), ratings.fireworks(local_noise)),
+                ("Rocket launches", launch_text(local_noise), ratings.launches(local_noise)),
+            ),
         ),
         (
-            "Nearest airport",
-            _with_name(
-                _miles_text(nearest_airport["distance_m"]),
-                f"{nearest_airport['code']}, {nearest_airport['name']}",
-            )
-            if nearest_airport
-            else None,
+            "natural_hazards",
+            "Natural hazards",
+            _rows(
+                ("Flood zone", flood_zone_text(flood), ratings.flood_zone(flood)),
+                ("Elevation", elevation_text(elevation), ratings.elevation(elevation)),
+                (
+                    "Evacuation zone",
+                    evacuation_zone_text(evacuation),
+                    ratings.evacuation_zone(evacuation),
+                ),
+                ("Wetlands", wetlands_text(wetlands), ratings.wetlands(wetlands)),
+                ("Sinkhole geology", sinkhole_text(sinkholes), ratings.sinkhole_geology(sinkholes)),
+                (
+                    "Sinkhole reports",
+                    sinkhole_reports_text(sinkholes),
+                    ratings.sinkhole_reports(sinkholes),
+                ),
+            ),
         ),
-        ("Air quality", air_quality_text(air), ratings.air_quality(air)),
-        ("Odor sources", odor_sources_text(odors), ratings.odor_sources(odors)),
-        ("Industry nearby", industry_text(industry), ratings.industry(industry)),
-        ("Road traffic", road_traffic_text(roads), ratings.road_traffic(roads)),
         (
-            "Tourist traffic",
-            _nearby_names_text(crowds.get("attractions")),
-            ratings.attractions(crowds),
-        ),
-        ("Event venues", _nearby_names_text(crowds.get("venues")), ratings.venues(crowds)),
-        ("Food & drink", food_drink_text(food), ratings.food_drink(food)),
-        (
-            "Nearest beach parking",
-            beach_parking_text(beach),
-            ratings.beach_minutes(beach.get("drive_minutes")) if beach else None,
-        ),
-        ("Emergency room", emergency_room_text(ers), ratings.emergency_room(ers)),
-        ("Emergency vet (24 hr)", emergency_vet_text(vets), ratings.emergency_vet(vets)),
-        (
-            "Vacant homes",
-            vacant_homes_text(tract),
-            ratings.vacant_homes(tract.get("other_vacant_pct")),
+            "pollution",
+            "Pollution",
+            _rows(
+                ("Air quality", air_quality_text(air), ratings.air_quality(air)),
+                ("Odor sources", odor_sources_text(odors), ratings.odor_sources(odors)),
+                ("Industry nearby", industry_text(industry), ratings.industry(industry)),
+                (
+                    "Contamination sites",
+                    contamination_text(contamination),
+                    ratings.contamination(contamination),
+                ),
+                ("Impaired waters", impaired_waters_text(waters), ratings.impaired_waters(waters)),
+            ),
         ),
     )
+    view.sections = [Section(key, title, rows) for key, title, rows in sections if rows]
 
     view.drive_times = drive_times(data("distance_provider"))
     view.nearby_places = [
@@ -203,34 +286,6 @@ def build_view(
         for p in data("places_nearby_provider").get("places_nearby", [])
         if p.get("name")
     ]
-
-    sinkholes = data("sinkhole_provider")
-    elevation = data("elevation_provider")
-    evacuation = data("evacuation_zone_provider")
-    wetlands = data("wetlands_provider")
-    contamination = data("contamination_provider")
-    waters = data("impaired_waters_provider")
-    view.hazards = _rows(
-        ("Sinkhole geology", sinkhole_text(sinkholes), ratings.sinkhole_geology(sinkholes)),
-        (
-            "Sinkhole reports",
-            sinkhole_reports_text(sinkholes),
-            ratings.sinkhole_reports(sinkholes),
-        ),
-        ("Elevation", elevation_text(elevation), ratings.elevation(elevation)),
-        (
-            "Evacuation zone",
-            evacuation_zone_text(evacuation),
-            ratings.evacuation_zone(evacuation),
-        ),
-        ("Wetlands", wetlands_text(wetlands), ratings.wetlands(wetlands)),
-        (
-            "Contamination sites",
-            contamination_text(contamination),
-            ratings.contamination(contamination),
-        ),
-        ("Impaired waters", impaired_waters_text(waters), ratings.impaired_waters(waters)),
-    )
 
     broadband = data("broadband_provider")
     view.internet = internet_providers(broadband)
@@ -471,6 +526,27 @@ def beach_parking_text(site: Optional[Dict[str, Any]]) -> Optional[str]:
     return f"{drive} ({' · '.join(p for p in (place, site.get('coast'), fee) if p)})"
 
 
+def healthy_mall_text(mall: Optional[Dict[str, Any]]) -> Optional[str]:
+    """E.g. "14 min · 8.2 mi (Altamonte Mall, Altamonte Springs · healthy)"."""
+    if not mall or mall.get("drive_minutes") is None:
+        return None
+    drive = _drive_text(mall["drive_minutes"], mall.get("drive_miles"))
+    place = ", ".join(p for p in (mall.get("name"), mall.get("city")) if p)
+    return f"{drive} ({' · '.join(p for p in (place, mall.get('status')) if p)})"
+
+
+def dying_malls_text(data: Dict[str, Any]) -> Optional[str]:
+    """E.g. "Volusia Mall 0.8 mi (dead: Sears gone ...)"; None if none in range."""
+    declining = data.get("declining") or []
+    if not declining:
+        return None
+    return " · ".join(
+        f"{m['name']} {_miles(m['straight_line_m'])} "
+        f"({m['status']}{': ' + m['note'] if m.get('note') else ''})"
+        for m in declining
+    )
+
+
 def food_drink_text(data: Dict[str, Any]) -> Optional[str]:
     """E.g. "6 within a 10-min walk · 20 within 0.9 mi (nearest Prato, 400 ft)"."""
     if "places" not in data:
@@ -509,6 +585,37 @@ def road_traffic_text(data: Dict[str, Any]) -> Optional[str]:
 def _nearby_names_text(places: Optional[List[Dict[str, Any]]]) -> Optional[str]:
     """E.g. "Kia Center 0.8 mi, Camping World Stadium 1.9 mi"; None if none in range."""
     return ", ".join(f"{p['name']} {_miles(p['distance_m'])}" for p in (places or [])[:3]) or None
+
+
+def listing_rows(details: ListingDetails) -> Rows:
+    """The listing's terms and facts, Zillow's at-a-glance summary first."""
+    glance = dict(details.at_a_glance)
+    # The hero already shows the type, and the fees row is more specific than Zillow's total
+    glance.pop("Type", None)
+    if details.fees:
+        glance.pop("Deposit & fees", None)
+    listed = [details.listed_by, details.contact_phone]
+    return _rows(
+        ("Status", details.status if details.status != "For rent" else None),
+        *glance.items(),
+        ("Lease", details.lease_term),
+        ("Fees", " · ".join(f"{name} {fee}" for name, fee in details.fees) or None),
+        ("Appliances", ", ".join(details.appliances) or None),
+        ("Flooring", ", ".join(details.flooring) or None),
+        (
+            "Rent Zestimate",
+            _money(details.rent_zestimate) and f"{_money(details.rent_zestimate)}/mo",
+        ),
+        ("Zestimate", _money(details.zestimate)),
+        ("On Zillow", _days(details.days_on_zillow)),
+        ("Listed by", " · ".join(p for p in listed if p) or None),
+    )
+
+
+def _days(days: Optional[int]) -> Optional[str]:
+    if days is None:
+        return None
+    return "Listed today" if days == 0 else f"{days} day{'s' if days != 1 else ''}"
 
 
 # Above this a listing's price is a sale price, not a month's rent

@@ -11,7 +11,7 @@ shops within a walk, and names the electric utility with its average residential
 gives the drive to the nearest emergency room and the nearest 24-hour emergency vet, fire
 stations and helipads close enough to hear the sirens and rotors, and how many of the
 tract's homes sit empty. In Florida it also covers sinkhole geology and reported sinkholes,
-open contamination cleanups, nearby odor sources (sewage plants, landfills, paper mills and the like), impaired lakes, hurricane evacuation zone, the drive to the nearest beach parking, traffic on the road out front, tourist and event crowds nearby, warehouses, factories and yards within a quarter mile, who owns the place, the property appraiser's record (year built, living area, value, recent sales), theme park
+open contamination cleanups, nearby odor sources (sewage plants, landfills, paper mills and the like), impaired lakes, hurricane evacuation zone, the drive to the nearest beach parking, the drive to the nearest healthy mall and any dying malls close by, traffic on the road out front, tourist and event crowds nearby, warehouses, factories and yards within a quarter mile, who owns the place, the property appraiser's record (year built, living area, value, recent sales), theme park
 fireworks and Cape launches; anywhere, nearby wetlands, whether the house sits below
 the ground around it, and FCC home internet providers. Look around in Street View, rate the home and how the neighborhood looks, mark it
 visited, keep notes and photos.
@@ -68,6 +68,15 @@ embedded property object (from `__NEXT_DATA__`, including the `gdpClientCache` J
 string) and schema.org JSON-LD blocks, and takes address, price, beds, baths, sqft, lot,
 year built, type and coordinates from them. Without it, the address comes from the URL
 slug and the geocoder does the rest.
+
+Enrichment also fetches the listing's Zillow page itself, every time it runs, and stores
+the same property object (trimmed to ~10 KB). That fills in the price and facts, plus the
+description, Zillow's highlights, rental terms (availability, pets, laundry, parking, lease,
+deposit and fees, appliances), the Rent Zestimate and who listed it, shown in a Listing
+section on the property page. The listing photos are copied into the property's photos once.
+Zillow has no API and its bot check may answer with a captcha instead of the page; then the
+stored data (or the Shortcut's `listing_json`) is kept and the failure is listed with the
+providers'. Set `ZILLOW_FETCH_ENABLED=false` to stop fetching.
 
 ### Add photos
 
@@ -130,15 +139,21 @@ national. None needs a key.
 The property record (Florida) is the county property appraiser's tax roll entry for the
 parcel, from the Department of Revenue's statewide parcels on Florida GIO's ArcGIS
 service: year built, living area, lot, use, quality, just and taxable value, homestead and
-sales from this year and last. No key. It has no bed or bath counts; those come from the
-listing.
+sales from this year and last. No key. When the listing (or your edits) leaves sqft, year
+built or lot blank, enrichment fills them from the record, unless the parcel was only the
+nearest one or holds several units. It has no bed, bath or garage counts; those come from
+the listing.
 
 Airports ship with the app (`app/data/airports.csv`, large and medium airports from
 OurAirports); refresh the list with `uv run python scripts/build_airports.py`. Beach
 parking (`app/data/beach_parking.csv`, FDEP's Coastal Access Sites that have parking) is
 bundled the same way: `uv run python scripts/build_beach_parking.py`. So are Florida's
 heliports (`app/data/heliports.csv`, from OurAirports, labeled hospital, police/fire, tour
-or other): `uv run python scripts/build_heliports.py`.
+or other): `uv run python scripts/build_heliports.py`. Malls (`app/data/malls.csv`) are
+kept by hand: each Florida mall or big shopping center is marked thriving, healthy,
+struggling, dead or redeveloping, with the reason in `note`. Edit the status as malls
+change; for a new row, leave the coordinates blank and run
+`uv run python scripts/locate_malls.py` to fill them in from Google Places.
 
 Walk, bike and transit scores (`WALKSCORE_API_KEY`) are the exception to "enrich once and
 store": Walk Score's terms don't allow keeping its scores, so they are fetched each time a
@@ -196,7 +211,8 @@ app/services/             property_service.py (ingest + enrichment), property_vi
 app/services/enrichment/  orchestrator + auto-discovered providers
 app/integrations/         external API clients
 scripts/                  build_highways.py, build_airports.py, build_broadband.py,
-                          build_beach_parking.py, build_heliports.py
+                          build_beach_parking.py, build_heliports.py,
+                          locate_malls.py
 tests/                    unit and endpoint tests (no network)
 ```
 

@@ -1,11 +1,15 @@
 """Tests for property ingest and enrichment."""
 
+import json
 from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, Mock
 
+import httpx
 import pytest
 
+from app.core.config import settings
 from app.db import PropertyStatus
+from app.integrations.zillow_page import ZillowFetchError
 from app.services.property_service import (
     AMENITY_TYPES,
     PREFERRED_PLACES,
@@ -28,6 +32,16 @@ LISTING_JSON = {
             "zipcode": "32127",
         },
     }
+}
+
+
+PARCEL = {
+    "found": True,
+    "match": "address",
+    "living_area_sqft": 1850,
+    "year_built": 1987,
+    "lot_acres": 0.23,
+    "residential_units": 1,
 }
 
 
@@ -298,6 +312,49 @@ class TestEnrich:
         assert (prop["price"], prop["beds"]) == (300000, 2)
 
     @pytest.mark.asyncio
+    async def test_parcel_record_fills_blank_facts(self, service, db, orchestrator):
+        orchestrator.enrich.return_value = _result(parcel_provider=_ok(PARCEL))
+        property_id, _ = service.create_from_input("111 White Pl")
+        db.update_property(property_id, {"year_built": 1990})
+
+        await service.enrich(property_id)
+
+        prop = db.get_property(property_id)
+        assert (prop["sqft"], prop["lot_acres"]) == (1850, 0.23)
+        assert prop["year_built"] == 1990  # hand-entered value wins
+        assert prop["beds"] is None  # the roll has no bedroom counts
+
+    @pytest.mark.asyncio
+    async def test_listing_facts_win_over_parcel_record(self, service, db, orchestrator):
+        orchestrator.enrich.return_value = _result(parcel_provider=_ok(PARCEL))
+        listing = {"property": {**LISTING_JSON["property"], "livingArea": 1900}}
+        property_id, _ = service.create_listing(URL, listing)
+
+        await service.enrich(property_id)
+
+        prop = db.get_property(property_id)
+        assert prop["sqft"] == 1900
+        assert prop["year_built"] == 1987
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "parcel",
+        [
+            {**PARCEL, "match": "nearest"},
+            {**PARCEL, "residential_units": 4},
+            {"found": False},
+        ],
+    )
+    async def test_uncertain_parcel_fills_nothing(self, service, db, orchestrator, parcel):
+        orchestrator.enrich.return_value = _result(parcel_provider=_ok(parcel))
+        property_id, _ = service.create_from_input("111 White Pl")
+
+        await service.enrich(property_id)
+
+        prop = db.get_property(property_id)
+        assert (prop["sqft"], prop["year_built"], prop["lot_acres"]) == (None, None, None)
+
+    @pytest.mark.asyncio
     async def test_missing_property(self, service):
         assert await service.enrich(999) is False
 
@@ -380,3 +437,119 @@ class TestLoadPreferences:
         preferences = await service.load_preferences()
 
         assert preferences["custom_locations"] == []
+
+
+PAGE_PROPERTY = {
+    **LISTING_JSON["property"],
+    "price": 2400,
+    "description": "Fresh paint.",
+    "latitude": 29.2,
+    "longitude": -81.1,
+    "originalPhotos": [
+        {"mixedSources": {"jpeg": [{"url": "https://photos.zillowstatic.com/fp/a-1536.jpg"}]}},
+        {"mixedSources": {"jpeg": [{"url": "https://photos.zillowstatic.com/fp/b-1536.jpg"}]}},
+        {"mixedSources": {"jpeg": [{"url": "https://photos.zillowstatic.com/fp/c-1536.jpg"}]}},
+    ],
+}
+
+
+def _photo_response(request_url):
+    if "/b-" in request_url:  # one photo comes back as something else
+        return httpx.Response(200, content=b"<html>", headers={"content-type": "text/html"})
+    return httpx.Response(200, content=b"jpeg-bytes", headers={"content-type": "image/jpeg"})
+
+
+@pytest.fixture
+def listing_client():
+    client = Mock()
+    client.fetch_property = AsyncMock(return_value=PAGE_PROPERTY)
+    client.fetch_photo = AsyncMock(side_effect=_photo_response)
+    return client
+
+
+@pytest.fixture
+def fetching_service(db, geocoder, orchestrator, listing_client, monkeypatch):
+    monkeypatch.setattr(settings, "zillow_fetch_enabled", True)
+    return PropertyService(
+        db=db, geocoder=geocoder, orchestrator=orchestrator, listing_client=listing_client
+    )
+
+
+class TestZillowPage:
+    @pytest.mark.asyncio
+    async def test_fetches_listing_and_photos(self, fetching_service, db, geocoder):
+        property_id, _ = fetching_service.create_listing(URL)
+
+        await fetching_service.enrich(property_id)
+
+        prop = db.get_property(property_id)
+        assert prop["address"] == "111 White Pl, Port Orange, FL 32127"
+        assert prop["price"] == 2400
+        assert prop["garage_spaces"] == 2
+        assert json.loads(prop["listing_json"])["description"] == "Fresh paint."
+        assert (prop["latitude"], prop["longitude"]) == (29.2, -81.1)
+        geocoder.geocode_address.assert_not_called()
+        assert sorted(db.photo_filenames(property_id)) == ["zillow-a-1536.jpg", "zillow-c-1536.jpg"]
+        assert prop["error"] is None
+
+    @pytest.mark.asyncio
+    async def test_photos_are_copied_once(self, fetching_service, db, listing_client):
+        property_id, _ = fetching_service.create_listing(URL)
+        await fetching_service.enrich(property_id)
+        db.delete_photo(db.photo_ids(property_id)[0])
+
+        await fetching_service.enrich(property_id, use_cached=False)
+
+        assert len(db.photo_ids(property_id)) == 1
+        assert listing_client.fetch_property.await_count == 2
+        assert listing_client.fetch_photo.await_count == 3
+
+    @pytest.mark.asyncio
+    async def test_typed_address_is_kept(self, fetching_service, db):
+        property_id, _ = fetching_service.create_listing(URL)
+        db.update_property(property_id, {"address": "111 White Place, Port Orange"})
+
+        await fetching_service.enrich(property_id)
+
+        assert db.get_property(property_id)["address"] == "111 White Place, Port Orange"
+
+    @pytest.mark.asyncio
+    async def test_blocked_keeps_shortcut_data(self, fetching_service, db, listing_client):
+        listing_client.fetch_property.side_effect = ZillowFetchError("Blocked (captcha)")
+        property_id, _ = fetching_service.create_listing(URL, LISTING_JSON)
+
+        await fetching_service.enrich(property_id)
+
+        prop = db.get_property(property_id)
+        assert prop["status"] == PropertyStatus.ENRICHED
+        assert prop["price"] == 425000
+        assert '"zpid": 46284123' in prop["listing_json"]
+        assert prop["error"] == "zillow_listing: Blocked (captcha)"
+        listing_client.fetch_photo.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_photo_download_error_is_skipped(self, fetching_service, db, listing_client):
+        listing_client.fetch_photo.side_effect = httpx.ConnectError("down")
+        property_id, _ = fetching_service.create_listing(URL)
+
+        await fetching_service.enrich(property_id)
+
+        assert db.photo_ids(property_id) == []
+        assert db.get_property(property_id)["price"] == 2400
+
+    @pytest.mark.asyncio
+    async def test_disabled(self, fetching_service, listing_client, monkeypatch):
+        monkeypatch.setattr(settings, "zillow_fetch_enabled", False)
+        property_id, _ = fetching_service.create_listing(URL)
+
+        await fetching_service.enrich(property_id)
+
+        listing_client.fetch_property.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_plain_address_is_not_fetched(self, fetching_service, listing_client):
+        property_id, _ = fetching_service.create_from_input("42 Elm St, Denver, CO")
+
+        await fetching_service.enrich(property_id)
+
+        listing_client.fetch_property.assert_not_called()

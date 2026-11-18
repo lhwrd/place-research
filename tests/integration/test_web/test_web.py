@@ -126,6 +126,9 @@ class TestPropertyDetail:
         html = web.get(f"/properties/{enriched}").text
 
         assert "Walk score" in html and ">72<" in html
+        # The Walk Score credit sits under the section that holds the scores
+        neighborhood = html.split('id="neighborhood"')[1].split("</section>")[0]
+        assert "<h2>Neighborhood</h2>" in neighborhood and "Walk Score<sup>" in neighborhood
         walk_scores.assert_awaited_once_with(39.7, -104.9, "42 Elm St, Denver, CO")
         assert "Mom" in html and "18m" in html
         assert "Denver" in html and "715,000" in html
