@@ -19,6 +19,11 @@ def pairs(rows):
     return [(r.label, r.value) for r in rows]
 
 
+def rated(view):
+    """Every row of the rated sections, in page order."""
+    return [row for section in view.sections for row in section.rows]
+
+
 class TestListing:
     LISTING = {
         "zpid": 1,
@@ -138,17 +143,24 @@ def test_build_view_formats_every_provider():
         },
     )
 
-    assert pairs(view.surroundings) == [
-        ("Walk score", "45 · Car-Dependent"),
-        ("Bike score", "60 · Bikeable"),
-        ("Noise", noise_text(view.noise)),
-        # Passing trains a mile away outweigh the interstate 2 mi away and the airport
-        ("Noise by source", "Road 41 · Rail 56 · Aircraft 46 dB"),
-        ("Flood zone", "AE (high-risk SFHA, BFE 7 ft)"),
-        ("Nearest highway", "2.00 mi (I- 95)"),
-        ("Nearest railroad", "1.00 mi"),
-        ("Nearest airport", "5.64 mi (DAB, Daytona Beach International Airport)"),
-        ("Air quality", "AQI 31 Good"),
+    assert [(s.title, pairs(s.rows)) for s in view.sections] == [
+        (
+            "Neighborhood",
+            [("Walk score", "45 · Car-Dependent"), ("Bike score", "60 · Bikeable")],
+        ),
+        (
+            "Noise",
+            [
+                ("Noise", noise_text(view.noise)),
+                # Passing trains a mile away outweigh the interstate 2 mi away and the airport
+                ("Noise by source", "Road 41 · Rail 56 · Aircraft 46 dB"),
+                ("Nearest highway", "2.00 mi (I- 95)"),
+                ("Nearest railroad", "1.00 mi"),
+                ("Nearest airport", "5.64 mi (DAB, Daytona Beach International Airport)"),
+            ],
+        ),
+        ("Natural hazards", [("Flood zone", "AE (high-risk SFHA, BFE 7 ft)")]),
+        ("Pollution", [("Air quality", "AQI 31 Good")]),
     ]
     assert view.noise.main_source == "rail"
     assert noise_text(view.noise).startswith("Moderate · ")
@@ -156,7 +168,7 @@ def test_build_view_formats_every_provider():
         DriveTime("Mom", 15, 6.14, "good"),
         DriveTime("Work", None, None, None),
     ]
-    assert levels(view.surroundings) == {
+    assert levels(rated(view)) == {
         "Walk score": "fair",
         "Bike score": "fair",
         "Noise": "fair",  # 56 dB
@@ -176,7 +188,7 @@ def test_build_view_formats_every_provider():
 def test_empty_enrichment():
     view = build_view({})
 
-    assert view.surroundings == []
+    assert view.sections == []
     assert view.drive_times == []
     assert view.census == []
     assert view.distributions == []
@@ -243,12 +255,12 @@ def test_census_outside_any_city():
 
 def test_air_quality_without_aqi():
     view = build_view({"air_quality_provider": {"category": "Moderate"}})
-    assert values(view.surroundings)["Air quality"] == "Moderate"
+    assert values(view.section("pollution"))["Air quality"] == "Moderate"
 
 
 def test_odor_sources():
     def view(data):
-        return build_view({"odor_sources_provider": data}).surroundings
+        return rated(build_view({"odor_sources_provider": data}))
 
     assert view({}) == []
     assert pairs(view({"source_count": 0, "sources": []})) == [("Odor sources", "None in range")]
@@ -273,7 +285,7 @@ def test_odor_sources():
 
 def test_beach_parking():
     def view(sites):
-        return build_view({"beach_parking_provider": {"sites": sites}}).surroundings
+        return rated(build_view({"beach_parking_provider": {"sites": sites}}))
 
     assert view([]) == []
     site = {"name": "Lori Wilson Park", "beach": "Cocoa Beach", "coast": "Atlantic",
@@ -296,45 +308,46 @@ def test_beach_parking():
 
 
 def test_food_drink_road_and_crowds():
-    def surroundings(**providers):
-        return values(build_view({f"{k}_provider": v for k, v in providers.items()}).surroundings)
+    def shown(**providers):
+        return values(rated(build_view({f"{k}_provider": v for k, v in providers.items()})))
 
     place = {"name": "Prato", "type": "Italian Restaurant", "distance_m": 120}
     far = {"name": "Far Diner", "type": "Diner", "distance_m": 1500}
     sparse = {"places": [place, far], "walkable_count": 1, "capped": False, "radius_m": 2414}
-    assert surroundings(food_drink=sparse)["Food & drink"] == (
+    assert shown(food_drink=sparse)["Food & drink"] == (
         "1 within a 10-min walk · 2 within 1.5 mi (nearest Prato, 394 ft)"
     )
     dense = {"places": [place] * 19 + [{**place, "distance_m": 300}], "walkable_count": 20,
              "capped": True, "radius_m": 2414}  # fmt: skip
-    assert surroundings(food_drink=dense)["Food & drink"] == (
+    assert shown(food_drink=dense)["Food & drink"] == (
         "20+ within a 10-min walk · the closest 20 within 984 ft (nearest Prato, 394 ft)"
     )
     strip_malls = {"places": [far] * 20, "walkable_count": 0, "capped": True, "radius_m": 2414}
-    assert surroundings(food_drink=strip_malls)["Food & drink"] == (
+    assert shown(food_drink=strip_malls)["Food & drink"] == (
         "None within a 10-min walk · 20 within 0.9 mi (nearest Far Diner, 0.9 mi)"
     )
     none = {"places": [], "walkable_count": 0, "capped": False, "radius_m": 2414}
-    assert surroundings(food_drink=none)["Food & drink"] == "None within 1.5 mi"
+    assert shown(food_drink=none)["Food & drink"] == "None within 1.5 mi"
 
     quiet = {"from_street": "Orlando Ave", "to_street": "Park Ave", "vehicles_per_day": 3000,
              "distance_m": 20}  # fmt: skip
     busy = {"from_street": "SR-426/Fairbanks Ave", "to_street": None, "vehicles_per_day": 41000,
             "distance_m": 45}  # fmt: skip
-    assert surroundings(road_traffic={"roads": [quiet, busy]})["Road traffic"] == (
+    assert shown(road_traffic={"roads": [quiet, busy]})["Road traffic"] == (
         "On a counted road: 41,000 vehicles a day (SR-426/Fairbanks Ave)"
     )
-    assert surroundings(road_traffic={"roads": [{**quiet, "distance_m": 130}]})["Road traffic"] == (
+    assert shown(road_traffic={"roads": [{**quiet, "distance_m": 130}]})["Road traffic"] == (
         "Nearest counted road 427 ft away: 3,000 vehicles a day (Orlando Ave to Park Ave)"
     )
-    assert surroundings(road_traffic={"roads": []})["Road traffic"] == (
+    assert shown(road_traffic={"roads": []})["Road traffic"] == (
         "No counted road within 650 ft (a local street)"
     )
 
     crowds = {"attractions": [], "venues": [{"name": "Kia Center", "distance_m": 1300},
                                             {"name": "Inter&Co Stadium", "distance_m": 2300}]}  # fmt: skip
-    shown = surroundings(event_traffic=crowds)
-    assert shown == {"Event venues": "Kia Center 0.8 mi, Inter&Co Stadium 1.4 mi"}
+    assert shown(event_traffic=crowds) == {
+        "Event venues": "Kia Center 0.8 mi, Inter&Co Stadium 1.4 mi"
+    }
 
 
 class TestRenting:
@@ -424,7 +437,7 @@ class TestRenting:
 
 def test_malls():
     def view(data):
-        return build_view({"malls_provider": data}).surroundings
+        return rated(build_view({"malls_provider": data}))
 
     assert view({"healthy": [], "declining": []}) == []
     healthy = {"name": "Altamonte Mall", "city": "Altamonte Springs", "status": "healthy",
@@ -501,7 +514,7 @@ def test_scores_without_descriptions():
     """Just the number where Walk Score sends no description."""
     view = build_view({}, {"walk_score": 47, "bike_score": 62})
 
-    assert pairs(view.surroundings) == [("Walk score", "47"), ("Bike score", "62")]
+    assert pairs(view.section("neighborhood")) == [("Walk score", "47"), ("Bike score", "62")]
 
 
 class TestHazardsAndInternet:
@@ -567,18 +580,21 @@ class TestHazardsAndInternet:
             }
         )
 
-        assert values(view.hazards) == {
-            "Sinkhole geology": "Most favorable to sinkhole formation",
-            "Sinkhole reports": "3 within 1 mi (1 verified) · nearest 0.3 mi, 2008",
-            "Elevation": "82 ft · 3.5 ft below surrounding ground",
-            "Evacuation zone": "None",
-            "Wetlands": "Freshwater Forested/Shrub Wetland 144 ft away",
-            "Contamination sites": "2 open within ½ mi · nearest Fera Cleaners (PFAS), 643 ft",
-            "Impaired waters": "Lake Eola (nutrients, mercury)",
-        }
-        surroundings = values(view.surroundings)
-        assert surroundings["Fireworks"] == "EPCOT 3.6 mi"
-        assert surroundings["Rocket launches"] == "12 mi from the Cape · sonic booms likely"
+        assert pairs(view.section("natural_hazards")) == [
+            ("Elevation", "82 ft · 3.5 ft below surrounding ground"),
+            ("Evacuation zone", "None"),
+            ("Wetlands", "Freshwater Forested/Shrub Wetland 144 ft away"),
+            ("Sinkhole geology", "Most favorable to sinkhole formation"),
+            ("Sinkhole reports", "3 within 1 mi (1 verified) · nearest 0.3 mi, 2008"),
+        ]
+        assert pairs(view.section("pollution")) == [
+            ("Contamination sites", "2 open within ½ mi · nearest Fera Cleaners (PFAS), 643 ft"),
+            ("Impaired waters", "Lake Eola (nutrients, mercury)"),
+        ]
+        assert pairs(view.section("noise")) == [
+            ("Fireworks", "EPCOT 3.6 mi"),
+            ("Rocket launches", "12 mi from the Cape · sonic booms likely"),
+        ]
         assert view.internet_summary.value == "No fiber · 1 wired provider · up to 1,000 Mbps"
         assert [p["name"] for p in view.internet] == ["Spectrum"]
 
@@ -617,7 +633,7 @@ class TestHazardsAndInternet:
             }
         )
 
-        assert levels(view.hazards) == {
+        assert levels(rated(view)) == {
             "Sinkhole geology": "poor",
             "Sinkhole reports": "good",
             "Elevation": "fair",
@@ -632,12 +648,12 @@ class TestHazardsAndInternet:
         assert view.scorecard() == {
             "counts": {"good": 2, "fair": 2, "poor": 2},
             "total": 6,
-            "poor": ["Sinkhole geology", "Evacuation zone"],
+            "poor": ["Evacuation zone", "Sinkhole geology"],
         }
 
     def test_missing_providers_add_nothing(self):
         view = build_view({})
-        assert view.hazards == [] and view.internet_summary is None and view.internet == []
+        assert view.sections == [] and view.internet_summary is None and view.internet == []
 
     def test_quiet_results(self):
         view = build_view(
@@ -655,7 +671,7 @@ class TestHazardsAndInternet:
             }
         )
 
-        assert values(view.hazards) == {
+        assert values(rated(view)) == {
             "Sinkhole reports": "None within 1 mi",
             "Elevation": "100 ft · level with surroundings",
             "Evacuation zone": "Zone A (evacuates first)",
@@ -670,7 +686,7 @@ def test_scores_saved_by_earlier_versions_are_not_shown():
     """Walk Score's terms don't allow storing scores; only ones fetched for this view count."""
     view = build_view({"walk_score_provider": {"walk_score": 47}})
 
-    assert view.surroundings == []
+    assert view.sections == []
 
 
 class TestParcel:

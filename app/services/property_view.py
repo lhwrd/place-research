@@ -28,6 +28,15 @@ Rows = List[Row]
 
 
 @dataclass
+class Section:
+    """A titled group of rated rows on the detail page; `key` lets the template add notes."""
+
+    key: str
+    title: str
+    rows: Rows
+
+
+@dataclass
 class DriveTime:
     name: str
     minutes: Optional[float]
@@ -49,14 +58,15 @@ class Distribution:
 
 @dataclass
 class PropertyView:
-    surroundings: Rows = field(default_factory=list)
+    # The property's own rated data points, by topic: neighborhood (getting around and what's
+    # nearby), noise, natural hazards, pollution. Empty sections are left out
+    sections: List[Section] = field(default_factory=list)
     drive_times: List[DriveTime] = field(default_factory=list)
     nearby_places: List[Dict[str, Any]] = field(default_factory=list)
     census: Rows = field(default_factory=list)
     distributions: List[Distribution] = field(default_factory=list)
     acs_year: Optional[int] = None
     noise: Optional[NoiseEstimate] = None
-    hazards: Rows = field(default_factory=list)
     internet_summary: Optional[Row] = None
     internet: List[Dict[str, Any]] = field(default_factory=list)
     # The county property appraiser's record (Florida); unrated, so not in the scorecard
@@ -69,6 +79,10 @@ class PropertyView:
     highlights: List[str] = field(default_factory=list)
     listing: Rows = field(default_factory=list)
 
+    def section(self, key: str) -> Rows:
+        """The rows of the section with this key; empty if it has none."""
+        return next((s.rows for s in self.sections if s.key == key), [])
+
     def scorecard(self) -> Dict[str, Any]:
         """
         Counts of rated data points by level, and the labels of the poor ones.
@@ -78,8 +92,7 @@ class PropertyView:
         park, an outlet mall) would otherwise outweigh a flood zone.
         """
         rated = [
-            *self.surroundings,
-            *self.hazards,
+            *(row for section in self.sections for row in section.rows),
             *([self.internet_summary] if self.internet_summary else []),
         ]
         counts = {level: sum(1 for r in rated if r.level == level) for level in ratings.LEVELS}
@@ -128,70 +141,123 @@ def build_view(
     food = data("food_drink_provider")
     roads = data("road_traffic_provider")
     crowds = data("event_traffic_provider")
-    view.surroundings = _rows(
+    sinkholes = data("sinkhole_provider")
+    elevation = data("elevation_provider")
+    evacuation = data("evacuation_zone_provider")
+    wetlands = data("wetlands_provider")
+    contamination = data("contamination_provider")
+    waters = data("impaired_waters_provider")
+    sections = (
         (
-            "Walk score",
-            _score_text(walk.get("walk_score"), walk.get("description")),
-            ratings.walk_score(walk.get("walk_score")),
-        ),
-        (
-            "Bike score",
-            _score_text(walk.get("bike_score"), walk.get("bike_description")),
-            ratings.bike_score(walk.get("bike_score")),
-        ),
-        (
-            "Transit score",
-            _score_text(walk.get("transit_score"), walk.get("transit_description")),
-            ratings.transit_score(walk.get("transit_score")),
-        ),
-        ("Noise", noise_text(view.noise), ratings.noise_level(view.noise)),
-        ("Noise by source", noise_sources_text(view.noise)),
-        ("Fireworks", fireworks_text(local_noise), ratings.fireworks(local_noise)),
-        ("Rocket launches", launch_text(local_noise), ratings.launches(local_noise)),
-        ("Flood zone", flood_zone_text(flood), ratings.flood_zone(flood)),
-        (
-            "Nearest highway",
-            _with_name(
-                _miles_text(highway.get("highway_distance_m")), highway.get("nearest_highway_name")
+            "neighborhood",
+            "Neighborhood",
+            _rows(
+                (
+                    "Walk score",
+                    _score_text(walk.get("walk_score"), walk.get("description")),
+                    ratings.walk_score(walk.get("walk_score")),
+                ),
+                (
+                    "Bike score",
+                    _score_text(walk.get("bike_score"), walk.get("bike_description")),
+                    ratings.bike_score(walk.get("bike_score")),
+                ),
+                (
+                    "Transit score",
+                    _score_text(walk.get("transit_score"), walk.get("transit_description")),
+                    ratings.transit_score(walk.get("transit_score")),
+                ),
+                ("Road traffic", road_traffic_text(roads), ratings.road_traffic(roads)),
+                (
+                    "Tourist traffic",
+                    _nearby_names_text(crowds.get("attractions")),
+                    ratings.attractions(crowds),
+                ),
+                ("Event venues", _nearby_names_text(crowds.get("venues")), ratings.venues(crowds)),
+                ("Food & drink", food_drink_text(food), ratings.food_drink(food)),
+                (
+                    "Nearest beach parking",
+                    beach_parking_text(beach),
+                    ratings.beach_minutes(beach.get("drive_minutes")) if beach else None,
+                ),
+                (
+                    "Nearest healthy mall",
+                    healthy_mall_text(healthy_mall),
+                    ratings.mall_minutes(healthy_mall.get("drive_minutes"))
+                    if healthy_mall
+                    else None,
+                ),
+                ("Dying malls nearby", dying_malls_text(malls), ratings.dying_malls(malls)),
             ),
-            ratings.highway(highway.get("highway_distance_m")),
         ),
         (
-            "Nearest railroad",
-            _miles_text(rail.get("railroad_distance_m")),
-            ratings.railroad(rail.get("railroad_distance_m")),
+            "noise",
+            "Noise",
+            _rows(
+                ("Noise", noise_text(view.noise), ratings.noise_level(view.noise)),
+                ("Noise by source", noise_sources_text(view.noise)),
+                (
+                    "Nearest highway",
+                    _with_name(
+                        _miles_text(highway.get("highway_distance_m")),
+                        highway.get("nearest_highway_name"),
+                    ),
+                    ratings.highway(highway.get("highway_distance_m")),
+                ),
+                (
+                    "Nearest railroad",
+                    _miles_text(rail.get("railroad_distance_m")),
+                    ratings.railroad(rail.get("railroad_distance_m")),
+                ),
+                (
+                    "Nearest airport",
+                    _with_name(
+                        _miles_text(nearest_airport["distance_m"]),
+                        f"{nearest_airport['code']}, {nearest_airport['name']}",
+                    )
+                    if nearest_airport
+                    else None,
+                ),
+                ("Fireworks", fireworks_text(local_noise), ratings.fireworks(local_noise)),
+                ("Rocket launches", launch_text(local_noise), ratings.launches(local_noise)),
+            ),
         ),
         (
-            "Nearest airport",
-            _with_name(
-                _miles_text(nearest_airport["distance_m"]),
-                f"{nearest_airport['code']}, {nearest_airport['name']}",
-            )
-            if nearest_airport
-            else None,
-        ),
-        ("Air quality", air_quality_text(air), ratings.air_quality(air)),
-        ("Odor sources", odor_sources_text(odors), ratings.odor_sources(odors)),
-        ("Road traffic", road_traffic_text(roads), ratings.road_traffic(roads)),
-        (
-            "Tourist traffic",
-            _nearby_names_text(crowds.get("attractions")),
-            ratings.attractions(crowds),
-        ),
-        ("Event venues", _nearby_names_text(crowds.get("venues")), ratings.venues(crowds)),
-        ("Food & drink", food_drink_text(food), ratings.food_drink(food)),
-        (
-            "Nearest beach parking",
-            beach_parking_text(beach),
-            ratings.beach_minutes(beach.get("drive_minutes")) if beach else None,
+            "natural_hazards",
+            "Natural hazards",
+            _rows(
+                ("Flood zone", flood_zone_text(flood), ratings.flood_zone(flood)),
+                ("Elevation", elevation_text(elevation), ratings.elevation(elevation)),
+                (
+                    "Evacuation zone",
+                    evacuation_zone_text(evacuation),
+                    ratings.evacuation_zone(evacuation),
+                ),
+                ("Wetlands", wetlands_text(wetlands), ratings.wetlands(wetlands)),
+                ("Sinkhole geology", sinkhole_text(sinkholes), ratings.sinkhole_geology(sinkholes)),
+                (
+                    "Sinkhole reports",
+                    sinkhole_reports_text(sinkholes),
+                    ratings.sinkhole_reports(sinkholes),
+                ),
+            ),
         ),
         (
-            "Nearest healthy mall",
-            healthy_mall_text(healthy_mall),
-            ratings.mall_minutes(healthy_mall.get("drive_minutes")) if healthy_mall else None,
+            "pollution",
+            "Pollution",
+            _rows(
+                ("Air quality", air_quality_text(air), ratings.air_quality(air)),
+                ("Odor sources", odor_sources_text(odors), ratings.odor_sources(odors)),
+                (
+                    "Contamination sites",
+                    contamination_text(contamination),
+                    ratings.contamination(contamination),
+                ),
+                ("Impaired waters", impaired_waters_text(waters), ratings.impaired_waters(waters)),
+            ),
         ),
-        ("Dying malls nearby", dying_malls_text(malls), ratings.dying_malls(malls)),
     )
+    view.sections = [Section(key, title, rows) for key, title, rows in sections if rows]
 
     view.drive_times = drive_times(data("distance_provider"))
     view.nearby_places = [
@@ -206,34 +272,6 @@ def build_view(
         for p in data("places_nearby_provider").get("places_nearby", [])
         if p.get("name")
     ]
-
-    sinkholes = data("sinkhole_provider")
-    elevation = data("elevation_provider")
-    evacuation = data("evacuation_zone_provider")
-    wetlands = data("wetlands_provider")
-    contamination = data("contamination_provider")
-    waters = data("impaired_waters_provider")
-    view.hazards = _rows(
-        ("Sinkhole geology", sinkhole_text(sinkholes), ratings.sinkhole_geology(sinkholes)),
-        (
-            "Sinkhole reports",
-            sinkhole_reports_text(sinkholes),
-            ratings.sinkhole_reports(sinkholes),
-        ),
-        ("Elevation", elevation_text(elevation), ratings.elevation(elevation)),
-        (
-            "Evacuation zone",
-            evacuation_zone_text(evacuation),
-            ratings.evacuation_zone(evacuation),
-        ),
-        ("Wetlands", wetlands_text(wetlands), ratings.wetlands(wetlands)),
-        (
-            "Contamination sites",
-            contamination_text(contamination),
-            ratings.contamination(contamination),
-        ),
-        ("Impaired waters", impaired_waters_text(waters), ratings.impaired_waters(waters)),
-    )
 
     broadband = data("broadband_provider")
     view.internet = internet_providers(broadband)

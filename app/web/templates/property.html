@@ -130,24 +130,17 @@
 </section>
 {% endif %}
 
-{% if view.surroundings %}
-<section class="card-section">
-  <h2>Location</h2>
-  {{ rows(view.surroundings) }}
-  {% if walk and walk.walk_score is not none %}
+{% for section in view.sections %}
+<section class="card-section" id="{{ section.key|replace('_', '-') }}">
+  <h2>{{ section.title }}</h2>
+  {{ rows(section.rows) }}
+  {% if section.key == 'neighborhood' and walk and walk.walk_score is not none %}
     {# Only ever link to walkscore.com, whatever the API response held #}
     {% set walk_link = walk.link if (walk.link or '').startswith('https://www.walkscore.com/') else 'https://www.walkscore.com/how-it-works/' %}
     <p class="dim small">Walk, bike and transit scores from <a href="{{ walk_link }}" target="_blank" rel="noopener">Walk Score<sup>®</sup> ↗</a></p>
   {% endif %}
 </section>
-{% endif %}
-
-{% if view.hazards %}
-<section class="card-section">
-  <h2>Hazards &amp; environment</h2>
-  {{ rows(view.hazards) }}
-</section>
-{% endif %}
+{% endfor %}
 
 {% if view.internet_summary %}
 <section class="card-section">
