@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import shapely
+import shapely.prepared
 from shapely.geometry import Point, box
 
 from app.core.config import settings
@@ -47,9 +48,14 @@ CREATE TABLE IF NOT EXISTS sources (
     fields        TEXT,              -- JSON list of the attribute fields stored (layers)
     minx REAL NOT NULL, miny REAL NOT NULL, maxx REAL NOT NULL, maxy REAL NOT NULL,
     feature_count INTEGER,
-    built_at      TEXT NOT NULL
+    built_at      TEXT NOT NULL,
+    -- WKB polygon of the area actually covered, when that isn't the whole bbox (e.g. the
+    -- counties whose parcel files were imported); NULL: the bbox
+    coverage      BLOB
 )
 """
+# Added after the first builds; build_gis adds it to older files
+SOURCES_ADDED_COLUMNS = [("coverage", "BLOB")]
 
 
 class LocalDataError(Exception):
@@ -64,10 +70,13 @@ class Source:
     path: str
     fields: Tuple[str, ...]
     bbox: BBox
+    # The covered area (a prepared geometry) when it's less than the bbox
+    coverage: Optional[Any] = None
 
     def covers(self, area: BBox) -> bool:
         minx, miny, maxx, maxy = self.bbox
-        return area[0] >= minx and area[1] >= miny and area[2] <= maxx and area[3] <= maxy
+        inside = area[0] >= minx and area[1] >= miny and area[2] <= maxx and area[3] <= maxy
+        return inside and (self.coverage is None or self.coverage.covers(box(*area)))
 
 
 def source_key(base_url: str, path: str) -> Tuple[str, str]:
@@ -119,6 +128,11 @@ class LocalGIS:
                                 path=row["path"],
                                 fields=tuple(json.loads(row["fields"] or "[]")),
                                 bbox=(row["minx"], row["miny"], row["maxx"], row["maxy"]),
+                                coverage=(
+                                    shapely.prepared.prep(shapely.from_wkb(row["coverage"]))
+                                    if "coverage" in row.keys() and row["coverage"]
+                                    else None
+                                ),
                             )
                             sources[source_key(source.base_url, source.path)] = source
                 except sqlite3.Error as e:

@@ -47,7 +47,7 @@ def write_layer(directory: Path, name, path, fields, features, bbox=COVERAGE):
             f'INSERT INTO "{name}_rtree" VALUES (?, ?, ?, ?, ?)', (oid, minx, maxx, miny, maxy)
         )
     conn.execute(
-        "INSERT OR REPLACE INTO sources VALUES (?, 'layer', ?, ?, ?, ?, ?, ?, ?, ?, '2026-11-18')",
+        "INSERT OR REPLACE INTO sources (name, kind, base_url, path, fields, minx, miny, maxx, maxy, feature_count, built_at) VALUES (?, 'layer', ?, ?, ?, ?, ?, ?, ?, ?, '2026-11-18')",
         (name, BASE, path, json.dumps(fields), *bbox, len(features)),
     )
     conn.commit()
@@ -73,7 +73,7 @@ def write_raster(directory: Path, name, path, values, bbox=COVERAGE, nodata=-327
     conn = sqlite3.connect(directory / LAYERS_FILE)
     conn.execute(SOURCES_SCHEMA)
     conn.execute(
-        "INSERT OR REPLACE INTO sources VALUES (?, 'raster', ?, ?, NULL, ?, ?, ?, ?, NULL, 'x')",
+        "INSERT OR REPLACE INTO sources (name, kind, base_url, path, fields, minx, miny, maxx, maxy, feature_count, built_at) VALUES (?, 'raster', ?, ?, NULL, ?, ?, ?, ?, NULL, 'x')",
         (name, BASE, path, *bbox),
     )
     conn.commit()

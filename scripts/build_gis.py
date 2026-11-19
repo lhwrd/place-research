@@ -9,6 +9,7 @@ goes to the servers.
 
     uv run python scripts/build_gis.py data/gis                    # everything, default area
     uv run python scripts/build_gis.py data/gis --only parcels     # one source, e.g. yearly
+    uv run python scripts/build_gis.py data/gis --only parcels --parcels-from ~/Downloads
     uv run python scripts/build_gis.py data/gis --bbox -82.6 27.6 -80.4 29.7
     uv run python scripts/build_gis.py --list
 
@@ -19,8 +20,11 @@ in only when complete, so an interrupted rebuild keeps the previous copy; run th
 command again to resume it. Parcels are
 republished every August, flood maps a few times a year; the rest change rarely.
 
-Takes a while: parcels (about 2 million in the default area) and flood zones are the bulk.
-Disk use is roughly 2-3 GB, most of it parcels and elevation.
+Everything but parcels takes about 20 minutes. Paging through the statewide parcel layer
+(about 2.7 million parcels in the default area) takes most of a day; importing the
+Department of Revenue's county files with --parcels-from takes minutes, and only the
+imported counties are answered locally. Disk use is roughly 2.5 GB, most of it parcels and
+elevation.
 """
 
 import argparse
@@ -30,6 +34,7 @@ import math
 import sqlite3
 import sys
 import time
+import zipfile
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -41,7 +46,8 @@ import rasterio
 import shapely
 from rasterio.transform import from_bounds
 from rasterio.windows import Window
-from shapely.geometry import shape
+from shapely.geometry import box, shape
+from shapely.geometry.base import BaseGeometry
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -57,6 +63,7 @@ from app.integrations.local_gis import (  # noqa: E402
     GEOMETRY_COLUMN,
     ID_COLUMN,
     LAYERS_FILE,
+    SOURCES_ADDED_COLUMNS,
     SOURCES_SCHEMA,
     BBox,
 )
@@ -306,9 +313,16 @@ async def build_layer(
                     continue
                 try:
                     features, more = await fetch(cell)
-                except ValueError:
-                    # A query the server keeps failing on; smaller ones usually work
-                    if cell[2] - cell[0] <= MIN_CELL_DEG:
+                except (ValueError, httpx.HTTPStatusError) as e:
+                    # A query the server keeps failing on (too heavy: a timeout, a 500);
+                    # smaller ones usually work. Not for a bad request, and only a couple
+                    # of levels down, so a server that's simply down fails the build
+                    # instead of being sent ever smaller queries.
+                    client_error = (
+                        isinstance(e, httpx.HTTPStatusError) and e.response.status_code < 500
+                    )
+                    width = cell[2] - cell[0]
+                    if client_error or width <= MIN_CELL_DEG or width <= spec.cell_deg / 4:
                         raise
                     log(f"  {spec.name}: splitting a cell the server can't answer")
                     for quarter in split(cell):
@@ -397,9 +411,11 @@ def record_source(
     fields: Optional[Sequence[str]],
     bbox: BBox,
     count: Optional[int],
+    coverage: Optional[BaseGeometry] = None,
 ) -> None:
     conn.execute(
-        "INSERT OR REPLACE INTO sources VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT OR REPLACE INTO sources (name, kind, base_url, path, fields, minx, miny, maxx,"
+        " maxy, feature_count, built_at, coverage) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             name,
             kind,
@@ -409,8 +425,20 @@ def record_source(
             *bbox,
             count,
             datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            shapely.to_wkb(coverage) if coverage is not None else None,
         ),
     )
+
+
+def open_layers(directory: Path) -> sqlite3.Connection:
+    conn = sqlite3.connect(directory / LAYERS_FILE)
+    conn.execute(SOURCES_SCHEMA)
+    existing = {row[1] for row in conn.execute("PRAGMA table_info(sources)")}
+    for column, definition in SOURCES_ADDED_COLUMNS:
+        if column not in existing:
+            conn.execute(f"ALTER TABLE sources ADD COLUMN {column} {definition}")
+    conn.commit()
+    return conn
 
 
 # Rasters
@@ -555,14 +583,175 @@ async def build_favorability(client: httpx.AsyncClient, directory: Path, bbox: B
     return out_bbox
 
 
+# Parcels from the Department of Revenue's county files
+
+# Map Data files on https://floridarevenue.com/property/Pages/DataPortal.aspx: parcel
+# outlines joined with that year's tax roll (NAL), e.g. volusia_2026Ppar.zip. The fields
+# are the statewide layer's (it's built from the same files), in each county's state
+# plane projection.
+DOR_PARCEL_GLOB = "*Ppar.zip"
+TIGER_COUNTIES = (
+    "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/State_County/MapServer/1"
+)
+FLORIDA_FIPS = "12"
+# File name prefix -> Census county name, where title-casing it isn't enough
+COUNTY_NAMES = {
+    "desoto": "DeSoto",
+    "indianriver": "Indian River",
+    "miamidade": "Miami-Dade",
+    "palmbeach": "Palm Beach",
+    "santarosa": "Santa Rosa",
+    "stjohns": "St. Johns",
+    "stlucie": "St. Lucie",
+}
+DOUBLE_TYPES = ("esriFieldTypeDouble", "esriFieldTypeSingle")
+INTEGER_TYPES = ("esriFieldTypeInteger", "esriFieldTypeSmallInteger", "esriFieldTypeBigInteger")
+
+
+def county_of(path: Path) -> str:
+    """volusia_2026Ppar.zip -> Volusia"""
+    prefix = path.name.split("_")[0].lower().replace(" ", "").replace(".", "")
+    return COUNTY_NAMES.get(prefix, prefix.title())
+
+
+async def county_outline(client: httpx.AsyncClient, county: str) -> BaseGeometry:
+    """The county's Census boundary (including its water), in WGS84."""
+    name = county.replace("'", "''")
+    data = await get_json(
+        client,
+        f"{TIGER_COUNTIES}/query",
+        {
+            "where": f"STATE = '{FLORIDA_FIPS}' AND BASENAME = '{name}'",
+            "outFields": "BASENAME",
+            "returnGeometry": "true",
+            "outSR": 4326,
+            "f": "geojson",
+        },
+    )
+    features = data.get("features") or []
+    if len(features) != 1:
+        raise ValueError(f"No Florida county named {county!r} in the Census boundaries")
+    return shape(features[0]["geometry"])
+
+
+def server_value(value: Any, field_type: Optional[str]) -> Any:
+    """A shapefile value as the ArcGIS layer's JSON gives it (whole doubles as ints)."""
+    if value is None:
+        return None
+    if field_type in DOUBLE_TYPES or field_type in INTEGER_TYPES:
+        number = float(value)
+        if math.isnan(number):
+            return None
+        return int(number) if number.is_integer() else number
+    if field_type == "esriFieldTypeString":
+        return str(value)
+    return value
+
+
+def read_county(path: Path, fields: Sequence[str]) -> Tuple[Dict[str, list], np.ndarray]:
+    """A county file's field values (column lists) and its geometries in WGS84."""
+    from pyogrio import read_arrow  # imported late: only the importer needs it
+    from pyproj import Transformer
+
+    shapefiles = [n for n in zipfile.ZipFile(path).namelist() if n.lower().endswith(".shp")]
+    if len(shapefiles) != 1:
+        raise ValueError(f"{path.name}: expected one shapefile, found {shapefiles}")
+    meta, table = read_arrow(f"/vsizip/{path}/{shapefiles[0]}", columns=list(fields))
+    missing = set(fields) - set(table.column_names)
+    if missing:
+        raise ValueError(f"{path.name} has no fields {sorted(missing)}")
+    geometries = shapely.from_wkb(table[meta["geometry_name"] or "wkb_geometry"].to_numpy(False))
+    to_wgs84 = Transformer.from_crs(meta["crs"], "EPSG:4326", always_xy=True)
+    geometries = shapely.transform(
+        geometries, lambda xy: np.column_stack(to_wgs84.transform(xy[:, 0], xy[:, 1]))
+    )
+    return {f: table[f].to_pylist() for f in fields}, geometries
+
+
+async def import_parcels(
+    client: httpx.AsyncClient,
+    conn: sqlite3.Connection,
+    spec: LayerSpec,
+    files: List[Path],
+    bbox: BBox,
+) -> None:
+    """Load parcels from DOR county files instead of paging through the statewide layer."""
+    started = time.monotonic()
+    url = f"{spec.base_url.rstrip('/')}/{spec.path}"
+    info = await get_json(client, url, {"f": "json"})
+    types = {f["name"]: f.get("type") for f in info.get("fields") or []}
+    fields = list(spec.fields or ())
+
+    staging = f"{spec.name}__staging"
+    for suffix in ("", "_rtree", "_done", "_job"):
+        conn.execute(f'DROP TABLE IF EXISTS "{staging}{suffix}"')
+    columns = ", ".join(f'"{f}"' for f in fields)
+    conn.execute(
+        f'CREATE TABLE "{staging}" ("{ID_COLUMN}" INTEGER PRIMARY KEY, {columns}, '
+        f'"{GEOMETRY_COLUMN}" BLOB NOT NULL)'
+    )
+    conn.execute(f'CREATE VIRTUAL TABLE "{staging}_rtree" USING rtree(id, minx, maxx, miny, maxy)')
+    insert = f'INSERT INTO "{staging}" VALUES ({", ".join("?" * (len(fields) + 2))})'
+    insert_box = f'INSERT INTO "{staging}_rtree" VALUES (?, ?, ?, ?, ?)'
+
+    area = box(*bbox)
+    outlines = []
+    oid = 0
+    for path in files:
+        county = county_of(path)
+        outline = await county_outline(client, county)
+        if not outline.intersects(area):
+            log(f"  parcels: skipping {path.name}: {county} County is outside the area")
+            continue
+        values, geometries = await asyncio.to_thread(read_county, path, fields)
+        keep = shapely.intersects(geometries, area) & ~shapely.is_missing(geometries)
+        rows, boxes = [], []
+        for i in np.flatnonzero(keep):
+            oid += 1
+            geometry = geometries[i]
+            rows.append(
+                [
+                    oid,
+                    *(server_value(values[f][i], types.get(f)) for f in fields),
+                    shapely.to_wkb(geometry),
+                ]
+            )
+            minx, miny, maxx, maxy = geometry.bounds
+            boxes.append((oid, minx, maxx, miny, maxy))
+        conn.executemany(insert, rows)
+        conn.executemany(insert_box, boxes)
+        conn.commit()
+        outlines.append(outline)
+        log(f"  parcels: {county}: {len(rows):,} of {len(geometries):,} parcels in the area")
+
+    if not outlines:
+        raise ValueError("None of the parcel files is a county in the area")
+    coverage = shapely.union_all(outlines).intersection(area)
+    conn.execute(f'DROP TABLE IF EXISTS "{spec.name}"')
+    conn.execute(f'DROP TABLE IF EXISTS "{spec.name}_rtree"')
+    conn.execute(f'ALTER TABLE "{staging}" RENAME TO "{spec.name}"')
+    conn.execute(f'ALTER TABLE "{staging}_rtree" RENAME TO "{spec.name}_rtree"')
+    record_source(
+        conn, spec.name, "layer", spec.base_url, spec.path, fields, coverage.bounds, oid, coverage
+    )
+    conn.commit()
+    log(
+        f"parcels: {oid:,} parcels from {len(outlines)} counties ({time.monotonic() - started:.0f}s)"
+    )
+
+
 # Main
 
 
-async def build(directory: Path, bbox: BBox, only: Optional[List[str]], fresh: bool) -> None:
+async def build(
+    directory: Path,
+    bbox: BBox,
+    only: Optional[List[str]],
+    fresh: bool,
+    parcel_files: Optional[List[Path]] = None,
+) -> None:
     directory.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(directory / LAYERS_FILE)
-    conn.execute(SOURCES_SCHEMA)
-    conn.commit()
+    conn = open_layers(directory)
     wanted = set(only or SOURCES)
     async with httpx.AsyncClient(
         timeout=120, follow_redirects=True, headers={"User-Agent": USER_AGENT}
@@ -581,7 +770,12 @@ async def build(directory: Path, bbox: BBox, only: Optional[List[str]], fresh: b
             )
             conn.commit()
         for spec in LAYERS:
-            if spec.name in wanted:
+            if spec.name not in wanted:
+                continue
+            if spec.name == "parcels" and parcel_files:
+                log(f"parcels: importing {len(parcel_files)} county files")
+                await import_parcels(client, conn, spec, parcel_files, bbox)
+            else:
                 log(f"{spec.name}: harvesting {spec.base_url}/{spec.path}")
                 await build_layer(client, conn, spec, bbox, fresh)
     conn.execute("VACUUM")
@@ -605,6 +799,15 @@ def main() -> int:
     parser.add_argument(
         "--fresh", action="store_true", help="Start layers over instead of resuming"
     )
+    parser.add_argument(
+        "--parcels-from",
+        type=Path,
+        metavar="DIR",
+        help=(
+            "Import parcels from the Department of Revenue's county files in DIR "
+            f"({DOR_PARCEL_GLOB}) instead of paging through the statewide layer"
+        ),
+    )
     parser.add_argument("--list", action="store_true", help="List the sources and exit")
     args = parser.parse_args()
     if args.list:
@@ -618,7 +821,15 @@ def main() -> int:
     west, south, east, north = args.bbox
     if not (west < east and south < north):
         parser.error("--bbox is WEST SOUTH EAST NORTH")
-    asyncio.run(build(args.output, (west, south, east, north), args.only, args.fresh))
+    parcel_files = None
+    if args.parcels_from:
+        parcel_files = sorted(args.parcels_from.glob(DOR_PARCEL_GLOB))
+        empty = [f.name for f in parcel_files if f.stat().st_size == 0]
+        if empty:
+            parser.error(f"empty files (download again?): {', '.join(empty)}")
+        if not parcel_files:
+            parser.error(f"no {DOR_PARCEL_GLOB} files in {args.parcels_from}")
+    asyncio.run(build(args.output, (west, south, east, north), args.only, args.fresh, parcel_files))
     return 0
 
 

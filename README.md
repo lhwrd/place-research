@@ -143,9 +143,15 @@ national. None needs a key.
   `uv run python scripts/build_gis.py data/gis` (Central Florida; `--bbox WEST SOUTH EAST
   NORTH` for another area). Lookups inside the copied area are answered from the files in
   milliseconds; anything outside it, or any layer not copied, still goes to the server.
-  Takes a few hours the first time (mostly parcels) and about 3 GB; an interrupted build
-  resumes when run again. Refresh parcels each fall (`--only parcels`, after the August
-  roll) and flood zones a few times a year (`--only flood_zones`).
+  About 20 minutes and 2.5 GB, plus parcels; an interrupted build resumes when run again.
+  Parcels are far faster from the Department of Revenue's county files than from the
+  statewide layer (minutes instead of most of a day): download each county's
+  `<county>_<year>Ppar.zip` from the Data Portal's Map Data folder
+  (https://floridarevenue.com/property/Pages/DataPortal.aspx, Tax Roll and GIS Data) into
+  one directory and run `uv run python scripts/build_gis.py data/gis --only parcels
+  --parcels-from data/downloads`. Only the imported counties are answered locally. Refresh
+  parcels each fall, after the August roll, and flood zones a few times a year
+  (`--only flood_zones`).
 
 The property record (Florida) is the county property appraiser's tax roll entry for the
 parcel, from the Department of Revenue's statewide parcels on Florida GIO's ArcGIS

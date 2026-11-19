@@ -159,3 +159,136 @@ async def test_splits_cells_the_server_cant_answer(tmp_path):
     conn = sqlite3.connect(tmp_path / LAYERS_FILE)
     assert conn.execute("SELECT count(*) FROM sites").fetchone() == (5,)
     conn.close()
+
+
+# Importing the Department of Revenue's county parcel files
+
+
+def test_server_value_matches_the_layers_json():
+    assert build_gis.server_value(2026.0, "esriFieldTypeDouble") == 2026
+    assert isinstance(build_gis.server_value(2026.0, "esriFieldTypeDouble"), int)
+    assert build_gis.server_value(0.23, "esriFieldTypeDouble") == 0.23
+    assert build_gis.server_value(float("nan"), "esriFieldTypeDouble") is None
+    assert build_gis.server_value("048", "esriFieldTypeString") == "048"
+    assert build_gis.server_value(None, "esriFieldTypeString") is None
+
+
+def test_county_of():
+    assert build_gis.county_of(Path("volusia_2026Ppar.zip")) == "Volusia"
+    assert build_gis.county_of(Path("stjohns_2026Ppar.zip")) == "St. Johns"
+    assert build_gis.county_of(Path("indianriver_2026Ppar.zip")) == "Indian River"
+
+
+def write_county_zip(directory: Path, name: str, parcels):
+    """A DOR-style county file: a zipped shapefile in Florida East state plane feet."""
+    import zipfile
+
+    import geopandas as gpd
+
+    frame = gpd.GeoDataFrame(
+        [{k: v for k, v in p.items() if k != "geometry"} for p in parcels],
+        geometry=[p["geometry"] for p in parcels],
+        crs="EPSG:4326",
+    ).to_crs("EPSG:2881")  # NAD83(HARN) / Florida East (ftUS)
+    shp_dir = directory / name
+    shp_dir.mkdir()
+    frame.to_file(shp_dir / f"{name}.shp")
+    archive = directory / f"{name}.zip"
+    with zipfile.ZipFile(archive, "w") as zf:
+        for part in shp_dir.iterdir():
+            zf.write(part, part.name)
+    return archive
+
+
+@pytest.mark.asyncio
+async def test_imports_county_files_with_their_outline_as_coverage(tmp_path):
+    from shapely.geometry import box
+
+    from app.integrations.arcgis_api import ArcGISClient
+
+    # Volusia is imported; Flagler (to the north) isn't
+    volusia = box(-81.2, 28.8, -80.9, 29.1)
+    flagler = box(-81.2, 29.1, -80.9, 29.4)
+    archive = write_county_zip(
+        tmp_path,
+        "volusia_2026Ppar",
+        [
+            {
+                "PARCEL_ID": "A1",
+                "DOR_UC": "001",
+                "JV": 250000.0,
+                "geometry": box(-81.0, 29.0, -80.999, 29.001),
+            },
+            {
+                "PARCEL_ID": "B2",
+                "DOR_UC": "048",
+                "JV": 1.5,
+                "geometry": box(-81.1, 28.9, -81.099, 28.901),
+            },
+        ],
+    )
+
+    def handle(request):
+        if request.url.host == "tigerweb.geo.census.gov":
+            assert "BASENAME = 'Volusia'" in request.url.params["where"]
+            return httpx.Response(
+                200,
+                json={
+                    "features": [
+                        {"type": "Feature", "geometry": volusia.__geo_interface__, "properties": {}}
+                    ]
+                },
+            )
+        return httpx.Response(
+            200,
+            json={
+                "fields": [
+                    {"name": "PARCEL_ID", "type": "esriFieldTypeString"},
+                    {"name": "DOR_UC", "type": "esriFieldTypeString"},
+                    {"name": "JV", "type": "esriFieldTypeDouble"},
+                ]
+            },
+        )
+
+    spec = build_gis.LayerSpec(
+        "parcels", BASE, "Parcels/FeatureServer/0", ("PARCEL_ID", "DOR_UC", "JV")
+    )
+    conn = build_gis.open_layers(tmp_path)
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handle)) as client:
+        await build_gis.import_parcels(client, conn, spec, [archive], (-82.0, 28.0, -80.0, 30.0))
+    rows = conn.execute("SELECT PARCEL_ID, DOR_UC, JV FROM parcels ORDER BY PARCEL_ID").fetchall()
+    conn.close()
+    assert rows == [("A1", "001", 250000), ("B2", "048", 1.5)]
+
+    def server(request):
+        return httpx.Response(200, json={"type": "FeatureCollection", "features": []})
+
+    api = ArcGISClient(BASE, service="test", local_gis=LocalGIS(tmp_path))
+    api._client = httpx.AsyncClient(transport=httpx.MockTransport(server))
+    # Inside Volusia: answered locally, from the reprojected outlines
+    found = await api.query_box(
+        "Parcels/FeatureServer/0", 29.0005, -80.9995, 20, ("PARCEL_ID", "JV")
+    )
+    assert [(p["PARCEL_ID"], p["JV"]) for p in found] == [("A1", 250000)]
+    # In Flagler, inside the area but not imported: the server is asked
+    source = LocalGIS(tmp_path).source(BASE, "Parcels/FeatureServer/0")
+    assert not source.covers(flagler.centroid.buffer(0.001).bounds)
+    assert await api.query_box("Parcels/FeatureServer/0", 29.3, -81.0, 20, ("PARCEL_ID",)) == []
+
+
+@pytest.mark.asyncio
+async def test_splits_cells_that_keep_failing_with_server_errors(tmp_path):
+    handle, _ = server()
+
+    def overloaded(request):
+        if request.url.path.endswith("/query"):
+            west, _, east, _ = map(float, request.url.params["geometry"].split(","))
+            if east - west > 0.5:
+                return httpx.Response(500)
+        return handle(request)
+
+    await harvest(tmp_path, overloaded)
+
+    conn = sqlite3.connect(tmp_path / LAYERS_FILE)
+    assert conn.execute("SELECT count(*) FROM sites").fetchone() == (5,)
+    conn.close()
