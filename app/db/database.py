@@ -52,6 +52,8 @@ CREATE TABLE IF NOT EXISTS properties (
     -- JSON object: provider name -> {"at", "ok", "inputs"} for its latest run, which decides
     -- whether a refresh needs to call it again
     enrichment_meta TEXT NOT NULL DEFAULT '{}',
+    -- 1 once the listing's photo has been copied, so one you delete isn't copied again
+    listing_photo_copied INTEGER NOT NULL DEFAULT 0,
     -- Yours; enrichment never writes these
     notes         TEXT NOT NULL DEFAULT '',
     rating        INTEGER,
@@ -131,6 +133,7 @@ PROPERTY_COLUMNS = frozenset(
         "enrichment",
         "enriched_at",
         "enrichment_meta",
+        "listing_photo_copied",
         "notes",
         "rating",
         "neighborhood_rating",
@@ -144,6 +147,7 @@ ADDED_COLUMNS = [
     ("properties", "neighborhood_rating", "INTEGER"),
     ("properties", "garage_spaces", "INTEGER"),
     ("properties", "enrichment_meta", "TEXT NOT NULL DEFAULT '{}'"),
+    ("properties", "listing_photo_copied", "INTEGER NOT NULL DEFAULT 0"),
     ("locations", "latitude", "REAL"),
     ("locations", "longitude", "REAL"),
     ("locations", "city", "TEXT"),

@@ -36,7 +36,7 @@ OPEN_WATER = {"Freshwater Pond", "Lake", "Riverine", "Estuarine and Marine Deepw
 class WetlandsProvider(BaseEnrichmentProvider):
     def __init__(self):
         self.logger = logging.getLogger(__name__)
-        self.api_client = ArcGISClient(USFWS_WETLANDS, service="USFWS wetlands", timeout=45.0)
+        self.api_client = ArcGISClient(USFWS_WETLANDS, service="USFWS wetlands", timeout=20.0)
 
     @property
     def metadata(self) -> ProviderMetadata:

@@ -139,6 +139,8 @@ async def property_detail(
             "walk": walk_scores,
             "photo_ids": service.db.photo_ids(property_id),
             "pending": prop["status"] in PropertyStatus.PENDING,
+            # Stored at the deadline; these slower sources are still on their way
+            "filling": [_source_name(n) for n in service.filling_in(property_id)],
             "street_view_url": street_view_url(prop),
         },
     )
@@ -178,8 +180,16 @@ def street_view_url(prop) -> Optional[str]:
 async def property_status(
     property_id: int, service: PropertyService = Depends(get_property_service)
 ):
-    """Polled by the detail page while enrichment runs."""
-    return {"status": _get_property_or_404(service, property_id)["status"]}
+    """Polled by the detail page while enrichment runs, and while late results fill in."""
+    return {
+        "status": _get_property_or_404(service, property_id)["status"],
+        "filling": bool(service.filling_in(property_id)),
+    }
+
+
+def _source_name(name: str) -> str:
+    """flood_zone_provider -> flood zone"""
+    return name.removesuffix("_provider").replace("_", " ")
 
 
 @router.post("/properties/{property_id}/notes")
@@ -268,6 +278,9 @@ async def reenrich(
     `everything`, call every provider again (some are billed per call).
     """
     _get_property_or_404(service, property_id)
+    if service.is_busy(property_id):
+        # Already running (or filling in); queueing would leave it marked Queued
+        return _redirect(f"/properties/{property_id}")
     service.db.update_property(property_id, {"status": PropertyStatus.NEW})
     background_tasks.add_task(service.enrich_safely, property_id, use_cached=not everything)
     return _redirect(f"/properties/{property_id}")

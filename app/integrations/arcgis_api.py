@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class ArcGISClient(BaseAPIClient):
     """Point queries against one ArcGIS server."""
 
-    def __init__(self, base_url: str, service: str, timeout: float = 30.0):
+    def __init__(self, base_url: str, service: str, timeout: float = 15.0):
         """
         Args:
             base_url: The server's services root, e.g. https://host/arcgis/rest/services

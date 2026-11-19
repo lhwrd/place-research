@@ -34,7 +34,7 @@ class ElevationProvider(BaseEnrichmentProvider):
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         # The DEM can take several seconds to sample
-        self.api_client = ArcGISClient(USGS_ELEVATION, service="USGS 3DEP", timeout=60.0)
+        self.api_client = ArcGISClient(USGS_ELEVATION, service="USGS 3DEP", timeout=20.0)
 
     @property
     def metadata(self) -> ProviderMetadata:

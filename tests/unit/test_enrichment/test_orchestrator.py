@@ -1,5 +1,6 @@
 """Tests for the EnrichmentOrchestrator."""
 
+import asyncio
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -232,3 +233,54 @@ def test_provider_info(orchestrator):
     # Same settings give the same fingerprint; different settings a different one
     assert info == orchestrator.provider_info({"places": ["Costco"]})
     assert info["configured"]["inputs"] != changed["configured"]["inputs"]
+
+
+def _sleeper(name, seconds):
+    """A provider that takes `seconds` to answer."""
+    provider = _provider(name)
+
+    async def enrich(**kwargs):
+        await asyncio.sleep(seconds)
+        return ProviderResult(provider_name=name, data={"name": name}, success=True)
+
+    provider.enrich = enrich
+    return provider
+
+
+class TestDeadline:
+    @pytest.fixture
+    def timed(self, orchestrator):
+        orchestrator.cache_service.get = AsyncMock(return_value=None)
+        orchestrator.cache_service.set = AsyncMock()
+        orchestrator.provider_registry.get_enabled_providers = Mock(
+            return_value=[_sleeper("fast", 0), _sleeper("slow", 0.2)]
+        )
+        return orchestrator
+
+    @pytest.mark.asyncio
+    async def test_returns_at_the_deadline_and_hands_back_the_rest(self, timed):
+        response = await timed.enrich(**LOCATION, use_cached=False, deadline_seconds=0.05)
+
+        assert set(response["enrichment_data"]) == {"fast"}
+        assert response["metadata"]["pending_providers"] == ["slow"]
+        late = await response["late"]
+        assert late["enrichment_data"]["slow"]["data"] == {"name": "slow"}
+        assert late["late"] is None
+
+    @pytest.mark.asyncio
+    async def test_gives_up_on_stragglers(self, timed):
+        response = await timed.enrich(
+            **LOCATION, use_cached=False, deadline_seconds=0.01, late_limit_seconds=0.01
+        )
+
+        late = (await response["late"])["enrichment_data"]["slow"]
+        assert late["success"] is False
+        assert "Gave up" in late["error"]
+
+    @pytest.mark.asyncio
+    async def test_without_a_deadline_waits_for_all(self, timed):
+        response = await timed.enrich(**LOCATION, use_cached=False)
+
+        assert set(response["enrichment_data"]) == {"fast", "slow"}
+        assert response["late"] is None
+        assert response["metadata"]["pending_providers"] == []
