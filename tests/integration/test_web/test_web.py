@@ -169,7 +169,10 @@ class TestPropertyDetail:
         assert web.get("/properties/999").status_code == 404
 
     def test_status(self, web, enriched):
-        assert web.get(f"/properties/{enriched}/status").json() == {"status": "enriched"}
+        assert web.get(f"/properties/{enriched}/status").json() == {
+            "status": "enriched",
+            "filling": False,
+        }
 
     def test_pending_property_polls(self, web, db):
         property_id = db.create_property({"address": "1 Main"})
@@ -259,6 +262,25 @@ class TestPropertyDetail:
 
         assert db.get_property(enriched)["status"] == PropertyStatus.NEW
         service.enrich.assert_awaited_once_with(enriched, use_cached=True)
+
+    def test_reenrich_while_filling_in_is_ignored(self, web, db, service, enriched):
+        service._in_progress.add(enriched)
+        service._filling[enriched] = ["flood_zone_provider"]
+
+        web.post(f"/properties/{enriched}/reenrich")
+
+        assert db.get_property(enriched)["status"] == PropertyStatus.ENRICHED
+        service.enrich.assert_not_awaited()
+
+    def test_filling_in_shows_what_is_still_coming(self, web, service, enriched):
+        service._in_progress.add(enriched)
+        service._filling[enriched] = ["flood_zone_provider", "listing_photo"]
+
+        html = web.get(f"/properties/{enriched}").text
+
+        assert "Still waiting on flood zone, listing photo." in html
+        assert "var waitForFill = true" in html
+        assert web.get(f"/properties/{enriched}/status").json()["filling"] is True
 
     def test_redo_all_runs_every_provider(self, web, service, enriched):
         web.post(f"/properties/{enriched}/reenrich", data={"everything": "1"})

@@ -31,8 +31,8 @@
   </div>
   <div class="hero-actions">
     <form method="post" action="/properties/{{ p.id }}/reenrich">
-      <button type="submit" {% if pending %}disabled{% endif %} title="Fetch what is missing, failed, out of date or affected by changed settings">Re-enrich</button>
-      <button type="submit" name="everything" value="1" class="link" {% if pending %}disabled{% endif %} title="Fetch everything again, including the paid Google lookups">Redo all</button>
+      <button type="submit" {% if pending or filling %}disabled{% endif %} title="Fetch what is missing, failed, out of date or affected by changed settings">Re-enrich</button>
+      <button type="submit" name="everything" value="1" class="link" {% if pending or filling %}disabled{% endif %} title="Fetch everything again, including the paid Google lookups">Redo all</button>
     </form>
   </div>
 </section>
@@ -41,6 +41,8 @@
   <div class="alert alert-error"><strong>Enrichment failed.</strong> {{ p.error }}</div>
 {% elif pending %}
   <div class="alert" id="pending-note">Enriching this property. The page will refresh when it's done.</div>
+{% elif filling %}
+  <div class="alert" id="pending-note">Still waiting on {{ filling|join(', ') }}. The page will refresh when they arrive.</div>
 {% endif %}
 
 {% set score = view.scorecard() %}
@@ -279,10 +281,13 @@
     form.addEventListener('input', function () { dirty = true; });
     form.addEventListener('submit', function () { dirty = false; });
   });
-  {% if pending %}
+  {% if pending or filling %}
+  // Reload once the main results are stored, and again when the slow ones fill in
+  var waitForFill = {{ 'false' if pending else 'true' }};
   var timer = setInterval(function () {
     fetch('/properties/{{ p.id }}/status').then(function (r) { return r.json(); }).then(function (s) {
       if (s.status === 'new' || s.status === 'enriching') return;
+      if (waitForFill && s.filling && s.status !== 'error') return;
       clearInterval(timer);
       if (!dirty) { location.reload(); return; }
       var note = document.getElementById('pending-note');

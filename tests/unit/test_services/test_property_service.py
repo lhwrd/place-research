@@ -1,5 +1,6 @@
 """Tests for property ingest and enrichment."""
 
+import asyncio
 import json
 from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, Mock
@@ -372,6 +373,85 @@ class TestEnrich:
         await service.enrich_safely(1)
 
 
+class TestLateResults:
+    """Providers that miss the deadline are stored when they finish."""
+
+    @pytest.fixture
+    def late(self, orchestrator):
+        """The orchestrator answers with walk score now; the rest come in later."""
+        release = asyncio.Event()
+
+        async def rest():
+            await release.wait()
+            return _result(
+                highway_provider=_ok({"miles": 2}),
+                distance_provider={"success": False, "error": "timed out"},
+            )
+
+        async def enrich(**kwargs):
+            return {
+                **_result(walk_score_provider=_ok({"walk_score": 45})),
+                "late": asyncio.create_task(rest()),
+                "metadata": {"pending_providers": ["distance_provider", "highway_provider"]},
+            }
+
+        orchestrator.enrich = AsyncMock(side_effect=enrich)
+        return release
+
+    @pytest.mark.asyncio
+    async def test_stores_at_the_deadline_then_fills_in(self, service, db, late):
+        property_id, _ = service.create_from_input("1 Main")
+
+        await service.enrich(property_id)
+
+        prop = db.get_property(property_id)
+        assert prop["status"] == PropertyStatus.ENRICHED
+        assert prop["enrichment"] == {"walk_score_provider": {"walk_score": 45}}
+        assert service.is_busy(property_id)
+        assert service.filling_in(property_id) == ["distance_provider", "highway_provider"]
+        # A second enrichment meanwhile is skipped
+        assert await service.enrich(property_id) is False
+
+        late.set()
+        await service.wait_for_background()
+
+        prop = db.get_property(property_id)
+        assert prop["enrichment"] == {
+            "walk_score_provider": {"walk_score": 45},
+            "highway_provider": {"miles": 2},
+        }
+        assert prop["enrichment_meta"]["highway_provider"]["ok"] is True
+        assert prop["enrichment_meta"]["distance_provider"]["ok"] is False
+        assert prop["error"] == "distance_provider: timed out"
+        assert not service.is_busy(property_id)
+        assert service.filling_in(property_id) == []
+
+    @pytest.mark.asyncio
+    async def test_keeps_other_errors(self, service, db, late):
+        property_id, _ = service.create_from_input("1 Main")
+        await service.enrich(property_id)
+        db.update_property(property_id, {"error": "zillow_listing: captcha\nhighway_provider: old"})
+
+        late.set()
+        await service.wait_for_background()
+
+        assert db.get_property(property_id)["error"] == (
+            "zillow_listing: captcha\ndistance_provider: timed out"
+        )
+
+    @pytest.mark.asyncio
+    async def test_dropped_if_the_property_moved(self, service, db, late):
+        property_id, _ = service.create_from_input("1 Main")
+        await service.enrich(property_id)
+        db.update_property(property_id, {"latitude": 30.0, "longitude": -82.0})
+
+        late.set()
+        await service.wait_for_background()
+
+        assert "highway_provider" not in db.get_property(property_id)["enrichment"]
+        assert not service.is_busy(property_id)
+
+
 class TestEnrichPending:
     @pytest.mark.asyncio
     async def test_enriches_new_and_interrupted(self, service, db):
@@ -481,6 +561,7 @@ class TestZillowPage:
         property_id, _ = fetching_service.create_listing(URL)
 
         await fetching_service.enrich(property_id)
+        await fetching_service.wait_for_background()
 
         prop = db.get_property(property_id)
         assert prop["address"] == "111 White Pl, Port Orange, FL 32127"
@@ -489,20 +570,41 @@ class TestZillowPage:
         assert json.loads(prop["listing_json"])["description"] == "Fresh paint."
         assert (prop["latitude"], prop["longitude"]) == (29.2, -81.1)
         geocoder.geocode_address.assert_not_called()
-        assert sorted(db.photo_filenames(property_id)) == ["zillow-a-1536.jpg", "zillow-c-1536.jpg"]
+        # Only the first photo
+        assert db.photo_filenames(property_id) == ["zillow-a-1536.jpg"]
         assert prop["error"] is None
+
+    @pytest.mark.asyncio
+    async def test_unusable_first_photo_falls_back_to_the_next(
+        self, fetching_service, db, listing_client
+    ):
+        def first_is_html(url):
+            if "/a-" in url:
+                return httpx.Response(200, content=b"<html>", headers={"content-type": "text/html"})
+            return httpx.Response(200, content=b"jpeg", headers={"content-type": "image/jpeg"})
+
+        listing_client.fetch_photo.side_effect = first_is_html
+        property_id, _ = fetching_service.create_listing(URL)
+
+        await fetching_service.enrich(property_id)
+        await fetching_service.wait_for_background()
+
+        assert db.photo_filenames(property_id) == ["zillow-b-1536.jpg"]
 
     @pytest.mark.asyncio
     async def test_photos_are_copied_once(self, fetching_service, db, listing_client):
         property_id, _ = fetching_service.create_listing(URL)
         await fetching_service.enrich(property_id)
+        await fetching_service.wait_for_background()
         db.delete_photo(db.photo_ids(property_id)[0])
 
         await fetching_service.enrich(property_id, use_cached=False)
+        await fetching_service.wait_for_background()
 
-        assert len(db.photo_ids(property_id)) == 1
+        # The deleted photo isn't copied again
+        assert db.photo_ids(property_id) == []
         assert listing_client.fetch_property.await_count == 2
-        assert listing_client.fetch_photo.await_count == 3
+        assert listing_client.fetch_photo.await_count == 1
 
     @pytest.mark.asyncio
     async def test_typed_address_is_kept(self, fetching_service, db):

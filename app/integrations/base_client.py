@@ -28,8 +28,8 @@ RETRYABLE_STATUSES = (429, 500, 502, 503, 504)
 async def send_with_retry(
     send: Callable[[], Awaitable[httpx.Response]],
     service: str,
-    max_attempts: int = 4,
-    backoff_seconds: float = 2.0,
+    max_attempts: int = 3,
+    backoff_seconds: float = 1.0,
     retry_statuses: tuple = RETRYABLE_STATUSES,
 ) -> httpx.Response:
     """

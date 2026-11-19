@@ -136,6 +136,23 @@ evacuation zone)
 query FDEP and state ArcGIS services; wetlands (USFWS) and elevation (USGS 3DEP) are
 national. None needs a key.
 
+- `GIS_DATA_DIR`: local copies of the slow public map layers, so enrichment doesn't wait
+  on FEMA, USGS, USFWS, FDEP and Florida GIO servers: flood zones, parcels (property
+  record and industrial neighbors), wetlands, elevation, sinkholes, cleanup sites,
+  impaired waters and odor sources. Build it with
+  `uv run python scripts/build_gis.py data/gis` (Central Florida; `--bbox WEST SOUTH EAST
+  NORTH` for another area). Lookups inside the copied area are answered from the files in
+  milliseconds; anything outside it, or any layer not copied, still goes to the server.
+  About 20 minutes and 2.5 GB, plus parcels; an interrupted build resumes when run again.
+  Parcels are far faster from the Department of Revenue's county files than from the
+  statewide layer (minutes instead of most of a day): download each county's
+  `<county>_<year>Ppar.zip` from the Data Portal's Map Data folder
+  (https://floridarevenue.com/property/Pages/DataPortal.aspx, Tax Roll and GIS Data) into
+  one directory and run `uv run python scripts/build_gis.py data/gis --only parcels
+  --parcels-from data/downloads`. Only the imported counties are answered locally. Refresh
+  parcels each fall, after the August roll, and flood zones a few times a year
+  (`--only flood_zones`).
+
 The property record (Florida) is the county property appraiser's tax roll entry for the
 parcel, from the Department of Revenue's statewide parcels on Florida GIO's ArcGIS
 service: year built, living area, lot, use, quality, just and taxable value, homestead and
@@ -211,7 +228,7 @@ app/services/             property_service.py (ingest + enrichment), property_vi
 app/services/enrichment/  orchestrator + auto-discovered providers
 app/integrations/         external API clients
 scripts/                  build_highways.py, build_airports.py, build_broadband.py,
-                          build_beach_parking.py, build_heliports.py,
+                          build_beach_parking.py, build_heliports.py, build_gis.py,
                           locate_malls.py
 tests/                    unit and endpoint tests (no network)
 ```

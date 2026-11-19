@@ -4,13 +4,16 @@ import asyncio
 import hashlib
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 
 from app.services.cache_service import CacheService
 from app.services.enrichment.base_provider import ProviderCategory, ProviderResult
 from app.services.enrichment.provider_registry import registry
 
 logger = logging.getLogger(__name__)
+
+# After the deadline, how much longer providers still running get before they're given up on
+LATE_LIMIT_SECONDS = 90.0
 
 
 class EnrichmentOrchestrator:
@@ -35,9 +38,17 @@ class EnrichmentOrchestrator:
         use_cached: bool = True,
         provider_filter: Optional[List[str]] = None,
         category_filter: Optional[List[ProviderCategory]] = None,
+        deadline_seconds: Optional[float] = None,
+        late_limit_seconds: float = LATE_LIMIT_SECONDS,
     ) -> Dict[str, Any]:
         """
         Enrich a location using all applicable providers.
+
+        With a deadline, returns once it passes with the providers that finished by then.
+        The rest keep running: response["late"] is then a task that resolves to a response
+        of the same shape for them, once they finish or late_limit_seconds more have passed
+        (the stragglers are then cancelled and reported as failed). The caller must await
+        it. Without a deadline, "late" is None and every provider is in the response.
 
         Args:
             latitude: Property latitude
@@ -48,6 +59,8 @@ class EnrichmentOrchestrator:
             use_cached: Whether to use cached provider results if available
             provider_filter: Optional list of specific provider names to run
             category_filter: Optional list of categories to run
+            deadline_seconds: How long to wait before returning (None: until all finish)
+            late_limit_seconds: After the deadline, how long the rest still get
 
         Returns:
             Dictionary with all enrichment data organized by provider
@@ -73,7 +86,7 @@ class EnrichmentOrchestrator:
             },
         )
 
-        results = await self._execute_providers(
+        tasks = self._start_providers(
             providers=providers,
             latitude=latitude,
             longitude=longitude,
@@ -82,20 +95,54 @@ class EnrichmentOrchestrator:
             user_preferences=user_preferences,
             use_cached=use_cached,
         )
+        done, pending = await _wait(tasks, deadline_seconds)
+        results = _collect(tasks, done)
+        _log_completed(results)
 
-        success_count = sum(1 for r in results if r.success)
-        logger.info(
-            "Enrichment completed: %d/%d providers successful",
-            success_count,
-            len(results),
-            extra={
-                "total_providers": len(results),
-                "successful": success_count,
-                "failed": len(results) - success_count,
-            },
-        )
+        response = self._format_response(results)
+        response["late"] = None
+        response["metadata"]["pending_providers"] = sorted(tasks[t] for t in pending)
+        if pending:
+            logger.info(
+                "Deadline of %.0fs passed; still waiting on %s",
+                deadline_seconds,
+                response["metadata"]["pending_providers"],
+                extra={"pending_providers": response["metadata"]["pending_providers"]},
+            )
+            late = {t: tasks[t] for t in pending}
+            response["late"] = asyncio.create_task(self._finish_late(late, late_limit_seconds))
+        return response
 
-        return self._format_response(results)
+    async def _finish_late(
+        self, tasks: Dict[asyncio.Task, str], limit_seconds: float
+    ) -> Dict[str, Any]:
+        """Wait for providers still running after the deadline; give up after limit_seconds."""
+        done, pending = await _wait(tasks, limit_seconds)
+        for task in pending:
+            task.cancel()
+        await asyncio.gather(*pending, return_exceptions=True)
+
+        results = _collect(tasks, done)
+        for task in pending:
+            logger.warning(
+                "Provider %s gave up: still running %.0fs after the deadline",
+                tasks[task],
+                limit_seconds,
+                extra={"provider": tasks[task]},
+            )
+            results.append(
+                ProviderResult(
+                    provider_name=tasks[task],
+                    data={},
+                    success=False,
+                    error_message=f"Gave up after {limit_seconds:.0f}s more than the deadline",
+                )
+            )
+        _log_completed(results)
+        response = self._format_response(results)
+        response["late"] = None
+        response["metadata"]["pending_providers"] = []
+        return response
 
     def provider_info(
         self, user_preferences: Optional[Dict[str, Any]] = None
@@ -140,7 +187,13 @@ class EnrichmentOrchestrator:
 
         return providers
 
-    async def _execute_providers(
+    async def _execute_providers(self, **kwargs) -> List[ProviderResult]:
+        """Execute all providers in parallel and wait for every one."""
+        tasks = self._start_providers(**kwargs)
+        done, _ = await _wait(tasks, None)
+        return _collect(tasks, done)
+
+    def _start_providers(
         self,
         providers: List,
         latitude: float,
@@ -149,45 +202,22 @@ class EnrichmentOrchestrator:
         property_data: Dict[str, Any],
         user_preferences: Dict[str, Any],
         use_cached: bool,
-    ) -> List[ProviderResult]:
-        """Execute all providers in parallel."""
-        # Create tasks for each provider
-        tasks = []
-        for provider in providers:
-            task = self._run_provider_with_cache(
-                provider=provider,
-                latitude=latitude,
-                longitude=longitude,
-                address=address,
-                property_data=property_data,
-                user_preferences=user_preferences,
-                use_cached=use_cached,
-            )
-            tasks.append(task)
-
-        # Execute all tasks in parallel
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-
-        # Filter out exceptions and log them
-        valid_results = []
-        for i, result in enumerate(results):
-            if isinstance(result, Exception):
-                provider_name = providers[i].metadata.name
-                logger.error(
-                    "Provider %s failed: %s",
-                    provider_name,
-                    str(result),
-                    extra={
-                        "provider": provider_name,
-                        "error": str(result),
-                        "error_type": type(result).__name__,
-                    },
-                    exc_info=result,
+    ) -> Dict[asyncio.Task, str]:
+        """Start every provider running. Returns task -> provider name, in provider order."""
+        return {
+            asyncio.ensure_future(
+                self._run_provider_with_cache(
+                    provider=provider,
+                    latitude=latitude,
+                    longitude=longitude,
+                    address=address,
+                    property_data=property_data,
+                    user_preferences=user_preferences,
+                    use_cached=use_cached,
                 )
-            elif isinstance(result, ProviderResult):
-                valid_results.append(result)
-
-        return valid_results
+            ): provider.metadata.name
+            for provider in providers
+        }
 
     async def _run_provider_with_cache(
         self,
@@ -325,6 +355,52 @@ class EnrichmentOrchestrator:
             }
 
         return response
+
+
+async def _wait(tasks: Iterable[asyncio.Task], timeout: Optional[float]) -> tuple:
+    """asyncio.wait, which refuses an empty set. Returns (done, pending)."""
+    tasks = set(tasks)
+    if not tasks:
+        return set(), set()
+    return await asyncio.wait(tasks, timeout=timeout)
+
+
+def _collect(tasks: Dict[asyncio.Task, str], done: set) -> List[ProviderResult]:
+    """Results of the finished tasks, in provider order. Exceptions are logged and dropped."""
+    results = []
+    for task, provider_name in tasks.items():
+        if task not in done:
+            continue
+        error = task.exception()
+        if error is not None:
+            logger.error(
+                "Provider %s failed: %s",
+                provider_name,
+                str(error),
+                extra={
+                    "provider": provider_name,
+                    "error": str(error),
+                    "error_type": type(error).__name__,
+                },
+                exc_info=error,
+            )
+        elif isinstance(task.result(), ProviderResult):
+            results.append(task.result())
+    return results
+
+
+def _log_completed(results: List[ProviderResult]) -> None:
+    success_count = sum(1 for r in results if r.success)
+    logger.info(
+        "Enrichment completed: %d/%d providers successful",
+        success_count,
+        len(results),
+        extra={
+            "total_providers": len(results),
+            "successful": success_count,
+            "failed": len(results) - success_count,
+        },
+    )
 
 
 def _fingerprint(value: Any) -> str:

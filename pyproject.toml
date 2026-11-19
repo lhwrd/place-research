@@ -15,11 +15,12 @@ dependencies = [
     "geopandas>=1.1.2",
     "pyarrow>=26.0.1",
     "jinja2>=3.1.4",
+    "rasterio>=1.5.2",
 ]
 
 [dependency-groups]
 dev = [
-    "pytest>=7.4.4",
+    "pytest>=9.0.3",
     "pytest-asyncio>=0.23.3",
     "pytest-cov>=4.1.0",
     "httpx>=0.26.0", # For testing

@@ -2,7 +2,7 @@
 
 Properties come from the iOS Shortcut (a Zillow URL plus scraped listing JSON) or from the
 web UI (a Zillow URL or a plain address). Each new property is enriched in the background:
-fetch the Zillow listing page (price, description, photos), geocode, run every provider,
+fetch the Zillow listing page (price, description, first photo), geocode, run every provider,
 and store each provider's data on the row. A provider that fails keeps its previous data,
 so a flaky API never blanks a property; so does a Zillow page that can't be fetched.
 
@@ -11,13 +11,14 @@ is missing, failed last time, is older than the provider's cache_duration_days, 
 computed from settings that have since changed; several providers are billed per call.
 """
 
+import asyncio
 import json
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 from pathlib import PurePosixPath
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
 from urllib.parse import urlparse
 
 import httpx
@@ -47,11 +48,18 @@ logger = logging.getLogger(__name__)
 MAX_LISTING_JSON_CHARS = 2_000_000
 MAX_ERROR_CHARS = 2_000
 
-# Photos copied from the Zillow listing; their filenames start with this
+# The listing's first photo is copied; its filename starts with this
 ZILLOW_PHOTO_PREFIX = "zillow-"
-MAX_LISTING_PHOTOS = 60
+# Photos tried, in order, until one is usable
+MAX_PHOTO_TRIES = 3
 LISTING_PHOTO_TYPES = frozenset({"image/jpeg", "image/png", "image/webp"})
 MAX_LISTING_PHOTO_BYTES = 25 * 1024 * 1024
+# What filling_in() calls the listing photo still downloading
+PHOTOS = "listing_photo"
+
+# How long enrichment waits for providers before storing what it has. Slower ones (public
+# map servers have bad days) fill in when they finish.
+PROVIDER_DEADLINE_SECONDS = 12.0
 
 # Settings keys
 AMENITY_TYPES = "amenity_types"
@@ -84,6 +92,9 @@ class PropertyService:
         self.orchestrator = orchestrator or EnrichmentOrchestrator()
         self.listing_client = listing_client or ZillowPageClient()
         self._in_progress: Set[int] = set()
+        # Properties stored at the deadline with results still to come -> what's pending
+        self._filling: Dict[int, List[str]] = {}
+        self._background: Set[asyncio.Task] = set()
 
     # Ingest
 
@@ -140,6 +151,11 @@ class PropertyService:
         """
         Enrich a property and store the results.
 
+        Stores what has arrived once PROVIDER_DEADLINE_SECONDS pass, so the property can be
+        looked at; providers still running then (and the listing photo, if still downloading) fill
+        in afterward, in the background. Until they do, the property is busy (is_busy) and
+        another enrichment of it is skipped.
+
         Args:
             use_cached: Keep stored provider results that are still good and only run the
                 rest. False runs every provider.
@@ -151,32 +167,116 @@ class PropertyService:
             logger.info("Property %s is already being enriched; skipping", property_id)
             return False
         self._in_progress.add(property_id)
+        finishing_later = False
         try:
             prop = self.db.get_property(property_id)
             if prop is None:
                 return False
 
             self.db.update_property(property_id, {"status": PropertyStatus.ENRICHING})
+            photos: Optional[asyncio.Task] = None
             try:
-                listing_error = await self._refresh_listing(prop)
+                listing_error, photo_list = await self._refresh_listing(prop)
+                if photo_list:
+                    # Downloads while the providers run
+                    photos = asyncio.create_task(
+                        self._import_listing_photos(property_id, photo_list)
+                    )
                 prop = self.db.get_property(property_id) or prop
-                values = await self._enrich(prop, use_cached=use_cached)
-                if listing_error:
-                    errors = [listing_error, values.get("error")]
-                    values["error"] = "\n".join(e for e in errors if e)[:MAX_ERROR_CHARS]
+                values, late = await self._enrich(prop, use_cached=use_cached)
+                values["error"] = _join_errors([listing_error, values.get("error")])
             except Exception as e:  # pylint: disable=broad-except
                 logger.error("Enrichment failed for property %s: %s", property_id, e, exc_info=True)
                 self.db.update_property(
                     property_id,
                     {"status": PropertyStatus.ERROR, "error": str(e)[:MAX_ERROR_CHARS]},
                 )
+                if photos is not None:
+                    await photos
                 return True
 
             self.db.update_property(property_id, values)
-            logger.info("Enriched property %s", property_id)
+            waiting = list((late or {}).get("names") or [])
+            if photos is not None and not photos.done():
+                waiting.append(PHOTOS)
+            if waiting:
+                logger.info("Enriched property %s; still waiting on %s", property_id, waiting)
+                self._filling[property_id] = waiting
+                task = asyncio.create_task(self._finish_later(property_id, late, photos))
+                self._background.add(task)
+                task.add_done_callback(self._background.discard)
+                finishing_later = True
+            else:
+                if photos is not None:
+                    await photos  # done: just collects it
+                logger.info("Enriched property %s", property_id)
             return True
         finally:
+            if not finishing_later:
+                self._in_progress.discard(property_id)
+
+    def is_busy(self, property_id: int) -> bool:
+        """Whether the property is being enriched, including late results still filling in."""
+        return property_id in self._in_progress
+
+    def filling_in(self, property_id: int) -> List[str]:
+        """What the property's enrichment is still waiting on after storing the rest."""
+        return list(self._filling.get(property_id) or [])
+
+    async def wait_for_background(self) -> None:
+        """Wait for late results still filling in (for tests and shutdown)."""
+        while self._background:
+            await asyncio.gather(*self._background, return_exceptions=True)
+
+    async def _finish_later(
+        self,
+        property_id: int,
+        late: Optional[Dict[str, Any]],
+        photos: Optional[asyncio.Task],
+    ) -> None:
+        """Store providers that missed the deadline, once they finish."""
+        try:
+            if photos is not None:
+                await photos
+            if late is not None:
+                response = await late["task"]
+                self._store_late_results(property_id, late, response.get("enrichment_data") or {})
+            logger.info("Property %s: late results stored", property_id)
+        except Exception as e:  # pylint: disable=broad-except
+            logger.error(
+                "Storing late results failed for property %s: %s", property_id, e, exc_info=True
+            )
+        finally:
+            self._filling.pop(property_id, None)
             self._in_progress.discard(property_id)
+
+    def _store_late_results(
+        self, property_id: int, late: Dict[str, Any], results: Dict[str, Any]
+    ) -> None:
+        prop = self.db.get_property(property_id)
+        if prop is None:
+            return
+        if (prop.get("latitude"), prop.get("longitude")) != late["location"]:
+            # The address was edited meanwhile: these are for the old location
+            logger.info("Property %s moved; dropping late results", property_id)
+            return
+        enrichment, runs, failed = _apply_results(prop, results, late["providers"])
+        # Earlier lines for these providers are replaced; the rest (including the listing's)
+        # stay
+        kept = [
+            line
+            for line in (prop.get("error") or "").splitlines()
+            if line.split(":", 1)[0] not in results
+        ]
+        self.db.update_property(
+            property_id,
+            {
+                **_parcel_columns(enrichment.get("parcel_provider"), prop),
+                "enrichment": enrichment,
+                "enrichment_meta": runs,
+                "error": _join_errors(kept + failed),
+            },
+        )
 
     async def enrich_safely(self, property_id: int, use_cached: bool = True) -> None:
         """For background tasks, whose errors would otherwise only surface as a traceback."""
@@ -195,24 +295,24 @@ class PropertyService:
             logger.info("Enriched %d pending properties", enriched)
         return enriched
 
-    async def _refresh_listing(self, prop: Dict[str, Any]) -> Optional[str]:
+    async def _refresh_listing(self, prop: Dict[str, Any]) -> Tuple[Optional[str], List[str]]:
         """
-        Fetch the property's Zillow page: store its listing data and copy its photos.
+        Fetch the property's Zillow page and store its listing data.
 
         Runs on every enrichment, so the price and availability stay current. A page that
         can't be fetched (Zillow's bot check, a removed listing) keeps the stored data.
 
         Returns:
-            A line for the property's failures, or None
+            (a line for the property's failures or None, the listing's photo URLs to copy)
         """
         url = prop.get("zillow_url")
         if not settings.zillow_fetch_enabled or not url or not is_zillow_listing_url(url):
-            return None
+            return None, []
         try:
             listing = await self.listing_client.fetch_property(url)
         except ZillowFetchError as e:
             logger.warning("Property %s: could not fetch Zillow listing: %s", prop["id"], e)
-            return f"zillow_listing: {e}"
+            return f"zillow_listing: {e}", []
 
         facts = parse_listing_json(listing)
         values: Dict[str, Any] = {
@@ -223,49 +323,68 @@ class PropertyService:
         if facts.full_address and prop.get("address") in (address_from_url(url), url):
             values["address"] = facts.full_address
         self.db.update_property(prop["id"], values)
-        await self._import_listing_photos(prop["id"], photo_urls(listing))
-        return None
+        return None, photo_urls(listing)
 
     async def _import_listing_photos(self, property_id: int, urls: List[str]) -> int:
         """
-        Copy the listing's photos into the property's photos. Returns how many were added.
+        Copy the listing's first photo into the property's photos. Returns how many were
+        added (0 or 1).
 
-        Only once: if any Zillow photos are already stored, nothing is added, so photos you
-        deleted don't come back on the next enrichment.
+        Only once (listing_photo_copied), so a photo you deleted doesn't come back on the
+        next enrichment; properties from before that flag count as copied if they have any
+        Zillow photo. A photo that can't be used is skipped for the next one, up to
+        MAX_PHOTO_TRIES. Never raises.
         """
-        if any(f.startswith(ZILLOW_PHOTO_PREFIX) for f in self.db.photo_filenames(property_id)):
-            return 0
-        added = 0
-        for url in urls[:MAX_LISTING_PHOTOS]:
-            try:
-                response = await self.listing_client.fetch_photo(url)
-            except (ZillowFetchError, httpx.HTTPError) as e:
-                logger.warning("Property %s: skipping listing photo: %s", property_id, e)
-                continue
-            content_type = response.headers.get("content-type", "").split(";")[0].strip().lower()
-            content = response.content
-            if (
-                response.status_code != 200
-                or content_type not in LISTING_PHOTO_TYPES
-                or not content
-                or len(content) > MAX_LISTING_PHOTO_BYTES
+        try:
+            prop = self.db.get_property(property_id) or {}
+            if prop.get("listing_photo_copied") or any(
+                f.startswith(ZILLOW_PHOTO_PREFIX) for f in self.db.photo_filenames(property_id)
             ):
-                logger.warning(
-                    "Property %s: skipping listing photo (HTTP %s, %s, %d bytes)",
-                    property_id,
-                    response.status_code,
-                    content_type or "no type",
-                    len(content),
+                return 0
+            for url in urls[:MAX_PHOTO_TRIES]:
+                try:
+                    response = await self.listing_client.fetch_photo(url)
+                except (ZillowFetchError, httpx.HTTPError) as e:
+                    logger.warning("Property %s: skipping listing photo: %s", property_id, e)
+                    continue
+                content_type = (
+                    response.headers.get("content-type", "").split(";")[0].strip().lower()
                 )
-                continue
-            name = PurePosixPath(urlparse(url).path).name or f"{added + 1}.jpg"
-            self.db.add_photo(property_id, ZILLOW_PHOTO_PREFIX + name, content_type, content)
-            added += 1
-        if added:
-            logger.info("Property %s: copied %d listing photos", property_id, added)
-        return added
+                content = response.content
+                if (
+                    response.status_code != 200
+                    or content_type not in LISTING_PHOTO_TYPES
+                    or not content
+                    or len(content) > MAX_LISTING_PHOTO_BYTES
+                ):
+                    logger.warning(
+                        "Property %s: skipping listing photo (HTTP %s, %s, %d bytes)",
+                        property_id,
+                        response.status_code,
+                        content_type or "no type",
+                        len(content),
+                    )
+                    continue
+                name = PurePosixPath(urlparse(url).path).name or "1.jpg"
+                self.db.add_photo(property_id, ZILLOW_PHOTO_PREFIX + name, content_type, content)
+                self.db.update_property(property_id, {"listing_photo_copied": 1})
+                logger.info("Property %s: copied the listing photo", property_id)
+                return 1
+            return 0
+        except Exception as e:  # pylint: disable=broad-except
+            logger.error("Property %s: copying the listing photo failed: %s", property_id, e)
+            return 0
 
-    async def _enrich(self, prop: Dict[str, Any], use_cached: bool) -> Dict[str, Any]:
+    async def _enrich(
+        self, prop: Dict[str, Any], use_cached: bool
+    ) -> Tuple[Dict[str, Any], Optional[Dict[str, Any]]]:
+        """
+        Run the providers that are due, until the deadline.
+
+        Returns:
+            (the property's new values, None or what _finish_later needs for the providers
+            still running: {"task", "names", "providers", "location"})
+        """
         facts = parse_listing_json(prop.get("listing_json"))
         address = prop.get("address") or facts.full_address
         if not address:
@@ -295,6 +414,7 @@ class PropertyService:
         )
 
         results: Dict[str, Any] = {}
+        late = None
         if to_run:
             result = await self.orchestrator.enrich(
                 latitude=latitude,
@@ -306,25 +426,18 @@ class PropertyService:
                 # know about settings changes
                 use_cached=False,
                 provider_filter=to_run,
+                deadline_seconds=PROVIDER_DEADLINE_SECONDS,
             )
             results = result.get("enrichment_data") or {}
+            if result.get("late") is not None:
+                late = {
+                    "task": result["late"],
+                    "names": (result.get("metadata") or {}).get("pending_providers") or [],
+                    "providers": providers,
+                    "location": (latitude, longitude),
+                }
 
-        # Keep each provider's previous data unless it succeeded this time
-        enrichment = dict(prop.get("enrichment") or {})
-        failed = []
-        timestamp = now.isoformat(timespec="seconds")
-        for name, provider_result in results.items():
-            succeeded = bool(provider_result.get("success"))
-            if succeeded and provider_result.get("data"):
-                enrichment[name] = provider_result["data"]
-            elif not succeeded:
-                failed.append(f"{name}: {provider_result.get('error') or 'failed'}")
-            runs[name] = {
-                "at": timestamp,
-                "ok": succeeded,
-                "inputs": (providers.get(name) or {}).get("inputs"),
-            }
-
+        enrichment, runs, failed = _apply_results(prop, results, providers, runs)
         listing = _listing_columns(facts)
         return {
             **_parcel_columns(enrichment.get("parcel_provider"), {**prop, **listing}),
@@ -333,11 +446,11 @@ class PropertyService:
             "longitude": longitude,
             "enrichment": enrichment,
             "enrichment_meta": runs,
-            "enriched_at": timestamp,
+            "enriched_at": now.isoformat(timespec="seconds"),
             "status": PropertyStatus.ENRICHED,
             # Partial failures are worth seeing, but don't make the property an Error
-            "error": "\n".join(failed)[:MAX_ERROR_CHARS] or None,
-        }
+            "error": _join_errors(failed),
+        }, late
 
     # Preferences
 
@@ -401,6 +514,41 @@ def _previous_runs(prop: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
         name: {"at": prop.get("enriched_at"), "ok": name not in failed, "inputs": None}
         for name in prop.get("enrichment") or {}
     }
+
+
+def _apply_results(
+    prop: Dict[str, Any],
+    results: Dict[str, Any],
+    providers: Dict[str, Dict[str, Any]],
+    runs: Optional[Dict[str, Dict[str, Any]]] = None,
+) -> Tuple[Dict[str, Any], Dict[str, Dict[str, Any]], List[str]]:
+    """
+    Merge provider results into the property's stored ones. A provider keeps its previous
+    data unless it succeeded this time.
+
+    Returns:
+        (enrichment, enrichment_meta, a "name: error" line per provider that failed)
+    """
+    enrichment = dict(prop.get("enrichment") or {})
+    runs = dict(runs if runs is not None else _previous_runs(prop))
+    failed = []
+    timestamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    for name, provider_result in results.items():
+        succeeded = bool(provider_result.get("success"))
+        if succeeded and provider_result.get("data"):
+            enrichment[name] = provider_result["data"]
+        elif not succeeded:
+            failed.append(f"{name}: {provider_result.get('error') or 'failed'}")
+        runs[name] = {
+            "at": timestamp,
+            "ok": succeeded,
+            "inputs": (providers.get(name) or {}).get("inputs"),
+        }
+    return enrichment, runs, failed
+
+
+def _join_errors(lines: Sequence[Optional[str]]) -> Optional[str]:
+    return "\n".join(line for line in lines if line)[:MAX_ERROR_CHARS] or None
 
 
 def _is_fresh(run: Optional[Dict[str, Any]], info: Dict[str, Any], now: datetime) -> bool:
