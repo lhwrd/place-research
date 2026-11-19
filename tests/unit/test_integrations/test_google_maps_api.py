@@ -19,6 +19,7 @@ def google_maps_api():
     # Patch the settings in the real module
     with patch.object(real_module, "settings") as mock_settings:
         mock_settings.google_maps_api_key = "test_api_key"
+        mock_settings.osrm_url = None
 
         # Import GoogleMapsAPI here to get the unmocked version from the autouse fixture
         from app.integrations.google_maps_api import GoogleMapsAPI
@@ -263,6 +264,73 @@ class TestDistanceMatrix:
 
         with pytest.raises(GoogleMapsAPIError, match="Distance matrix failed"):
             await google_maps_api.distance_matrix((0, 0), [(1, 1)])
+
+
+class TestDistanceMatrixViaOsrm:
+    """With OSRM_URL set, typical drive times skip Google."""
+
+    @pytest.fixture
+    def osrm_maps_api(self, google_maps_api):
+        from tests.unit.test_integrations import conftest
+
+        with patch.object(conftest._real_module, "settings") as mock_settings:
+            mock_settings.google_maps_api_key = "test_api_key"
+            mock_settings.osrm_url = "http://osrm:5000"
+            google_maps_api._make_request = AsyncMock()
+            yield google_maps_api
+
+    @pytest.mark.asyncio
+    async def test_driving_goes_to_osrm(self, osrm_maps_api):
+        osrm_maps_api._osrm()._make_request = AsyncMock(
+            return_value={
+                "code": "Ok",
+                "durations": [[0, 720.4, None]],
+                "distances": [[0, 8369.0, None]],
+            }
+        )
+
+        results = await osrm_maps_api.distance_matrix(
+            (28.5421, -81.3790), [(28.55, -81.37), (0.0, 0.0)]
+        )
+
+        osrm_maps_api._make_request.assert_not_called()
+        endpoint = osrm_maps_api._osrm()._make_request.call_args[0][1]
+        assert (
+            endpoint
+            == "table/v1/driving/-81.379000,28.542100;-81.370000,28.550000;0.000000,0.000000"
+        )
+        assert results[0] == {
+            "destination_index": 0,
+            "distance_meters": 8369,
+            "distance_miles": 5.2,
+            "duration_seconds": 720,
+            "duration_minutes": 12,
+            "status": "OK",
+        }
+        assert results[1]["status"] == "ZERO_RESULTS"
+
+    @pytest.mark.asyncio
+    async def test_traffic_still_uses_google(self, osrm_maps_api, mock_distance_matrix_response):
+        osrm_maps_api._make_request.return_value = mock_distance_matrix_response
+        osrm_maps_api._osrm()._make_request = AsyncMock()
+
+        await osrm_maps_api.distance_matrix(
+            (28.5, -81.4), [(28.6, -81.3)], departure_time=datetime(2024, 1, 15, 8)
+        )
+
+        osrm_maps_api._make_request.assert_called_once()
+        osrm_maps_api._osrm()._make_request.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_osrm_error_raises(self, osrm_maps_api):
+        from app.exceptions import ExternalAPIError
+
+        osrm_maps_api._osrm()._make_request = AsyncMock(
+            return_value={"code": "NoTable", "message": "No table found"}
+        )
+
+        with pytest.raises(ExternalAPIError, match="No table found"):
+            await osrm_maps_api.distance_matrix((28.5, -81.4), [(28.6, -81.3)])
 
 
 class TestStreetViewMetadata:

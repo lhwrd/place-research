@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     # never sent to the browser.
     google_maps_embed_key: Optional[str] = Field(None, alias="GOOGLE_MAPS_EMBED_KEY")
     census_api_key: Optional[str] = Field(None, alias="CENSUS_API_KEY")
+    # Self-hosted OSRM (e.g. http://osrm:5000). Set: drive times come from it instead of
+    # Google's billed, quota-limited Distance Matrix
+    osrm_url: Optional[str] = Field(None, alias="OSRM_URL")
     census_acs_year: int = Field(
         2024,
         alias="CENSUS_ACS_YEAR",
