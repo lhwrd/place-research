@@ -3,8 +3,12 @@
 Many state and federal datasets are published as ArcGIS MapServer/FeatureServer layers or
 ImageServer rasters. This client answers the two questions the providers ask of them:
 "which features are within N meters of this point?" and "what is the raster value here?".
+
+When GIS_DATA_DIR holds a local copy of a layer or raster covering the whole query (see
+app/integrations/local_gis.py), the answer comes from it instead of the server.
 """
 
+import asyncio
 import logging
 import math
 from typing import Any, Dict, List, Optional, Sequence, Tuple
@@ -13,6 +17,7 @@ from shapely.geometry import shape
 from shapely.geometry.base import BaseGeometry
 
 from .base_client import BaseAPIClient, send_with_retry
+from .local_gis import BBox, LocalDataError, LocalGIS, Source, area_around, default_local_gis
 
 logger = logging.getLogger(__name__)
 
@@ -20,16 +25,37 @@ logger = logging.getLogger(__name__)
 class ArcGISClient(BaseAPIClient):
     """Point queries against one ArcGIS server."""
 
-    def __init__(self, base_url: str, service: str, timeout: float = 15.0):
+    def __init__(
+        self,
+        base_url: str,
+        service: str,
+        timeout: float = 15.0,
+        local_gis: Optional[LocalGIS] = None,
+    ):
         """
         Args:
             base_url: The server's services root, e.g. https://host/arcgis/rest/services
             service: Short name for logs and retry messages
+            local_gis: Local copies to answer from (default: GIS_DATA_DIR's, if set)
         """
         super().__init__(
             base_url=base_url, api_key=None, timeout=timeout, rate_limit_per_second=10.0
         )
         self.service = service
+        self._local_gis = local_gis
+
+    def _local(self, path: str, area: BBox) -> Optional[Tuple[LocalGIS, Source]]:
+        """The local copy of a layer or raster, if there is one covering the whole area."""
+        local = self._local_gis or default_local_gis()
+        source = local.source(self.base_url, path) if local else None
+        if local is None or source is None or not source.covers(area):
+            return None
+        return local, source
+
+    def _local_failed(self, source: Source, error: Exception) -> None:
+        logger.warning(
+            "Local %s copy can't answer; asking %s: %s", source.name, self.service, error
+        )
 
     def _get_service_name(self) -> str:
         return self.service
@@ -64,6 +90,23 @@ class ArcGISClient(BaseAPIClient):
             httpx.HTTPError: If the server can't be reached or returns an HTTP error
             ValueError: If the server returns an ArcGIS error body
         """
+        local = self._local(layer, area_around(latitude, longitude, max(distance_m, 0.01)))
+        if local:
+            gis, source = local
+            try:
+                return await asyncio.to_thread(
+                    gis.query_near,
+                    source,
+                    latitude,
+                    longitude,
+                    distance_m,
+                    out_fields,
+                    geometry,
+                    where,
+                )
+            except LocalDataError as e:
+                self._local_failed(source, e)
+
         params: Dict[str, Any] = {
             "geometry": f"{longitude},{latitude}",
             "geometryType": "esriGeometryPoint",
@@ -113,6 +156,15 @@ class ArcGISClient(BaseAPIClient):
         """
         dlat = half_size_m / 110_950.0
         dlon = half_size_m / (111_320.0 * math.cos(math.radians(latitude)))
+        area = (longitude - dlon, latitude - dlat, longitude + dlon, latitude + dlat)
+        local = self._local(layer, area)
+        if local:
+            gis, source = local
+            try:
+                return await asyncio.to_thread(gis.query_box, source, area, out_fields, where)
+            except LocalDataError as e:
+                self._local_failed(source, e)
+
         params: Dict[str, Any] = {
             "geometry": f"{longitude - dlon},{latitude - dlat},{longitude + dlon},{latitude + dlat}",
             "geometryType": "esriGeometryEnvelope",
@@ -147,6 +199,16 @@ class ArcGISClient(BaseAPIClient):
         self, image_service: str, points: Sequence[Tuple[float, float]]
     ) -> List[Optional[float]]:
         """Raster values at several (latitude, longitude) points in one request, in order."""
+        lats = [lat for lat, _ in points]
+        lons = [lon for _, lon in points]
+        local = self._local(image_service, (min(lons), min(lats), max(lons), max(lats)))
+        if local:
+            gis, source = local
+            try:
+                return await asyncio.to_thread(gis.sample, source, points)
+            except LocalDataError as e:
+                self._local_failed(source, e)
+
         coordinates = ",".join(f"[{lon},{lat}]" for lat, lon in points)
         params = {
             "geometry": f'{{"points":[{coordinates}],"spatialReference":{{"wkid":4326}}}}',

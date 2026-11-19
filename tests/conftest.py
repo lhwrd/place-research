@@ -14,6 +14,8 @@ os.environ["TESTING"] = "1"
 os.environ["DATABASE_PATH"] = str(Path(tempfile.mkdtemp(prefix="place-research-")) / "test.db")
 os.environ["INGEST_API_TOKEN"] = "test-ingest-token"
 os.environ["ZILLOW_FETCH_ENABLED"] = "0"
+# Tests never answer from a developer's local map layer copies
+os.environ["GIS_DATA_DIR"] = ""
 
 
 # Define mock classes at module level before any imports

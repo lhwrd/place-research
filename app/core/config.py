@@ -47,6 +47,9 @@ class Settings(BaseSettings):
     highways_path: Optional[Path] = Field(None, alias="HIGHWAYS_PATH")
     # FCC broadband availability by census block, built by scripts/build_broadband.py
     broadband_path: Optional[Path] = Field(None, alias="BROADBAND_PATH")
+    # Local copies of the slow public map layers (flood zones, parcels, elevation, ...),
+    # built by scripts/build_gis.py. Unset: every lookup goes to the public servers
+    gis_data_dir: Optional[Path] = Field(None, alias="GIS_DATA_DIR")
 
     # SQLite database holding properties, photos, locations and settings
     database_path: Path = Field(
@@ -55,7 +58,9 @@ class Settings(BaseSettings):
         description="SQLite file; its directory is created if missing",
     )
 
-    @field_validator("raillines_path", "highways_path", "broadband_path", mode="before")
+    @field_validator(
+        "raillines_path", "highways_path", "broadband_path", "gis_data_dir", mode="before"
+    )
     @classmethod
     def _blank_path_is_unset(cls, value):
         """`RAILLINES_PATH=` in .env means "not set", not the current directory."""

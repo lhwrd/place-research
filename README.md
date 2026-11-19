@@ -136,6 +136,17 @@ evacuation zone)
 query FDEP and state ArcGIS services; wetlands (USFWS) and elevation (USGS 3DEP) are
 national. None needs a key.
 
+- `GIS_DATA_DIR`: local copies of the slow public map layers, so enrichment doesn't wait
+  on FEMA, USGS, USFWS, FDEP and Florida GIO servers: flood zones, parcels (property
+  record and industrial neighbors), wetlands, elevation, sinkholes, cleanup sites,
+  impaired waters and odor sources. Build it with
+  `uv run python scripts/build_gis.py data/gis` (Central Florida; `--bbox WEST SOUTH EAST
+  NORTH` for another area). Lookups inside the copied area are answered from the files in
+  milliseconds; anything outside it, or any layer not copied, still goes to the server.
+  Takes a few hours the first time (mostly parcels) and about 3 GB; an interrupted build
+  resumes when run again. Refresh parcels each fall (`--only parcels`, after the August
+  roll) and flood zones a few times a year (`--only flood_zones`).
+
 The property record (Florida) is the county property appraiser's tax roll entry for the
 parcel, from the Department of Revenue's statewide parcels on Florida GIO's ArcGIS
 service: year built, living area, lot, use, quality, just and taxable value, homestead and
@@ -211,7 +222,7 @@ app/services/             property_service.py (ingest + enrichment), property_vi
 app/services/enrichment/  orchestrator + auto-discovered providers
 app/integrations/         external API clients
 scripts/                  build_highways.py, build_airports.py, build_broadband.py,
-                          build_beach_parking.py, build_heliports.py,
+                          build_beach_parking.py, build_heliports.py, build_gis.py,
                           locate_malls.py
 tests/                    unit and endpoint tests (no network)
 ```

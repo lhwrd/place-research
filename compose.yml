@@ -10,6 +10,7 @@ services:
       RAILLINES_PATH: ${CONTAINER_RAILLINES_PATH:-/app/data/raillines.geojson}
       HIGHWAYS_PATH: ${CONTAINER_HIGHWAYS_PATH:-/app/data/highways.parquet}
       BROADBAND_PATH: ${CONTAINER_BROADBAND_PATH:-/app/data/broadband.parquet}
+      GIS_DATA_DIR: ${CONTAINER_GIS_DATA_DIR:-/app/data/gis}
     volumes:
       - ./data:/app/data:ro
       # SQLite database (properties, photos, locations, settings): back this up
