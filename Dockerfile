@@ -1,6 +1,7 @@
 # Multi-stage build for the FastAPI backend.
-# Every dependency ships a manylinux wheel (pyogrio bundles GDAL, shapely bundles
-# GEOS), so no system packages or compilers are needed.
+# Every dependency ships a manylinux wheel (pyogrio and rasterio bundle GDAL, shapely
+# bundles GEOS), so no compilers are needed. rasterio's bundled GDAL still links the
+# system libexpat, which python:*-slim leaves out; the runtime stage installs it.
 FROM python:3.13-slim AS builder
 
 COPY --from=ghcr.io/astral-sh/uv:0.5.16 /uv /bin/uv
@@ -16,6 +17,10 @@ RUN uv sync --locked --no-dev
 
 # Runtime stage
 FROM python:3.13-slim
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libexpat1 \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN useradd -m -u 1000 appuser
 
