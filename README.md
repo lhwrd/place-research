@@ -178,6 +178,9 @@ property page is opened, shown with a link to Walk Score, and never saved. They 
 the property list for the same reason.
 
 Google APIs: `GOOGLE_MAPS_API_KEY` needs Geocoding, Distance Matrix and Places (New).
+With `OSRM_URL` set (a self-hosted [OSRM](https://github.com/Project-OSRM/osrm-backend),
+car profile), drive times come from it instead of Distance Matrix: free, no daily quota,
+but free-flow times with no traffic.
 `GOOGLE_MAPS_EMBED_KEY`, which the browser sees, needs the Maps Embed API (the Street View
 viewer) and Street View Static API (the free panorama lookup that points the viewer at
 the house). Without an embed key there is no Street View: the main key is never sent to

@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from app.core.config import settings
 from app.exceptions import GoogleMapsAPIError
 from app.integrations.base_client import BaseAPIClient
+from app.integrations.osrm_api import OsrmAPI
 
 logger = logging.getLogger(__name__)
 
@@ -35,10 +36,23 @@ class GoogleMapsAPI(BaseAPIClient):
             timeout=30.0,
             rate_limit_per_second=50,  # Google's default is higher, but be conservative
         )
+        self._osrm_client: Optional[OsrmAPI] = None
 
     def _get_service_name(self) -> str:
         """Return service name."""
         return "google_maps"
+
+    def _osrm(self) -> OsrmAPI:
+        """The OSRM client for drive times, made on first use."""
+        if self._osrm_client is None:
+            self._osrm_client = OsrmAPI(settings.osrm_url)
+        return self._osrm_client
+
+    async def close(self):
+        """Close HTTP clients."""
+        await super().close()
+        if self._osrm_client is not None:
+            await self._osrm_client.close()
 
     def _get_auth_headers(self) -> Dict[str, str]:
         """Google Maps uses query param for auth, not headers."""
@@ -207,6 +221,11 @@ class GoogleMapsAPI(BaseAPIClient):
                 ...
             ]
         """
+        # Typical drive times come from the self-hosted OSRM when there is one: free, and no
+        # daily quota. Google is still used for traffic estimates and other travel modes.
+        if settings.osrm_url and mode == "driving" and departure_time is None:
+            return await self._osrm().distance_matrix(origin, destinations)
+
         # Format origins and destinations
         origin_str = f"{origin[0]},{origin[1]}"
         destinations_str = "|".join(f"{lat},{lon}" for lat, lon in destinations)
