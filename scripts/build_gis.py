@@ -130,6 +130,9 @@ LAYERS = [
         USFWS_WETLANDS,
         wetlands.WETLANDS_LAYER,
         ("WETLAND_TYPE", "ACRES"),
+        # Bay and estuary polygons are so detailed the server fails (HTTP 500) unless it
+        # simplifies them
+        max_offset_deg=1e-5,
         cell_deg=0.05,
         concurrency=6,
     ),
